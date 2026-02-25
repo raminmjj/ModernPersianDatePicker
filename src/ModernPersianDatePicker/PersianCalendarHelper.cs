@@ -133,13 +133,15 @@ public static class PersianCalendarHelper
     {
         var firstDay = ToGregorianDate(new PersianDate(year, month, 1, 0));
         var persianCalendar = new PersianCalendar();
-        int dayOfWeek = (int)persianCalendar.GetDayOfWeek(firstDay);
+        DayOfWeek dotNetDay = persianCalendar.GetDayOfWeek(firstDay);
         
-        // Convert from Sunday=0 format to Shanbeh=0 format
-        // Persian calendar: Shanbeh=0, Yekshanbeh=1, ..., Jomeh=6
-        // .NET DayOfWeek: Sunday=0, Monday=1, ..., Saturday=6
-        // Persian calendar starts from Shanbeh (Saturday)
-        return (dayOfWeek + 1) % 7;
+        // Convert from .NET DayOfWeek to Persian day index
+        // .NET: Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6
+        // Persian: Shanbeh(Sat)=0, Yekshanbeh(Sun)=1, Doshanbeh(Mon)=2, 
+        //          Seshanbeh(Tue)=3, Chaharshanbeh(Wed)=4, Panjshanbeh(Thu)=5, Jomeh(Fri)=6
+        int persianDayIndex = ((int)dotNetDay + 1) % 7;
+        
+        return persianDayIndex;
     }
 
     /// <summary>

@@ -203,9 +203,10 @@ public class CalendarView : TemplatedControl
 
                 for (int day = 1; day <= daysInMonth; day++)
                 {
+                    int currentDay = day; // Capture the current day value
                     var button = new Button
                     {
-                        Content = day.ToString(),
+                        Content = currentDay.ToString(),
                         [Grid.RowProperty] = currentRow,
                         [Grid.ColumnProperty] = currentColumn
                     };
@@ -215,19 +216,19 @@ public class CalendarView : TemplatedControl
                     if (SelectedDate.HasValue &&
                         SelectedDate.Value.Year == DisplayYear &&
                         SelectedDate.Value.Month == DisplayMonth &&
-                        SelectedDate.Value.Day == day)
+                        SelectedDate.Value.Day == currentDay)
                     {
                         button.Classes.Add("selected");
                     }
 
                     // Check if this is today
                     var today = PersianCalendarHelper.Today();
-                    if (today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == day)
+                    if (today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay)
                     {
                         button.Classes.Add("today");
                     }
 
-                    button.Click += (s, e) => OnDayClicked(day);
+                    button.Click += OnDayClicked;
                     _daysGrid.Children.Add(button);
 
                     currentColumn++;
@@ -245,11 +246,21 @@ public class CalendarView : TemplatedControl
         }
     }
 
-    private void OnDayClicked(int day)
+    private void OnDayClicked(object? sender, RoutedEventArgs e)
     {
+        if (sender is not Button button || button.Content is not string dayStr)
+            return;
+            
+        if (!int.TryParse(dayStr, out int day))
+            return;
+        
+        // Create the selected date with correct day of week
         var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, 0);
         
-        // Fire the event to parent control first
+        System.Diagnostics.Debug.WriteLine($"Day clicked: {day}, DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
+        System.Diagnostics.Debug.WriteLine($"Selected date: {selectedDate.ToString("long")}");
+        
+        // Fire the event to parent control
         DateSelected?.Invoke(this, new DateSelectedEventArgs(selectedDate));
     }
 }
