@@ -197,7 +197,7 @@ public class CalendarView : TemplatedControl
 
     private void ShowMonthSelection()
     {
-        if (_monthGrid == null || _monthPopup == null) return;
+        if (_monthGrid == null || _monthPopup == null || _monthButton == null) return;
 
         _monthGrid.Children.Clear();
         
@@ -246,12 +246,14 @@ public class CalendarView : TemplatedControl
             _monthGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         }
 
+        // Set placement target to the month button
+        _monthPopup.PlacementTarget = _monthButton;
         _monthPopup.IsOpen = true;
     }
 
     private void ShowYearSelection()
     {
-        if (_yearGrid == null || _yearPopup == null) return;
+        if (_yearGrid == null || _yearPopup == null || _yearButton == null) return;
 
         _yearGrid.Children.Clear();
         
@@ -303,6 +305,8 @@ public class CalendarView : TemplatedControl
             _yearGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
         }
 
+        // Set placement target to the year button
+        _yearPopup.PlacementTarget = _yearButton;
         _yearPopup.IsOpen = true;
     }
 

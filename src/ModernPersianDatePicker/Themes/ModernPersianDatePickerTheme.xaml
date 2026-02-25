@@ -170,10 +170,8 @@
                         <!-- Month selection popup -->
                         <Popup x:Name="PART_MonthPopup"
                                Placement="Bottom"
-                               PlacementTarget="{TemplateBinding}"
                                IsOpen="False"
-                               HorizontalOffset="50"
-                               VerticalOffset="40">
+                               VerticalOffset="4">
                             <Border Background="White"
                                     BorderBrush="#FFABADB3"
                                     BorderThickness="1"
@@ -189,10 +187,8 @@
                         <!-- Year selection popup -->
                         <Popup x:Name="PART_YearPopup"
                                Placement="Bottom"
-                               PlacementTarget="{TemplateBinding}"
                                IsOpen="False"
-                               HorizontalOffset="100"
-                               VerticalOffset="40">
+                               VerticalOffset="4">
                             <Border Background="White"
                                     BorderBrush="#FFABADB3"
                                     BorderThickness="1"
