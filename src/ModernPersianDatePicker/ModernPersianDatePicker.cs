@@ -128,6 +128,12 @@ public class ModernPersianDatePicker : TemplatedControl
             _toggleButton.IsCheckedChanged += OnToggleButton_IsCheckedChanged;
         }
 
+        // Add preview click handler to display text
+        if (_displayTextBlock != null)
+        {
+            _displayTextBlock.PointerPressed += OnDisplayText_PointerPressed;
+        }
+
         if (_calendarView != null)
         {
             _calendarView.UseEnglishNames = UseEnglishNames;
@@ -137,11 +143,8 @@ public class ModernPersianDatePicker : TemplatedControl
         UpdateDisplayText();
     }
 
-    protected override void OnPointerPressed(PointerPressedEventArgs e)
+    private void OnDisplayText_PointerPressed(object? sender, Avalonia.Input.PointerPressedEventArgs e)
     {
-        base.OnPointerPressed(e);
-        
-        // Toggle popup when clicking on the control
         if (!_isPopupOpen)
         {
             OpenPopup();
@@ -220,6 +223,11 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _toggleButton.Click -= OnToggleButton_Click;
             _toggleButton.IsCheckedChanged -= OnToggleButton_IsCheckedChanged;
+        }
+
+        if (_displayTextBlock != null)
+        {
+            _displayTextBlock.PointerPressed -= OnDisplayText_PointerPressed;
         }
 
         if (_calendarView != null)
