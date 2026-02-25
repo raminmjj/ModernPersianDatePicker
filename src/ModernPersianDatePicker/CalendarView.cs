@@ -98,6 +98,27 @@ public class CalendarView : TemplatedControl
         UpdateCalendar();
     }
 
+    protected override void OnUnloaded(RoutedEventArgs e)
+    {
+        base.OnUnloaded(e);
+
+        // Clean up event handlers to prevent memory leaks
+        if (_previousButton != null)
+            _previousButton.Click -= OnPreviousButton_Click;
+        if (_nextButton != null)
+            _nextButton.Click -= OnNextButton_Click;
+
+        // Clear days grid
+        if (_daysGrid != null)
+            _daysGrid.Children.Clear();
+    }
+
+    public void DisconnectFromVisualTree()
+    {
+        if (_daysGrid != null)
+            _daysGrid.Children.Clear();
+    }
+
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
     {
         if (DisplayMonth == 1)

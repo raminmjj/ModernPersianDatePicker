@@ -83,7 +83,6 @@
                            Margin="0,0,0,12"/>
                 
                 <persian:ModernPersianDatePicker x:Name="CustomDatePicker"
-                                                 ShowTodayButton="True"
                                                  DisplayFormat="long"
                                                  Watermark="Select a date..."
                                                  HorizontalAlignment="Left"

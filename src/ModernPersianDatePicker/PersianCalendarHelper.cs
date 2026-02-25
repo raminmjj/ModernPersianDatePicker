@@ -147,7 +147,7 @@ public static class PersianCalendarHelper
 /// <summary>
 /// Represents a Persian (Jalali/Shamsi) date
 /// </summary>
-public readonly struct PersianDate : IEquatable<PersianDate>
+public readonly struct PersianDate : IEquatable<PersianDate>, IComparable<PersianDate>
 {
     public int Year { get; }
     public int Month { get; }
@@ -215,5 +215,34 @@ public readonly struct PersianDate : IEquatable<PersianDate>
     public DateTime ToDateTime()
     {
         return PersianCalendarHelper.ToGregorianDate(this);
+    }
+
+    public int CompareTo(PersianDate other)
+    {
+        if (Year != other.Year)
+            return Year.CompareTo(other.Year);
+        if (Month != other.Month)
+            return Month.CompareTo(other.Month);
+        return Day.CompareTo(other.Day);
+    }
+
+    public static bool operator <(PersianDate left, PersianDate right)
+    {
+        return left.CompareTo(right) < 0;
+    }
+
+    public static bool operator >(PersianDate left, PersianDate right)
+    {
+        return left.CompareTo(right) > 0;
+    }
+
+    public static bool operator <=(PersianDate left, PersianDate right)
+    {
+        return left.CompareTo(right) <= 0;
+    }
+
+    public static bool operator >=(PersianDate left, PersianDate right)
+    {
+        return left.CompareTo(right) >= 0;
     }
 }
