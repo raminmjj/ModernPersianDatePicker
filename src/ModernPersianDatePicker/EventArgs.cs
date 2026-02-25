@@ -29,3 +29,16 @@ public class SelectedDateChangedEventArgs : EventArgs
         NewDate = newDate;
     }
 }
+
+/// <summary>
+/// Event arguments for today button click
+/// </summary>
+public class TodayClickedEventArgs : EventArgs
+{
+    public PersianDate Today { get; }
+
+    public TodayClickedEventArgs(PersianDate today)
+    {
+        Today = today;
+    }
+}

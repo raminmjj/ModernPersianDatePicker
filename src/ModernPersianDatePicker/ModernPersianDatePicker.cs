@@ -113,6 +113,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_calendarView != null)
         {
             _calendarView.DateSelected -= OnCalendarView_DateSelected;
+            _calendarView.TodayClicked -= OnCalendarView_TodayClicked;
         }
 
         // Get template parts
@@ -137,6 +138,7 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _calendarView.UseEnglishNames = UseEnglishNames;
             _calendarView.DateSelected += OnCalendarView_DateSelected;
+            _calendarView.TodayClicked += OnCalendarView_TodayClicked;
         }
 
         UpdateDisplayText();
@@ -282,6 +284,16 @@ public class ModernPersianDatePicker : TemplatedControl
             SelectedDate = e.SelectedDate;
             ClosePopup();
         }
+    }
+
+    private void OnCalendarView_TodayClicked(object? sender, TodayClickedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        // Select today and close popup
+        SelectedDate = e.Today;
+        ClosePopup();
     }
 
     private void OpenPopup()

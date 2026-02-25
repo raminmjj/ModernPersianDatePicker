@@ -28,10 +28,12 @@ public class CalendarView : TemplatedControl
 
     // Events
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
+    public event EventHandler<TodayClickedEventArgs>? TodayClicked;
 
     // Private fields
     private TextBlock? _monthText;
     private TextBlock? _yearText;
+    private TextBlock? _todayText;
     private Grid? _daysGrid;
     private Grid? _monthGrid;
     private Grid? _yearGrid;
@@ -39,6 +41,7 @@ public class CalendarView : TemplatedControl
     private Button? _nextButton;
     private Button? _monthButton;
     private Button? _yearButton;
+    private Button? _todayButton;
     private Popup? _monthPopup;
     private Popup? _yearPopup;
     private bool _isUpdatingCalendar;
@@ -156,10 +159,13 @@ public class CalendarView : TemplatedControl
             _monthButton.Click -= OnMonthButton_Click;
         if (_yearButton != null)
             _yearButton.Click -= OnYearButton_Click;
+        if (_todayButton != null)
+            _todayButton.Click -= OnTodayButton_Click;
 
         // Get template parts
         _monthText = e.NameScope.Find<TextBlock>("PART_MonthText");
         _yearText = e.NameScope.Find<TextBlock>("PART_YearText");
+        _todayText = e.NameScope.Find<TextBlock>("PART_TodayText");
         _daysGrid = e.NameScope.Find<Grid>("PART_DaysGrid");
         _monthGrid = e.NameScope.Find<Grid>("PART_MonthGrid");
         _yearGrid = e.NameScope.Find<Grid>("PART_YearGrid");
@@ -167,10 +173,11 @@ public class CalendarView : TemplatedControl
         _nextButton = e.NameScope.Find<Button>("PART_NextButton");
         _monthButton = e.NameScope.Find<Button>("PART_MonthButton");
         _yearButton = e.NameScope.Find<Button>("PART_YearButton");
+        _todayButton = e.NameScope.Find<Button>("PART_TodayButton");
         _monthPopup = e.NameScope.Find<Popup>("PART_MonthPopup");
         _yearPopup = e.NameScope.Find<Popup>("PART_YearPopup");
 
-        System.Diagnostics.Debug.WriteLine($"Template parts found: month={_monthButton != null}, year={_yearButton != null}");
+        System.Diagnostics.Debug.WriteLine($"Template parts found: month={_monthButton != null}, year={_yearButton != null}, today={_todayButton != null}");
 
         // Attach new event handlers
         if (_previousButton != null)
@@ -181,6 +188,8 @@ public class CalendarView : TemplatedControl
             _monthButton.Click += OnMonthButton_Click;
         if (_yearButton != null)
             _yearButton.Click += OnYearButton_Click;
+        if (_todayButton != null)
+            _todayButton.Click += OnTodayButton_Click;
 
         UpdateCalendar();
     }
@@ -193,6 +202,13 @@ public class CalendarView : TemplatedControl
     private void OnYearButton_Click(object? sender, RoutedEventArgs e)
     {
         ShowYearSelection();
+    }
+
+    private void OnTodayButton_Click(object? sender, RoutedEventArgs e)
+    {
+        // Fire event to parent to select today and close popup
+        var today = PersianCalendarHelper.Today();
+        TodayClicked?.Invoke(this, new TodayClickedEventArgs(today));
     }
 
     private void ShowMonthSelection()
@@ -568,6 +584,12 @@ public class CalendarView : TemplatedControl
             if (_yearText != null)
             {
                 _yearText.Text = DisplayYear.ToString();
+            }
+            
+            if (_todayText != null)
+            {
+                var today = PersianCalendarHelper.Today();
+                _todayText.Text = UseEnglishNames ? "Today" : "امروز";
             }
 
             if (_daysGrid != null)

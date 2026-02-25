@@ -140,6 +140,27 @@
                                                FlowDirection="RightToLeft"/>
                                 </Button>
                                 
+                                <Button x:Name="PART_TodayButton"
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Padding="8,4"
+                                        Margin="4,0"
+                                        Classes="month-year-button"
+                                        ToolTip.Tip="Go to today">
+                                    <StackPanel Orientation="Horizontal">
+                                        <PathIcon Data="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M16,17H18V15H16M13,17H15V15H13M10,17H12V15H10M7,17H9V15H7M16,14H18V12H16M13,14H15V12H13M10,14H12V12H10M7,14H9V12H7M16,11H18V9H16M13,11H15V9H13M10,11H12V9H10M7,11H9V9H7M19,7H5V5H19V7Z"
+                                                  Width="14"
+                                                  Height="14"
+                                                  Margin="0,0,4,0"/>
+                                        <TextBlock x:Name="PART_TodayText"
+                                                   Text="Today"
+                                                   FontSize="14"
+                                                   FontWeight="SemiBold"
+                                                   FlowDirection="RightToLeft"/>
+                                    </StackPanel>
+                                </Button>
+                                
                                 <Button x:Name="PART_YearButton"
                                         Grid.Column="2"
                                         HorizontalAlignment="Right"
