@@ -89,10 +89,14 @@ public class CalendarView : TemplatedControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
+        System.Diagnostics.Debug.WriteLine("OnApplyTemplate called");
 
         // Detach previous event handlers
         if (_previousButton != null)
+        {
+            System.Diagnostics.Debug.WriteLine("Detaching previous button handlers");
             _previousButton.Click -= OnPreviousButton_Click;
+        }
         if (_nextButton != null)
             _nextButton.Click -= OnNextButton_Click;
 
@@ -101,25 +105,22 @@ public class CalendarView : TemplatedControl
         _daysGrid = e.NameScope.Find<Grid>("PART_DaysGrid");
         _previousButton = e.NameScope.Find<Button>("PART_PreviousButton");
         _nextButton = e.NameScope.Find<Button>("PART_NextButton");
+        
+        System.Diagnostics.Debug.WriteLine($"Template parts found: previous={_previousButton != null}, next={_nextButton != null}, daysGrid={_daysGrid != null}");
 
         // Attach new event handlers
         if (_previousButton != null)
+        {
             _previousButton.Click += OnPreviousButton_Click;
+            System.Diagnostics.Debug.WriteLine("Attached PreviousButton click handler");
+        }
         if (_nextButton != null)
+        {
             _nextButton.Click += OnNextButton_Click;
+            System.Diagnostics.Debug.WriteLine("Attached NextButton click handler");
+        }
 
         UpdateCalendar();
-    }
-
-    protected override void OnUnloaded(RoutedEventArgs e)
-    {
-        base.OnUnloaded(e);
-
-        // Clean up event handlers to prevent memory leaks
-        if (_previousButton != null)
-            _previousButton.Click -= OnPreviousButton_Click;
-        if (_nextButton != null)
-            _nextButton.Click -= OnNextButton_Click;
     }
 
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
