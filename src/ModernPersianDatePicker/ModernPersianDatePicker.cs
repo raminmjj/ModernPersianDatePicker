@@ -113,7 +113,6 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_calendarView != null)
         {
             _calendarView.DateSelected -= OnCalendarView_DateSelected;
-            _calendarView.DisconnectFromVisualTree();
         }
 
         // Get template parts

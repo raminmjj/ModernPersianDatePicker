@@ -36,9 +36,9 @@ public class CalendarView : TemplatedControl
 
     static CalendarView()
     {
-        DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.UpdateCalendar());
-        DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.UpdateCalendar());
-        UseEnglishNamesProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.UpdateCalendar());
+        DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        UseEnglishNamesProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
     }
 
     public CalendarView()
@@ -46,6 +46,11 @@ public class CalendarView : TemplatedControl
         var today = PersianCalendarHelper.Today();
         DisplayYear = today.Year;
         DisplayMonth = today.Month;
+    }
+
+    private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        UpdateCalendar();
     }
 
     // Public Properties
@@ -107,16 +112,6 @@ public class CalendarView : TemplatedControl
             _previousButton.Click -= OnPreviousButton_Click;
         if (_nextButton != null)
             _nextButton.Click -= OnNextButton_Click;
-
-        // Clear days grid
-        if (_daysGrid != null)
-            _daysGrid.Children.Clear();
-    }
-
-    public void DisconnectFromVisualTree()
-    {
-        if (_daysGrid != null)
-            _daysGrid.Children.Clear();
     }
 
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
@@ -130,6 +125,8 @@ public class CalendarView : TemplatedControl
         {
             DisplayMonth--;
         }
+        
+        UpdateCalendar();
     }
 
     private void OnNextButton_Click(object? sender, RoutedEventArgs e)
@@ -143,6 +140,8 @@ public class CalendarView : TemplatedControl
         {
             DisplayMonth++;
         }
+        
+        UpdateCalendar();
     }
 
     private void UpdateCalendar()
