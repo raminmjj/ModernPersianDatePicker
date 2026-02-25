@@ -228,11 +228,6 @@ public class ModernPersianDatePicker : TemplatedControl
             _displayTextBlock.PointerPressed -= OnDisplayText_PointerPressed;
         }
 
-        if (_calendarView != null)
-        {
-            _calendarView.DateSelected -= OnCalendarView_DateSelected;
-        }
-
         if (_popup != null)
         {
             _popup.IsOpen = false;
