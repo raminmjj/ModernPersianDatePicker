@@ -302,6 +302,9 @@ public class ModernPersianDatePicker : TemplatedControl
 
             if (_toggleButton != null)
                 _toggleButton.IsChecked = true;
+                
+            // Focus the calendar for keyboard navigation
+            _calendarView.Focus();
         }
         catch (Exception)
         {

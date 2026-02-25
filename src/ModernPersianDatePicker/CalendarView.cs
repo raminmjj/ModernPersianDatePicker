@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 
@@ -48,6 +49,10 @@ public class CalendarView : TemplatedControl
         var today = PersianCalendarHelper.Today();
         DisplayYear = today.Year;
         DisplayMonth = today.Month;
+        _focusedDay = today.Day;
+        
+        // Make control focusable
+        Focusable = true;
     }
 
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
@@ -97,6 +102,9 @@ public class CalendarView : TemplatedControl
                 }
             }
         }
+        
+        // Also update focused day visual
+        UpdateFocusedDay();
     }
 
     // Public Properties
@@ -123,6 +131,9 @@ public class CalendarView : TemplatedControl
         get => GetValue(UseEnglishNamesProperty);
         set => SetValue(UseEnglishNamesProperty, value);
     }
+
+    // Private field for keyboard navigation
+    private int _focusedDay = 1;
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -159,6 +170,113 @@ public class CalendarView : TemplatedControl
         }
 
         UpdateCalendar();
+    }
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+
+        if (e.Handled)
+            return;
+
+        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+        bool moved = false;
+
+        switch (e.Key)
+        {
+            case Key.Left:
+                // Move to previous day (RTL: left is next day)
+                if (_focusedDay < daysInMonth)
+                {
+                    _focusedDay++;
+                    moved = true;
+                }
+                break;
+
+            case Key.Right:
+                // Move to previous day (RTL: right is previous day)
+                if (_focusedDay > 1)
+                {
+                    _focusedDay--;
+                    moved = true;
+                }
+                break;
+
+            case Key.Up:
+                // Move to previous week
+                if (_focusedDay > 7)
+                {
+                    _focusedDay -= 7;
+                    moved = true;
+                }
+                break;
+
+            case Key.Down:
+                // Move to next week
+                if (_focusedDay + 7 <= daysInMonth)
+                {
+                    _focusedDay += 7;
+                    moved = true;
+                }
+                break;
+
+            case Key.Home:
+                // Move to first day of month
+                _focusedDay = 1;
+                moved = true;
+                break;
+
+            case Key.End:
+                // Move to last day of month
+                _focusedDay = daysInMonth;
+                moved = true;
+                break;
+
+            case Key.Space:
+            case Key.Enter:
+                // Select the focused day
+                OnDayClicked(_focusedDay);
+                e.Handled = true;
+                return;
+
+            case Key.Escape:
+                // Close popup (handled by parent)
+                return;
+        }
+
+        if (moved)
+        {
+            // Update visual focus
+            UpdateFocusedDay();
+            e.Handled = true;
+        }
+    }
+
+    private void UpdateFocusedDay()
+    {
+        if (_daysGrid == null) return;
+
+        // Remove focus from all day buttons
+        foreach (var child in _daysGrid.Children)
+        {
+            if (child is Button button)
+            {
+                button.Focusable = false;
+            }
+        }
+
+        // Add focus to the focused day button
+        foreach (var child in _daysGrid.Children)
+        {
+            if (child is Button button && 
+                int.TryParse(button.Content?.ToString(), out int day) &&
+                day == _focusedDay)
+            {
+                button.Focusable = true;
+                button.Focus();
+                break;
+            }
+        }
     }
 
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
@@ -208,6 +326,26 @@ public class CalendarView : TemplatedControl
         
         _isUpdatingCalendar = true;
         System.Diagnostics.Debug.WriteLine($"UpdateCalendar starting - DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
+
+        // Reset focused day to selected date or today
+        if (SelectedDate.HasValue &&
+            SelectedDate.Value.Year == DisplayYear &&
+            SelectedDate.Value.Month == DisplayMonth)
+        {
+            _focusedDay = SelectedDate.Value.Day;
+        }
+        else
+        {
+            var today = PersianCalendarHelper.Today();
+            if (today.Year == DisplayYear && today.Month == DisplayMonth)
+            {
+                _focusedDay = today.Day;
+            }
+            else
+            {
+                _focusedDay = 1;
+            }
+        }
         
         try
         {
@@ -304,14 +442,8 @@ public class CalendarView : TemplatedControl
         }
     }
 
-    private void OnDayClicked(object? sender, RoutedEventArgs e)
+    private void OnDayClicked(int day)
     {
-        if (sender is not Button button || button.Content is not string dayStr)
-            return;
-            
-        if (!int.TryParse(dayStr, out int day))
-            return;
-        
         // Create the selected date with correct day of week
         var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, 0);
         
@@ -320,5 +452,16 @@ public class CalendarView : TemplatedControl
         
         // Fire the event to parent control
         DateSelected?.Invoke(this, new DateSelectedEventArgs(selectedDate));
+    }
+
+    private void OnDayClicked(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.Content is not string dayStr)
+            return;
+            
+        if (!int.TryParse(dayStr, out int day))
+            return;
+        
+        OnDayClicked(day);
     }
 }

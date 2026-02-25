@@ -210,6 +210,14 @@
     <Style Selector="local|CalendarView Button.day-button:focus">
         <Setter Property="BorderBrush" Value="#FF5593EB"/>
         <Setter Property="BorderThickness" Value="2"/>
+        <Setter Property="Background" Value="#FFE0E0E0"/>
+    </Style>
+
+    <!-- Focused and selected day button style -->
+    <Style Selector="local|CalendarView Button.day-button.selected:focus">
+        <Setter Property="BorderBrush" Value="White"/>
+        <Setter Property="BorderThickness" Value="3"/>
+        <Setter Property="Background" Value="#FF1976D2"/>
     </Style>
 
 </Styles>
