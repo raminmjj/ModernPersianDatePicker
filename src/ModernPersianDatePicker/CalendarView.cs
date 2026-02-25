@@ -30,10 +30,17 @@ public class CalendarView : TemplatedControl
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
 
     // Private fields
-    private TextBlock? _monthYearText;
+    private TextBlock? _monthText;
+    private TextBlock? _yearText;
     private Grid? _daysGrid;
+    private Grid? _monthGrid;
+    private Grid? _yearGrid;
     private Button? _previousButton;
     private Button? _nextButton;
+    private Button? _monthButton;
+    private Button? _yearButton;
+    private Popup? _monthPopup;
+    private Popup? _yearPopup;
     private bool _isUpdatingCalendar;
 
     static CalendarView()
@@ -142,34 +149,161 @@ public class CalendarView : TemplatedControl
 
         // Detach previous event handlers
         if (_previousButton != null)
-        {
-            System.Diagnostics.Debug.WriteLine("Detaching previous button handlers");
             _previousButton.Click -= OnPreviousButton_Click;
-        }
         if (_nextButton != null)
             _nextButton.Click -= OnNextButton_Click;
+        if (_monthButton != null)
+            _monthButton.Click -= OnMonthButton_Click;
+        if (_yearButton != null)
+            _yearButton.Click -= OnYearButton_Click;
 
         // Get template parts
-        _monthYearText = e.NameScope.Find<TextBlock>("PART_MonthYearText");
+        _monthText = e.NameScope.Find<TextBlock>("PART_MonthText");
+        _yearText = e.NameScope.Find<TextBlock>("PART_YearText");
         _daysGrid = e.NameScope.Find<Grid>("PART_DaysGrid");
+        _monthGrid = e.NameScope.Find<Grid>("PART_MonthGrid");
+        _yearGrid = e.NameScope.Find<Grid>("PART_YearGrid");
         _previousButton = e.NameScope.Find<Button>("PART_PreviousButton");
         _nextButton = e.NameScope.Find<Button>("PART_NextButton");
-        
-        System.Diagnostics.Debug.WriteLine($"Template parts found: previous={_previousButton != null}, next={_nextButton != null}, daysGrid={_daysGrid != null}");
+        _monthButton = e.NameScope.Find<Button>("PART_MonthButton");
+        _yearButton = e.NameScope.Find<Button>("PART_YearButton");
+        _monthPopup = e.NameScope.Find<Popup>("PART_MonthPopup");
+        _yearPopup = e.NameScope.Find<Popup>("PART_YearPopup");
+
+        System.Diagnostics.Debug.WriteLine($"Template parts found: month={_monthButton != null}, year={_yearButton != null}");
 
         // Attach new event handlers
         if (_previousButton != null)
-        {
             _previousButton.Click += OnPreviousButton_Click;
-            System.Diagnostics.Debug.WriteLine("Attached PreviousButton click handler");
-        }
         if (_nextButton != null)
-        {
             _nextButton.Click += OnNextButton_Click;
-            System.Diagnostics.Debug.WriteLine("Attached NextButton click handler");
-        }
+        if (_monthButton != null)
+            _monthButton.Click += OnMonthButton_Click;
+        if (_yearButton != null)
+            _yearButton.Click += OnYearButton_Click;
 
         UpdateCalendar();
+    }
+
+    private void OnMonthButton_Click(object? sender, RoutedEventArgs e)
+    {
+        ShowMonthSelection();
+    }
+
+    private void OnYearButton_Click(object? sender, RoutedEventArgs e)
+    {
+        ShowYearSelection();
+    }
+
+    private void ShowMonthSelection()
+    {
+        if (_monthGrid == null || _monthPopup == null) return;
+
+        _monthGrid.Children.Clear();
+        
+        int currentMonth = DisplayMonth;
+        int row = 0;
+        int col = 0;
+
+        for (int month = 1; month <= 12; month++)
+        {
+            var button = new Button
+            {
+                Content = PersianCalendarHelper.GetMonthName(month, UseEnglishNames),
+                [Grid.RowProperty] = row,
+                [Grid.ColumnProperty] = col,
+                Margin = new Thickness(2),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
+            };
+
+            if (month == currentMonth)
+            {
+                button.Classes.Add("selected");
+            }
+
+            int selectedMonth = month;
+            button.Click += (s, e) =>
+            {
+                DisplayMonth = selectedMonth;
+                _monthPopup.IsOpen = false;
+            };
+
+            _monthGrid.Children.Add(button);
+
+            col++;
+            if (col >= 3)
+            {
+                col = 0;
+                row++;
+            }
+        }
+
+        // Add row definitions
+        _monthGrid.RowDefinitions.Clear();
+        for (int i = 0; i < 4; i++)
+        {
+            _monthGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+
+        _monthPopup.IsOpen = true;
+    }
+
+    private void ShowYearSelection()
+    {
+        if (_yearGrid == null || _yearPopup == null) return;
+
+        _yearGrid.Children.Clear();
+        
+        int currentYear = DisplayYear;
+        int startYear = currentYear - 10;
+        int row = 0;
+        int col = 0;
+
+        for (int year = startYear; year < startYear + 30; year++)
+        {
+            if (year < 1) continue;
+
+            var button = new Button
+            {
+                Content = year.ToString(),
+                [Grid.RowProperty] = row,
+                [Grid.ColumnProperty] = col,
+                Margin = new Thickness(2),
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
+            };
+
+            if (year == currentYear)
+            {
+                button.Classes.Add("selected");
+            }
+
+            int selectedYear = year;
+            button.Click += (s, e) =>
+            {
+                DisplayYear = selectedYear;
+                _yearPopup.IsOpen = false;
+            };
+
+            _yearGrid.Children.Add(button);
+
+            col++;
+            if (col >= 3)
+            {
+                col = 0;
+                row++;
+            }
+        }
+
+        // Add row definitions
+        _yearGrid.RowDefinitions.Clear();
+        for (int i = 0; i < 10; i++)
+        {
+            _yearGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
+        }
+
+        _yearPopup.IsOpen = true;
     }
 
     protected override void OnKeyDown(KeyEventArgs e)
@@ -422,9 +556,14 @@ public class CalendarView : TemplatedControl
         
         try
         {
-            if (_monthYearText != null)
+            if (_monthText != null)
             {
-                _monthYearText.Text = $"{PersianCalendarHelper.GetMonthName(DisplayMonth, UseEnglishNames)} {DisplayYear}";
+                _monthText.Text = PersianCalendarHelper.GetMonthName(DisplayMonth, UseEnglishNames);
+            }
+            
+            if (_yearText != null)
+            {
+                _yearText.Text = DisplayYear.ToString();
             }
 
             if (_daysGrid != null)

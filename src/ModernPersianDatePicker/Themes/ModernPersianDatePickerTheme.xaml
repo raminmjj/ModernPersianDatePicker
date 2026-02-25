@@ -125,14 +125,35 @@
                                           Height="16"/>
                             </Button>
 
-                            <TextBlock x:Name="PART_MonthYearText"
-                                       Grid.Column="1"
-                                       Text="Month Year"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center"
-                                       FontSize="16"
-                                       FontWeight="SemiBold"
-                                       FlowDirection="RightToLeft"/>
+                            <Grid Grid.Column="1" ColumnDefinitions="Auto,*,Auto">
+                                <Button x:Name="PART_MonthButton"
+                                        Grid.Column="0"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Center"
+                                        Padding="8,4"
+                                        Margin="4,0"
+                                        Classes="month-year-button">
+                                    <TextBlock x:Name="PART_MonthText"
+                                               Text="Month"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               FlowDirection="RightToLeft"/>
+                                </Button>
+                                
+                                <Button x:Name="PART_YearButton"
+                                        Grid.Column="2"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Padding="8,4"
+                                        Margin="4,0"
+                                        Classes="month-year-button">
+                                    <TextBlock x:Name="PART_YearText"
+                                               Text="Year"
+                                               FontSize="16"
+                                               FontWeight="SemiBold"
+                                               FlowDirection="RightToLeft"/>
+                                </Button>
+                            </Grid>
 
                             <Button x:Name="PART_NextButton"
                                     Grid.Column="2"
@@ -145,6 +166,44 @@
                                           Height="16"/>
                             </Button>
                         </Grid>
+
+                        <!-- Month selection popup -->
+                        <Popup x:Name="PART_MonthPopup"
+                               Placement="Bottom"
+                               PlacementTarget="{TemplateBinding}"
+                               IsOpen="False"
+                               HorizontalOffset="50"
+                               VerticalOffset="40">
+                            <Border Background="White"
+                                    BorderBrush="#FFABADB3"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    BoxShadow="0 4 8 0 #40000000"
+                                    Padding="8">
+                                <Grid x:Name="PART_MonthGrid"
+                                      ColumnDefinitions="*,*,*"
+                                      MaxWidth="200"/>
+                            </Border>
+                        </Popup>
+
+                        <!-- Year selection popup -->
+                        <Popup x:Name="PART_YearPopup"
+                               Placement="Bottom"
+                               PlacementTarget="{TemplateBinding}"
+                               IsOpen="False"
+                               HorizontalOffset="100"
+                               VerticalOffset="40">
+                            <Border Background="White"
+                                    BorderBrush="#FFABADB3"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    BoxShadow="0 4 8 0 #40000000"
+                                    Padding="8">
+                                <Grid x:Name="PART_YearGrid"
+                                      ColumnDefinitions="*,*,*"
+                                      MaxWidth="200"/>
+                            </Border>
+                        </Popup>
 
                         <!-- Days grid -->
                         <Grid x:Name="PART_DaysGrid"
@@ -204,6 +263,19 @@
     <Style Selector="local|CalendarView Button.day-button.today">
         <Setter Property="BorderBrush" Value="#FF2196F3"/>
         <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+
+    <!-- Month/Year button style -->
+    <Style Selector="local|CalendarView Button.month-year-button">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    
+    <Style Selector="local|CalendarView Button.month-year-button:pointerover">
+        <Setter Property="Background" Value="#FFE0E0E0"/>
+        <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
     <!-- Day button focus style -->
