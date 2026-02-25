@@ -120,9 +120,8 @@ public static class PersianCalendarHelper
     /// </summary>
     public static bool IsLeapYear(int year)
     {
-        // Persian calendar leap year algorithm
-        int r = year % 33;
-        return r == 1 || r == 5 || r == 9 || r == 13 || r == 17 || r == 22 || r == 26 || r == 30;
+        PersianCalendar pc = new PersianCalendar();
+        return pc.IsLeapYear(year);
     }
 
     /// <summary>
