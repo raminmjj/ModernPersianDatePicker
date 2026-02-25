@@ -125,7 +125,6 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_toggleButton != null)
         {
             _toggleButton.Click += OnToggleButton_Click;
-            _toggleButton.IsCheckedChanged += OnToggleButton_IsCheckedChanged;
         }
 
         // Add preview click handler to display text
@@ -222,7 +221,6 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_toggleButton != null)
         {
             _toggleButton.Click -= OnToggleButton_Click;
-            _toggleButton.IsCheckedChanged -= OnToggleButton_IsCheckedChanged;
         }
 
         if (_displayTextBlock != null)
@@ -271,19 +269,12 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_isDisposed)
             return;
 
-        TogglePopup();
-        e.Handled = true;
-    }
-
-    private void OnToggleButton_IsCheckedChanged(object? sender, RoutedEventArgs e)
-    {
-        if (_isDisposed || _toggleButton == null)
-            return;
-
-        if (_toggleButton.IsChecked == true)
-            OpenPopup();
-        else
+        if (_isPopupOpen)
             ClosePopup();
+        else
+            OpenPopup();
+            
+        e.Handled = true;
     }
 
     private void OnCalendarView_DateSelected(object? sender, DateSelectedEventArgs e)
@@ -296,17 +287,6 @@ public class ModernPersianDatePicker : TemplatedControl
             SelectedDate = e.SelectedDate;
             ClosePopup();
         }
-    }
-
-    private void TogglePopup()
-    {
-        if (_isDisposed)
-            return;
-
-        if (_isPopupOpen)
-            ClosePopup();
-        else
-            OpenPopup();
     }
 
     private void OpenPopup()
