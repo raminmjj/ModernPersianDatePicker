@@ -26,6 +26,9 @@ public class ModernPersianDatePicker : TemplatedControl
     public static readonly StyledProperty<bool> IsEditableProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(IsEditable));
 
+    public static readonly StyledProperty<InvalidValueAction> InvalidValueActionProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, InvalidValueAction>(nameof(InvalidValueAction), InvalidValueAction.SetToNull);
+
     public static readonly StyledProperty<PersianDate?> MinDateProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(MinDate));
 
@@ -42,9 +45,11 @@ public class ModernPersianDatePicker : TemplatedControl
     private Popup? _popup;
     private ToggleButton? _toggleButton;
     private TextBlock? _displayTextBlock;
+    private TextBox? _editableTextBox;
     private CalendarView? _calendarView;
     private bool _isPopupOpen;
     private bool _isDisposed;
+    private bool _isUpdatingText;
 
     // Constructors
     static ModernPersianDatePicker()
@@ -81,6 +86,12 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         get => GetValue(IsEditableProperty);
         set => SetValue(IsEditableProperty, value);
+    }
+
+    public InvalidValueAction InvalidValueAction
+    {
+        get => GetValue(InvalidValueActionProperty);
+        set => SetValue(InvalidValueActionProperty, value);
     }
 
     public PersianDate? MinDate
@@ -120,9 +131,10 @@ public class ModernPersianDatePicker : TemplatedControl
         _popup = e.NameScope.Find<Popup>("PART_Popup");
         _toggleButton = e.NameScope.Find<ToggleButton>("PART_ToggleButton");
         _displayTextBlock = e.NameScope.Find<TextBlock>("PART_DisplayText");
+        _editableTextBox = e.NameScope.Find<TextBox>("PART_EditableText");
         _calendarView = e.NameScope.Find<CalendarView>("PART_CalendarView");
 
-        // Attach new event handlers
+        // Attach event handlers
         if (_toggleButton != null)
         {
             _toggleButton.Click += OnToggleButton_Click;
@@ -132,6 +144,13 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_displayTextBlock != null)
         {
             _displayTextBlock.PointerPressed += OnDisplayText_PointerPressed;
+        }
+
+        // Handle editable text box
+        if (_editableTextBox != null)
+        {
+            _editableTextBox.KeyDown += OnEditableText_KeyDown;
+            _editableTextBox.LostFocus += OnEditableText_LostFocus;
         }
 
         if (_calendarView != null)
@@ -150,6 +169,121 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             OpenPopup();
             e.Handled = true;
+        }
+    }
+
+    private void OnEditableText_KeyDown(object? sender, Avalonia.Input.KeyEventArgs e)
+    {
+        if (e.Key == Avalonia.Input.Key.Enter && _editableTextBox != null)
+        {
+            ValidateAndParseInput(_editableTextBox.Text);
+            e.Handled = true;
+        }
+    }
+
+    private void OnEditableText_LostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (_editableTextBox != null)
+        {
+            ValidateAndParseInput(_editableTextBox.Text);
+        }
+    }
+
+    private void ValidateAndParseInput(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            if (InvalidValueAction == InvalidValueAction.SetToToday)
+            {
+                SelectedDate = PersianCalendarHelper.Today();
+            }
+            else if (InvalidValueAction == InvalidValueAction.SetToNull)
+            {
+                SelectedDate = null;
+            }
+            return;
+        }
+
+        var parsedDate = ParsePersianDate(input);
+
+        if (parsedDate.HasValue)
+        {
+            // Validate min/max date
+            if (MinDate.HasValue && parsedDate.Value < MinDate.Value)
+            {
+                HandleInvalidInput();
+                return;
+            }
+            if (MaxDate.HasValue && parsedDate.Value > MaxDate.Value)
+            {
+                HandleInvalidInput();
+                return;
+            }
+
+            SelectedDate = parsedDate;
+        }
+        else
+        {
+            HandleInvalidInput();
+        }
+    }
+
+    private void HandleInvalidInput()
+    {
+        switch (InvalidValueAction)
+        {
+            case InvalidValueAction.SetToToday:
+                SelectedDate = PersianCalendarHelper.Today();
+                break;
+            case InvalidValueAction.SetToNull:
+                SelectedDate = null;
+                break;
+            case InvalidValueAction.Keep:
+                // Keep the current selected date (don't change)
+                break;
+        }
+    }
+
+    private PersianDate? ParsePersianDate(string input)
+    {
+        try
+        {
+            // Normalize separators
+            var normalized = input.Replace('-', '/').Replace('_', '/').Trim();
+            var parts = normalized.Split('/');
+
+            if (parts.Length != 3)
+                return null;
+
+            // Parse year
+            if (!int.TryParse(parts[0].Trim(), out int year))
+                return null;
+
+            // Handle 2-digit years
+            if (year >= 0 && year < 100)
+            {
+                // Assume 14xx for 2-digit years
+                year = 1400 + year;
+            }
+
+            // Parse month
+            if (!int.TryParse(parts[1].Trim(), out int month) || month < 1 || month > 12)
+                return null;
+
+            // Parse day
+            if (!int.TryParse(parts[2].Trim(), out int day) || day < 1 || day > 31)
+                return null;
+
+            // Validate day for the specific month
+            int daysInMonth = PersianCalendarHelper.GetDaysInMonth(year, month);
+            if (day > daysInMonth)
+                return null;
+
+            return new PersianDate(year, month, day, 0);
+        }
+        catch
+        {
+            return null;
         }
     }
 
@@ -185,10 +319,10 @@ public class ModernPersianDatePicker : TemplatedControl
                     ClosePopup();
                     e.Handled = true;
                 }
-                else if (IsEditable && _displayTextBlock != null)
+                else if (IsEditable && _editableTextBox != null)
                 {
                     // Try to parse manual input
-                    TryParseManualInput(_displayTextBlock.Text);
+                    ValidateAndParseInput(_editableTextBox.Text);
                     e.Handled = true;
                 }
                 break;
@@ -200,17 +334,6 @@ public class ModernPersianDatePicker : TemplatedControl
                     e.Handled = true;
                 }
                 break;
-        }
-    }
-
-    protected override void OnLostFocus(RoutedEventArgs e)
-    {
-        base.OnLostFocus(e);
-
-        // Close popup when losing focus (unless focus moved to popup)
-        if (_isPopupOpen && IsEditable && _displayTextBlock != null)
-        {
-            TryParseManualInput(_displayTextBlock.Text);
         }
     }
 
@@ -228,6 +351,12 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_displayTextBlock != null)
         {
             _displayTextBlock.PointerPressed -= OnDisplayText_PointerPressed;
+        }
+
+        if (_editableTextBox != null)
+        {
+            _editableTextBox.KeyDown -= OnEditableText_KeyDown;
+            _editableTextBox.LostFocus -= OnEditableText_LostFocus;
         }
 
         if (_popup != null)
@@ -351,59 +480,52 @@ public class ModernPersianDatePicker : TemplatedControl
 
     private void UpdateDisplayText()
     {
-        if (_isDisposed || _displayTextBlock == null)
+        if (_isDisposed)
             return;
 
         try
         {
+            if (_isUpdatingText)
+                return;
+
+            _isUpdatingText = true;
+
+            string displayText;
             if (SelectedDate.HasValue)
             {
-                _displayTextBlock.Text = SelectedDate.Value.ToString(DisplayFormat);
-                _displayTextBlock.Classes.Remove("watermark");
+                displayText = SelectedDate.Value.ToString(DisplayFormat);
             }
             else
             {
-                _displayTextBlock.Text = Watermark;
-                _displayTextBlock.Classes.Add("watermark");
+                displayText = Watermark;
             }
-        }
-        catch (Exception)
-        {
-            // Handle any formatting errors gracefully
-            _displayTextBlock.Text = Watermark;
-        }
-    }
 
-    private void TryParseManualInput(string? input)
-    {
-        if (string.IsNullOrWhiteSpace(input) || input == Watermark)
-            return;
-
-        try
-        {
-            // Try to parse Persian date format: YYYY/MM/DD or YYYY-MM-DD
-            var normalizedInput = input.Replace('-', '/').Trim();
-            var parts = normalizedInput.Split('/');
-
-            if (parts.Length == 3 &&
-                int.TryParse(parts[0], out int year) &&
-                int.TryParse(parts[1], out int month) &&
-                int.TryParse(parts[2], out int day))
+            // Update TextBlock
+            if (_displayTextBlock != null)
             {
-                var parsedDate = new PersianDate(year, month, day, 0);
-                
-                // Validate min/max date
-                if (MinDate.HasValue && parsedDate < MinDate.Value)
-                    return;
-                if (MaxDate.HasValue && parsedDate > MaxDate.Value)
-                    return;
+                _displayTextBlock.Text = displayText;
+                if (SelectedDate.HasValue)
+                    _displayTextBlock.Classes.Remove("watermark");
+                else
+                    _displayTextBlock.Classes.Add("watermark");
+            }
 
-                SelectedDate = parsedDate;
+            // Update TextBox
+            if (_editableTextBox != null)
+            {
+                if (SelectedDate.HasValue)
+                {
+                    _editableTextBox.Text = SelectedDate.Value.ToString("short");
+                }
+                else
+                {
+                    _editableTextBox.Text = "";
+                }
             }
         }
-        catch (Exception)
+        finally
         {
-            // Invalid input, ignore
+            _isUpdatingText = false;
         }
     }
 

@@ -3,6 +3,27 @@ using System;
 namespace ModernPersianDatePicker;
 
 /// <summary>
+/// Action to take when an invalid date is entered
+/// </summary>
+public enum InvalidValueAction
+{
+    /// <summary>
+    /// Set the date to null when invalid value is entered
+    /// </summary>
+    SetToNull,
+    
+    /// <summary>
+    /// Set the date to today when invalid value is entered
+    /// </summary>
+    SetToToday,
+    
+    /// <summary>
+    /// Keep the invalid value (no automatic correction)
+    /// </summary>
+    Keep
+}
+
+/// <summary>
 /// Event arguments for date selection
 /// </summary>
 public class DateSelectedEventArgs : EventArgs

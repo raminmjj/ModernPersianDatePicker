@@ -27,14 +27,27 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         
-                        <!-- Display Text -->
+                        <!-- Display Text (non-editable mode) -->
                         <TextBlock x:Name="PART_DisplayText"
                                    Grid.Column="0"
                                    Text="Select date..."
                                    VerticalAlignment="Center"
                                    Margin="8,0"
                                    Foreground="#FF6D6D6D"
-                                   FlowDirection="RightToLeft"/>
+                                   FlowDirection="RightToLeft"
+                                   IsVisible="False"/>
+                        
+                        <!-- Editable TextBox -->
+                        <TextBox x:Name="PART_EditableText"
+                                 Grid.Column="0"
+                                 Text=""
+                                 VerticalAlignment="Center"
+                                 Margin="4,0"
+                                 Padding="8,4"
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 FlowDirection="RightToLeft"
+                                 IsVisible="True"/>
                         
                         <!-- Toggle Button -->
                         <ToggleButton x:Name="PART_ToggleButton"
