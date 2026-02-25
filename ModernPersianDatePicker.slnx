@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/demo/">
+    <Project Path="demo/ModernPersianDatePicker.Demo/ModernPersianDatePicker.Demo.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/ModernPersianDatePicker/ModernPersianDatePicker.csproj" />
+  </Folder>
+</Solution>

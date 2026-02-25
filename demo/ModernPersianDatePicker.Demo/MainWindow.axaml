@@ -1,0 +1,140 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:persian="using:ModernPersianDatePicker"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+        x:Class="ModernPersianDatePicker.Demo.MainWindow"
+        Title="Modern Persian DatePicker Demo"
+        Width="600" Height="500"
+        WindowStartupLocation="CenterScreen">
+    
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="20">
+        
+        <!-- Title -->
+        <TextBlock Grid.Row="0"
+                   Text="Modern Persian DatePicker Control"
+                   FontSize="24"
+                   FontWeight="Bold"
+                   Margin="0,0,0,20"
+                   HorizontalAlignment="Center"/>
+        
+        <!-- Basic Usage -->
+        <Border Grid.Row="1"
+                BorderBrush="#FFCCCCCC"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Basic Usage (RTL - Persian)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                
+                <persian:ModernPersianDatePicker x:Name="BasicDatePicker"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                
+                <TextBlock x:Name="BasicDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="#FF666666"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- English Names -->
+        <Border Grid.Row="2"
+                BorderBrush="#FFCCCCCC"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="With English Names (LTR)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                
+                <persian:ModernPersianDatePicker x:Name="EnglishDatePicker"
+                                                 UseEnglishNames="True"
+                                                 FlowDirection="LeftToRight"
+                                                 DisplayFormat="short"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                
+                <TextBlock x:Name="EnglishDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="#FF666666"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- With Min/Max Date -->
+        <Border Grid.Row="3"
+                BorderBrush="#FFCCCCCC"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16">
+            <StackPanel>
+                <TextBlock Text="With Today Button &amp; Custom Format"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                
+                <persian:ModernPersianDatePicker x:Name="CustomDatePicker"
+                                                 ShowTodayButton="True"
+                                                 DisplayFormat="long"
+                                                 Watermark="Select a date..."
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                
+                <TextBlock x:Name="CustomDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="#FF666666"/>
+                
+                <!-- Action Buttons -->
+                <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                    <Button Content="Set to Today"
+                            Click="OnSetToTodayClick"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Clear Selection"
+                            Click="OnClearClick"
+                            Margin="0,0,8,0"/>
+                    <Button Content="Show Gregorian"
+                            Click="OnShowGregorianClick"/>
+                </StackPanel>
+                
+                <TextBlock x:Name="GregorianDateText"
+                           Text="Gregorian: "
+                           Margin="0,8,0,0"
+                           Foreground="#FF666666"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Information -->
+        <Border Grid.Row="4"
+                Background="#FFF5F5F5"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,16,0,0">
+            <StackPanel>
+                <TextBlock Text="Features:"
+                           FontWeight="Bold"
+                           Margin="0,0,0,8"/>
+                <TextBlock Text="• Full Persian (Jalali/Shamsi) calendar support"
+                           Margin="0,2"/>
+                <TextBlock Text="• RTL and LTR layout support"
+                           Margin="0,2"/>
+                <TextBlock Text="• Persian and English month/day names"
+                           Margin="0,2"/>
+                <TextBlock Text="• Convert to/from Gregorian dates"
+                           Margin="0,2"/>
+                <TextBlock Text="• Leap year calculation"
+                           Margin="0,2"/>
+            </StackPanel>
+        </Border>
+        
+    </Grid>
+</Window>

@@ -1,0 +1,94 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ModernPersianDatePicker;assembly=ModernPersianDatePicker">
+    
+    <Style Selector="local|ModernPersianDatePicker">
+        <Setter Property="Background" Value="White"/>
+        <Setter Property="BorderBrush" Value="#FFABADB3"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="MinHeight" Value="30"/>
+        <Setter Property="MinWidth" Value="200"/>
+        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Focusable" Value="True"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        CornerRadius="{TemplateBinding CornerRadius}"
+                        HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                        VerticalAlignment="{TemplateBinding VerticalAlignment}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <!-- Display Text -->
+                        <TextBlock x:Name="PART_DisplayText"
+                                   Grid.Column="0"
+                                   Text="Select date..."
+                                   VerticalAlignment="Center"
+                                   Margin="8,0"
+                                   Foreground="#FF6D6D6D"
+                                   FlowDirection="RightToLeft"/>
+                        
+                        <!-- Toggle Button -->
+                        <Button x:Name="PART_ToggleButton"
+                                Grid.Column="1"
+                                Width="30"
+                                Height="24"
+                                Margin="0,0,4,0"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                                Focusable="False">
+                            <PathIcon Data="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M16,17H18V15H16M13,17H15V15H13M10,17H12V15H10M7,17H9V15H7M16,14H18V12H16M13,14H15V12H13M10,14H12V12H10M7,14H9V12H7M16,11H18V9H16M13,11H15V9H13M10,11H12V9H10M7,11H9V9H7M19,7H5V5H19V7Z"
+                                      Width="16"
+                                      Height="16"/>
+                        </Button>
+                        
+                        <!-- Popup -->
+                        <Popup x:Name="PART_Popup"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="2"
+                               PlacementTarget="{TemplateBinding}"
+                               Placement="Bottom"
+                               IsOpen="False"
+                               HorizontalOffset="-1">
+                            <Border Background="White"
+                                    BorderBrush="#FFABADB3"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    BoxShadow="0 4 8 0 #40000000"
+                                    MinWidth="280">
+                                <local:CalendarView x:Name="PART_CalendarView"
+                                                    FlowDirection="RightToLeft"
+                                                    UseEnglishNames="{TemplateBinding UseEnglishNames}"/>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                </Border>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    
+    <!-- Hover state -->
+    <Style Selector="local|ModernPersianDatePicker:pointerover">
+        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+    </Style>
+    
+    <!-- Focused state -->
+    <Style Selector="local|ModernPersianDatePicker:focus">
+        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+        <Setter Property="BorderThickness" Value="2"/>
+    </Style>
+    
+    <!-- Watermark style -->
+    <Style Selector="local|ModernPersianDatePicker TextBlock.watermark">
+        <Setter Property="Foreground" Value="#FF999999"/>
+        <Setter Property="FontStyle" Value="Italic"/>
+    </Style>
+    
+</Styles>
