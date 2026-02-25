@@ -50,7 +50,11 @@ public class CalendarView : TemplatedControl
 
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        UpdateCalendar();
+        // Only update calendar if the property actually changed
+        if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == UseEnglishNamesProperty)
+        {
+            UpdateCalendar();
+        }
     }
 
     // Public Properties
@@ -125,8 +129,6 @@ public class CalendarView : TemplatedControl
         {
             DisplayMonth--;
         }
-        
-        UpdateCalendar();
     }
 
     private void OnNextButton_Click(object? sender, RoutedEventArgs e)
@@ -140,8 +142,6 @@ public class CalendarView : TemplatedControl
         {
             DisplayMonth++;
         }
-        
-        UpdateCalendar();
     }
 
     private void UpdateCalendar()
