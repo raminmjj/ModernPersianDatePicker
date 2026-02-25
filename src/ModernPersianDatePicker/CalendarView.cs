@@ -122,12 +122,12 @@ public class CalendarView : TemplatedControl
     {
         if (DisplayMonth == 1)
         {
-            DisplayMonth = 12;
-            DisplayYear--;
+            SetCurrentValue(DisplayMonthProperty, 12);
+            SetCurrentValue(DisplayYearProperty, DisplayYear - 1);
         }
         else
         {
-            DisplayMonth--;
+            SetCurrentValue(DisplayMonthProperty, DisplayMonth - 1);
         }
     }
 
@@ -135,12 +135,12 @@ public class CalendarView : TemplatedControl
     {
         if (DisplayMonth == 12)
         {
-            DisplayMonth = 1;
-            DisplayYear++;
+            SetCurrentValue(DisplayMonthProperty, 1);
+            SetCurrentValue(DisplayYearProperty, DisplayYear + 1);
         }
         else
         {
-            DisplayMonth++;
+            SetCurrentValue(DisplayMonthProperty, DisplayMonth + 1);
         }
     }
 
