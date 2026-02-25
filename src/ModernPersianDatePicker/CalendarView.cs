@@ -181,15 +181,23 @@ public class CalendarView : TemplatedControl
 
         int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
         bool moved = false;
+        bool monthChanged = false;
 
         switch (e.Key)
         {
             case Key.Left:
-                // Move to previous day (RTL: left is next day)
+                // Move to next day (RTL: left is next day)
                 if (_focusedDay < daysInMonth)
                 {
                     _focusedDay++;
                     moved = true;
+                }
+                else
+                {
+                    // Move to next month
+                    NavigateToMonth(1);
+                    _focusedDay = 1;
+                    monthChanged = true;
                 }
                 break;
 
@@ -200,6 +208,15 @@ public class CalendarView : TemplatedControl
                     _focusedDay--;
                     moved = true;
                 }
+                else
+                {
+                    // Move to previous month
+                    NavigateToMonth(-1);
+                    // Set to last day of previous month
+                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+                    _focusedDay = daysInMonth;
+                    monthChanged = true;
+                }
                 break;
 
             case Key.Up:
@@ -208,6 +225,14 @@ public class CalendarView : TemplatedControl
                 {
                     _focusedDay -= 7;
                     moved = true;
+                }
+                else
+                {
+                    // Move to previous month, same weekday
+                    NavigateToMonth(-1);
+                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+                    _focusedDay = Math.Min(_focusedDay, daysInMonth);
+                    monthChanged = true;
                 }
                 break;
 
@@ -218,6 +243,26 @@ public class CalendarView : TemplatedControl
                     _focusedDay += 7;
                     moved = true;
                 }
+                else
+                {
+                    // Move to next month, same weekday
+                    NavigateToMonth(1);
+                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+                    _focusedDay = Math.Min(_focusedDay, daysInMonth);
+                    monthChanged = true;
+                }
+                break;
+
+            case Key.PageUp:
+                // Move to previous month (faster navigation)
+                NavigateToMonth(-1);
+                monthChanged = true;
+                break;
+
+            case Key.PageDown:
+                // Move to next month (faster navigation)
+                NavigateToMonth(1);
+                monthChanged = true;
                 break;
 
             case Key.Home:
@@ -244,12 +289,40 @@ public class CalendarView : TemplatedControl
                 return;
         }
 
-        if (moved)
+        if (moved || monthChanged)
         {
             // Update visual focus
             UpdateFocusedDay();
             e.Handled = true;
         }
+    }
+
+    private void NavigateToMonth(int deltaMonths)
+    {
+        int newMonth = DisplayMonth + deltaMonths;
+        int newYear = DisplayYear;
+
+        if (newMonth < 1)
+        {
+            newMonth = 12;
+            newYear--;
+        }
+        else if (newMonth > 12)
+        {
+            newMonth = 1;
+            newYear++;
+        }
+
+        // Validate year range (optional, prevent negative years)
+        if (newYear < 1)
+        {
+            newYear = 1;
+            newMonth = 1;
+        }
+
+        // Use SetCurrentValue to trigger property changed handler
+        SetCurrentValue(DisplayMonthProperty, newMonth);
+        SetCurrentValue(DisplayYearProperty, newYear);
     }
 
     private void UpdateFocusedDay()
