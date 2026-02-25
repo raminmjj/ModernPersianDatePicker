@@ -127,12 +127,19 @@ public static class PersianCalendarHelper
 
     /// <summary>
     /// Gets the first day of the week for a Persian month
+    /// Returns 0 for Shanbeh (Saturday), 1 for Yekshanbeh, etc.
     /// </summary>
     public static int GetFirstDayOfWeek(int year, int month)
     {
         var firstDay = ToGregorianDate(new PersianDate(year, month, 1, 0));
         var persianCalendar = new PersianCalendar();
-        return (int)persianCalendar.GetDayOfWeek(firstDay);
+        int dayOfWeek = (int)persianCalendar.GetDayOfWeek(firstDay);
+        
+        // Convert from Sunday=0 format to Shanbeh=0 format
+        // Persian calendar: Shanbeh=0, Yekshanbeh=1, ..., Jomeh=6
+        // .NET DayOfWeek: Sunday=0, Monday=1, ..., Saturday=6
+        // Persian calendar starts from Shanbeh (Saturday)
+        return (dayOfWeek + 1) % 7;
     }
 
     /// <summary>
