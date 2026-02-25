@@ -51,10 +51,13 @@ public class CalendarView : TemplatedControl
 
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"Property changed: {e.Property.Name}, isUpdating: {_isUpdatingCalendar}");
+        
         // Only update calendar if the property actually changed
         if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == UseEnglishNamesProperty)
         {
             UpdateCalendar();
+            System.Diagnostics.Debug.WriteLine($"Calendar updated for {e.Property.Name}");
         }
     }
 
@@ -121,6 +124,8 @@ public class CalendarView : TemplatedControl
 
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"Previous button clicked. Current: {DisplayYear}/{DisplayMonth}");
+        
         if (DisplayMonth == 1)
         {
             SetCurrentValue(DisplayMonthProperty, 12);
@@ -130,10 +135,14 @@ public class CalendarView : TemplatedControl
         {
             SetCurrentValue(DisplayMonthProperty, DisplayMonth - 1);
         }
+        
+        System.Diagnostics.Debug.WriteLine($"After SetCurrentValue: {DisplayYear}/{DisplayMonth}");
     }
 
     private void OnNextButton_Click(object? sender, RoutedEventArgs e)
     {
+        System.Diagnostics.Debug.WriteLine($"Next button clicked. Current: {DisplayYear}/{DisplayMonth}");
+        
         if (DisplayMonth == 12)
         {
             SetCurrentValue(DisplayMonthProperty, 1);
@@ -143,14 +152,23 @@ public class CalendarView : TemplatedControl
         {
             SetCurrentValue(DisplayMonthProperty, DisplayMonth + 1);
         }
+        
+        System.Diagnostics.Debug.WriteLine($"After SetCurrentValue: {DisplayYear}/{DisplayMonth}");
     }
 
     private void UpdateCalendar()
     {
+        System.Diagnostics.Debug.WriteLine($"UpdateCalendar called, isUpdating: {_isUpdatingCalendar}");
+        
         // Prevent re-entrant calls
-        if (_isUpdatingCalendar) return;
+        if (_isUpdatingCalendar)
+        {
+            System.Diagnostics.Debug.WriteLine("UpdateCalendar blocked - already updating");
+            return;
+        }
         
         _isUpdatingCalendar = true;
+        System.Diagnostics.Debug.WriteLine($"UpdateCalendar starting - DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
         
         try
         {
@@ -243,6 +261,7 @@ public class CalendarView : TemplatedControl
         finally
         {
             _isUpdatingCalendar = false;
+            System.Diagnostics.Debug.WriteLine("UpdateCalendar finished, isUpdating: false");
         }
     }
 
