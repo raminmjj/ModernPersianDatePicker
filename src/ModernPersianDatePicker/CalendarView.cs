@@ -598,8 +598,8 @@ public class CalendarView : TemplatedControl
                     _daysGrid.Children.Add(textBlock);
                 }
 
-                // Add rows for weeks (max 6 weeks)
-                for (int i = 0; i < 6; i++)
+                // Add rows for weeks (max 6 weeks + 1 for header = 7 total rows)
+                for (int i = 0; i < 7; i++)
                 {
                     _daysGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
                 }
