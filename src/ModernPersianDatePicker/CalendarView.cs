@@ -40,6 +40,7 @@ public class CalendarView : TemplatedControl
         DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         UseEnglishNamesProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        SelectedDateProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnSelectedDateChanged(e));
     }
 
     public CalendarView()
@@ -58,6 +59,43 @@ public class CalendarView : TemplatedControl
         {
             UpdateCalendar();
             System.Diagnostics.Debug.WriteLine($"Calendar updated for {e.Property.Name}");
+        }
+    }
+
+    private void OnSelectedDateChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        // Update the visual selection without rebuilding the entire calendar
+        UpdateSelectedVisual();
+    }
+
+    private void UpdateSelectedVisual()
+    {
+        if (_daysGrid == null) return;
+
+        // Remove 'selected' class from all day buttons
+        foreach (var child in _daysGrid.Children)
+        {
+            if (child is Button button)
+            {
+                button.Classes.Remove("selected");
+            }
+        }
+
+        // Add 'selected' class to the button matching SelectedDate
+        if (SelectedDate.HasValue && 
+            SelectedDate.Value.Year == DisplayYear && 
+            SelectedDate.Value.Month == DisplayMonth)
+        {
+            foreach (var child in _daysGrid.Children)
+            {
+                if (child is Button button && 
+                    int.TryParse(button.Content?.ToString(), out int day) &&
+                    day == SelectedDate.Value.Day)
+                {
+                    button.Classes.Add("selected");
+                    break;
+                }
+            }
         }
     }
 
