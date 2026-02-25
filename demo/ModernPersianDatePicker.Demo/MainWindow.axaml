@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:persian="using:ModernPersianDatePicker"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="500"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="750"
         x:Class="ModernPersianDatePicker.Demo.MainWindow"
         Title="Modern Persian DatePicker Demo"
         Width="600" Height="750"

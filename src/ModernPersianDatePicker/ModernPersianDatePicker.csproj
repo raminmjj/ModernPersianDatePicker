@@ -5,15 +5,27 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    
+
     <!-- NuGet Package Info -->
     <PackageId>ModernPersianDatePicker</PackageId>
     <Version>1.0.0</Version>
-    <Authors>Your Name</Authors>
-    <Description>Modern Persian Date Picker control for Avalonia UI with Jalali/Shamsi calendar support</Description>
-    <PackageTags>avalonia;persian;jalali;shamsi;datepicker;calendar;rtl</PackageTags>
+    <Authors>Ramin Alirezaee</Authors>
+    <!--<Company>Your Company</Company>-->
+    <Product>ModernPersianDatePicker</Product>
+    <Description>Modern Persian Date Picker control for Avalonia UI with Jalali/Shamsi calendar support. Features include RTL/LTR layouts, keyboard navigation, editable mode, month/year selection, and full Persian calendar calculations.</Description>
+    <Copyright>Copyright © 2026</Copyright>
+    <PackageTags>avalonia;persian;jalali;shamsi;datepicker;calendar;rtl;farsi</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/yourusername/ModernPersianDatePicker</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/raminmjj/ModernPersianDatePicker</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/raminmjj/ModernPersianDatePicker</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial release with full Persian calendar support, keyboard navigation, editable mode, and modern UI.</PackageReleaseNotes>
+    
+    <!-- Generate XML documentation -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +34,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Themes\ModernPersianDatePickerTheme.xaml" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
