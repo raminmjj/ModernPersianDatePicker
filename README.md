@@ -1,4 +1,10 @@
+<div align="center">
+
+<img src="docs/icon-max.png" alt="ModernPersianDatePicker logo" width="256" height="256"/>
+
 # ModernPersianDatePicker
+
+</div>
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
@@ -191,7 +197,7 @@ string dayName = PersianCalendarHelper.GetDayName(0, useEnglish: false);    // "
 Structure representing a Persian date:
 
 ```csharp
-var date = new PersianDate(year: 1403, month: 8, day: 15, dayOfWeek: 3);
+var date = new PersianDate(year: 1403, month: 10, day: 19, dayOfWeek: 7);
 
 // ToString formats
 date.ToString();        // "1404/10/19"
@@ -219,24 +225,12 @@ dotnet run
 ## Screenshots
 
 ### Persian (RTL) Mode
-```
-┌─────────────────────────┐
-│  ۱۸ دی ۱۴۰۴         📅 │
-└─────────────────────────┘
-```
+
+![Persian (RTL) Mode](docs/ModernPersianDatePickerForAvalonia.png)
 
 ### Calendar View
-```
-┌──────────────────────────────────┐
-│  <  دی  1404  >                │
-│  ش  ی  د  س  چ  پ  ج             │
-│  ۵  ۴  ۳   ۲   ۱  ۳۰  ۲۹         │
-│  ۱۲   ۱۱   ۱۰   ۹   ۸   ۷   ۶    │
-│  ۱۹  ۱۸  ۱۷  ۱۶  ۱۵  ۱۴  ۱۳      │
-│  ...                              │
-│  [📅 امروز]                      │
-└──────────────────────────────────┘
-```
+
+![Calendar View](docs/ModernPersianDatePickerForAvalonia-Droped.png)
 
 ## Requirements
 
