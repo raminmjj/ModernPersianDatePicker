@@ -682,12 +682,17 @@ public class CalendarView : TemplatedControl
 
     private void OnDayClicked(int day)
     {
-        // Create the selected date with correct day of week
-        var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, 0);
+        // Calculate the day of week for the selected date
+        var firstDayOfMonth = new PersianDate(DisplayYear, DisplayMonth, 1, 0);
+        var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
+        var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
         
+        // Create the selected date with correct day of week
+        var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
+
         System.Diagnostics.Debug.WriteLine($"Day clicked: {day}, DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
         System.Diagnostics.Debug.WriteLine($"Selected date: {selectedDate.ToString("long")}");
-        
+
         // Fire the event to parent control
         DateSelected?.Invoke(this, new DateSelectedEventArgs(selectedDate));
     }

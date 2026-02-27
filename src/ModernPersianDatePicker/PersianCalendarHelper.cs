@@ -58,9 +58,15 @@ public static class PersianCalendarHelper
         int year = persianCalendar.GetYear(gregorianDate);
         int month = persianCalendar.GetMonth(gregorianDate);
         int day = persianCalendar.GetDayOfMonth(gregorianDate);
-        DayOfWeek dayOfWeek = persianCalendar.GetDayOfWeek(gregorianDate);
+        DayOfWeek dotNetDayOfWeek = persianCalendar.GetDayOfWeek(gregorianDate);
+        
+        // Convert from .NET DayOfWeek to Persian day index
+        // .NET: Sunday=0, Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6
+        // Persian: Shanbeh(Sat)=0, Yekshanbeh(Sun)=1, Doshanbeh(Mon)=2,
+        //          Seshanbeh(Tue)=3, Chaharshanbeh(Wed)=4, Panjshanbeh(Thu)=5, Jomeh(Fri)=6
+        int persianDayOfWeek = ((int)dotNetDayOfWeek + 1) % 7;
 
-        return new PersianDate(year, month, day, (int)dayOfWeek);
+        return new PersianDate(year, month, day, persianDayOfWeek);
     }
 
     /// <summary>

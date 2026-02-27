@@ -279,7 +279,11 @@ public class ModernPersianDatePicker : TemplatedControl
             if (day > daysInMonth)
                 return null;
 
-            return new PersianDate(year, month, day, 0);
+            // Calculate day of week
+            var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(year, month);
+            var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
+
+            return new PersianDate(year, month, day, dayOfWeek);
         }
         catch
         {
