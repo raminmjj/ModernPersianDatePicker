@@ -56,6 +56,7 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         SelectedDateProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateChanged(e));
         UseEnglishNamesProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLanguageChanged(e));
+        IsEditableProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnIsEditableChanged(e));
     }
 
     public ModernPersianDatePicker()
@@ -160,6 +161,7 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
         }
 
+        UpdateEditMode();
         UpdateDisplayText();
     }
 
@@ -392,6 +394,29 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.UseEnglishNames = UseEnglishNames;
 
         UpdateDisplayText();
+    }
+
+    private void OnIsEditableChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        UpdateEditMode();
+    }
+
+    /// <summary>
+    /// Toggles visibility of the display TextBlock and editable TextBox based on IsEditable.
+    /// </summary>
+    private void UpdateEditMode()
+    {
+        if (_isDisposed)
+            return;
+
+        if (_displayTextBlock != null)
+            _displayTextBlock.IsVisible = !IsEditable;
+
+        if (_editableTextBox != null)
+            _editableTextBox.IsVisible = IsEditable;
     }
 
     private void OnToggleButton_Click(object? sender, RoutedEventArgs e)

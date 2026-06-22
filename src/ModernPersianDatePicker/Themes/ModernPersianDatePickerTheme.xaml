@@ -34,8 +34,7 @@
                                    VerticalAlignment="Center"
                                    Margin="8,0"
                                    Foreground="#FF6D6D6D"
-                                   FlowDirection="RightToLeft"
-                                   IsVisible="False"/>
+                                   FlowDirection="RightToLeft"/>
                         
                         <!-- Editable TextBox -->
                         <TextBox x:Name="PART_EditableText"
@@ -47,7 +46,7 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  FlowDirection="RightToLeft"
-                                 IsVisible="True"/>
+                                 IsVisible="False"/>
                         
                         <!-- Toggle Button -->
                         <ToggleButton x:Name="PART_ToggleButton"
