@@ -67,13 +67,10 @@ public class CalendarView : TemplatedControl
 
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"Property changed: {e.Property.Name}, isUpdating: {_isUpdatingCalendar}");
-        
         // Only update calendar if the property actually changed
         if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == UseEnglishNamesProperty)
         {
             UpdateCalendar();
-            System.Diagnostics.Debug.WriteLine($"Calendar updated for {e.Property.Name}");
         }
     }
 
@@ -148,7 +145,6 @@ public class CalendarView : TemplatedControl
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
-        System.Diagnostics.Debug.WriteLine("OnApplyTemplate called");
 
         // Detach previous event handlers
         if (_previousButton != null)
@@ -176,8 +172,6 @@ public class CalendarView : TemplatedControl
         _todayButton = e.NameScope.Find<Button>("PART_TodayButton");
         _monthPopup = e.NameScope.Find<Popup>("PART_MonthPopup");
         _yearPopup = e.NameScope.Find<Popup>("PART_YearPopup");
-
-        System.Diagnostics.Debug.WriteLine($"Template parts found: month={_monthButton != null}, year={_yearButton != null}, today={_todayButton != null}");
 
         // Attach new event handlers
         if (_previousButton != null)
@@ -508,8 +502,6 @@ public class CalendarView : TemplatedControl
 
     private void OnPreviousButton_Click(object? sender, RoutedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"Previous button clicked. Current: {DisplayYear}/{DisplayMonth}");
-        
         if (DisplayMonth == 1)
         {
             SetCurrentValue(DisplayMonthProperty, 12);
@@ -519,14 +511,10 @@ public class CalendarView : TemplatedControl
         {
             SetCurrentValue(DisplayMonthProperty, DisplayMonth - 1);
         }
-        
-        System.Diagnostics.Debug.WriteLine($"After SetCurrentValue: {DisplayYear}/{DisplayMonth}");
     }
 
     private void OnNextButton_Click(object? sender, RoutedEventArgs e)
     {
-        System.Diagnostics.Debug.WriteLine($"Next button clicked. Current: {DisplayYear}/{DisplayMonth}");
-        
         if (DisplayMonth == 12)
         {
             SetCurrentValue(DisplayMonthProperty, 1);
@@ -536,23 +524,17 @@ public class CalendarView : TemplatedControl
         {
             SetCurrentValue(DisplayMonthProperty, DisplayMonth + 1);
         }
-        
-        System.Diagnostics.Debug.WriteLine($"After SetCurrentValue: {DisplayYear}/{DisplayMonth}");
     }
 
     private void UpdateCalendar()
     {
-        System.Diagnostics.Debug.WriteLine($"UpdateCalendar called, isUpdating: {_isUpdatingCalendar}");
-        
         // Prevent re-entrant calls
         if (_isUpdatingCalendar)
         {
-            System.Diagnostics.Debug.WriteLine("UpdateCalendar blocked - already updating");
             return;
         }
         
         _isUpdatingCalendar = true;
-        System.Diagnostics.Debug.WriteLine($"UpdateCalendar starting - DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
 
         // Reset focused day to selected date or today
         if (SelectedDate.HasValue &&
@@ -676,7 +658,6 @@ public class CalendarView : TemplatedControl
         finally
         {
             _isUpdatingCalendar = false;
-            System.Diagnostics.Debug.WriteLine("UpdateCalendar finished, isUpdating: false");
         }
     }
 
@@ -689,9 +670,6 @@ public class CalendarView : TemplatedControl
         
         // Create the selected date with correct day of week
         var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
-
-        System.Diagnostics.Debug.WriteLine($"Day clicked: {day}, DisplayYear: {DisplayYear}, DisplayMonth: {DisplayMonth}");
-        System.Diagnostics.Debug.WriteLine($"Selected date: {selectedDate.ToString("long")}");
 
         // Fire the event to parent control
         DateSelected?.Invoke(this, new DateSelectedEventArgs(selectedDate));
