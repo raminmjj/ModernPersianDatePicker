@@ -7,26 +7,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://ModernPersianDatePicker/Themes/PersianDatePickerColors.xaml"/>
             </ResourceDictionary.MergedDictionaries>
-
-            <!-- Brush resources derived from theme color resources -->
-            <SolidColorBrush x:Key="PersianDatePickerBackgroundBrush" Color="{DynamicResource PersianDatePickerBackgroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="{DynamicResource PersianDatePickerBorderColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="{DynamicResource PersianDatePickerTextForegroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="{DynamicResource PersianDatePickerWatermarkForegroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="{DynamicResource PersianDatePickerAccentColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerAccentHoverBrush" Color="{DynamicResource PersianDatePickerAccentHoverColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerFocusBorderBrush" Color="{DynamicResource PersianDatePickerFocusBorderColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerPopupBackgroundBrush" Color="{DynamicResource PersianDatePickerPopupBackgroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerPopupBorderBrush" Color="{DynamicResource PersianDatePickerPopupBorderColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerPopupShadowBrush" Color="{DynamicResource PersianDatePickerPopupShadowColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="{DynamicResource PersianDatePickerHeaderForegroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="{DynamicResource PersianDatePickerDayForegroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="{DynamicResource PersianDatePickerDayHoverBackgroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="{DynamicResource PersianDatePickerSelectedForegroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="{DynamicResource PersianDatePickerMonthYearHoverBackgroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerDayFocusBackgroundBrush" Color="{DynamicResource PersianDatePickerDayFocusBackgroundColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBorderBrush" Color="{DynamicResource PersianDatePickerSelectedFocusBorderColor}"/>
-            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBackgroundBrush" Color="{DynamicResource PersianDatePickerSelectedFocusBackgroundColor}"/>
         </ResourceDictionary>
     </Styles.Resources>
 
@@ -103,7 +83,7 @@
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
+                                    BoxShadow="0 4 8 0 #40000000"
                                     MinWidth="280">
                                 <local:CalendarView x:Name="PART_CalendarView"
                                                     FlowDirection="RightToLeft"
@@ -237,7 +217,7 @@
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
+                                    BoxShadow="0 4 8 0 #40000000"
                                     Padding="8">
                                 <Grid x:Name="PART_MonthGrid"
                                       ColumnDefinitions="*,*,*"
@@ -254,7 +234,7 @@
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
+                                    BoxShadow="0 4 8 0 #40000000"
                                     Padding="8">
                                 <Grid x:Name="PART_YearGrid"
                                       ColumnDefinitions="*,*,*"

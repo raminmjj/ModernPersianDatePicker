@@ -1,64 +1,61 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:sys="using:System">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Light theme colors (default) -->
+    <!-- Light theme brushes (default) -->
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <!-- Main control -->
-            <Color x:Key="PersianDatePickerBackgroundColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerBorderColor">#FFABADB3</Color>
-            <Color x:Key="PersianDatePickerTextForegroundColor">#FF6D6D6D</Color>
-            <Color x:Key="PersianDatePickerWatermarkForegroundColor">#FF999999</Color>
+            <SolidColorBrush x:Key="PersianDatePickerBackgroundBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="#FFABADB3"/>
+            <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="#FF6D6D6D"/>
+            <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="#FF999999"/>
 
             <!-- Accent colors -->
-            <Color x:Key="PersianDatePickerAccentColor">#FF2196F3</Color>
-            <Color x:Key="PersianDatePickerAccentHoverColor">#FF1976D2</Color>
-            <Color x:Key="PersianDatePickerFocusBorderColor">#FF5593EB</Color>
+            <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF2196F3"/>
+            <SolidColorBrush x:Key="PersianDatePickerAccentHoverBrush" Color="#FF1976D2"/>
+            <SolidColorBrush x:Key="PersianDatePickerFocusBorderBrush" Color="#FF5593EB"/>
 
             <!-- Popup -->
-            <Color x:Key="PersianDatePickerPopupBackgroundColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerPopupBorderColor">#FFABADB3</Color>
-            <Color x:Key="PersianDatePickerPopupShadowColor">#40000000</Color>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBackgroundBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBorderBrush" Color="#FFABADB3"/>
 
             <!-- Calendar internals -->
-            <Color x:Key="PersianDatePickerHeaderForegroundColor">#FF666666</Color>
-            <Color x:Key="PersianDatePickerDayForegroundColor">#FF333333</Color>
-            <Color x:Key="PersianDatePickerDayHoverBackgroundColor">#FFE0E0E0</Color>
-            <Color x:Key="PersianDatePickerSelectedForegroundColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerMonthYearHoverBackgroundColor">#FFE0E0E0</Color>
-            <Color x:Key="PersianDatePickerDayFocusBackgroundColor">#FFE0E0E0</Color>
-            <Color x:Key="PersianDatePickerSelectedFocusBorderColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerSelectedFocusBackgroundColor">#FF1976D2</Color>
+            <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="#FF666666"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="#FF333333"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="#FFE0E0E0"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="#FFE0E0E0"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayFocusBackgroundBrush" Color="#FFE0E0E0"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBorderBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBackgroundBrush" Color="#FF1976D2"/>
         </ResourceDictionary>
 
-        <!-- Dark theme colors -->
+        <!-- Dark theme brushes -->
         <ResourceDictionary x:Key="Dark">
             <!-- Main control -->
-            <Color x:Key="PersianDatePickerBackgroundColor">#FF2D2D2D</Color>
-            <Color x:Key="PersianDatePickerBorderColor">#FF555555</Color>
-            <Color x:Key="PersianDatePickerTextForegroundColor">#FFCCCCCC</Color>
-            <Color x:Key="PersianDatePickerWatermarkForegroundColor">#FF888888</Color>
+            <SolidColorBrush x:Key="PersianDatePickerBackgroundBrush" Color="#FF2D2D2D"/>
+            <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="#FF555555"/>
+            <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="#FFCCCCCC"/>
+            <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="#FF888888"/>
 
             <!-- Accent colors (lighter shades for dark backgrounds) -->
-            <Color x:Key="PersianDatePickerAccentColor">#FF64B5F6</Color>
-            <Color x:Key="PersianDatePickerAccentHoverColor">#FF2196F3</Color>
-            <Color x:Key="PersianDatePickerFocusBorderColor">#FF64B5F6</Color>
+            <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF64B5F6"/>
+            <SolidColorBrush x:Key="PersianDatePickerAccentHoverBrush" Color="#FF2196F3"/>
+            <SolidColorBrush x:Key="PersianDatePickerFocusBorderBrush" Color="#FF64B5F6"/>
 
             <!-- Popup -->
-            <Color x:Key="PersianDatePickerPopupBackgroundColor">#FF2D2D2D</Color>
-            <Color x:Key="PersianDatePickerPopupBorderColor">#FF555555</Color>
-            <Color x:Key="PersianDatePickerPopupShadowColor">#40000000</Color>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBackgroundBrush" Color="#FF2D2D2D"/>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBorderBrush" Color="#FF555555"/>
 
             <!-- Calendar internals -->
-            <Color x:Key="PersianDatePickerHeaderForegroundColor">#FFAAAAAA</Color>
-            <Color x:Key="PersianDatePickerDayForegroundColor">#FFDDDDDD</Color>
-            <Color x:Key="PersianDatePickerDayHoverBackgroundColor">#FF404040</Color>
-            <Color x:Key="PersianDatePickerSelectedForegroundColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerMonthYearHoverBackgroundColor">#FF404040</Color>
-            <Color x:Key="PersianDatePickerDayFocusBackgroundColor">#FF404040</Color>
-            <Color x:Key="PersianDatePickerSelectedFocusBorderColor">#FFFFFFFF</Color>
-            <Color x:Key="PersianDatePickerSelectedFocusBackgroundColor">#FF2196F3</Color>
+            <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="#FFAAAAAA"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="#FFDDDDDD"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="#FF404040"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="#FF404040"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayFocusBackgroundBrush" Color="#FF404040"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBorderBrush" Color="#FFFFFFFF"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBackgroundBrush" Color="#FF2196F3"/>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
