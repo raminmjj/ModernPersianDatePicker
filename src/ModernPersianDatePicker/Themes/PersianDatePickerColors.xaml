@@ -1,0 +1,65 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="using:System">
+
+    <!-- Light theme colors (default) -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <!-- Main control -->
+            <Color x:Key="PersianDatePickerBackgroundColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerBorderColor">#FFABADB3</Color>
+            <Color x:Key="PersianDatePickerTextForegroundColor">#FF6D6D6D</Color>
+            <Color x:Key="PersianDatePickerWatermarkForegroundColor">#FF999999</Color>
+
+            <!-- Accent colors -->
+            <Color x:Key="PersianDatePickerAccentColor">#FF2196F3</Color>
+            <Color x:Key="PersianDatePickerAccentHoverColor">#FF1976D2</Color>
+            <Color x:Key="PersianDatePickerFocusBorderColor">#FF5593EB</Color>
+
+            <!-- Popup -->
+            <Color x:Key="PersianDatePickerPopupBackgroundColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerPopupBorderColor">#FFABADB3</Color>
+            <Color x:Key="PersianDatePickerPopupShadowColor">#40000000</Color>
+
+            <!-- Calendar internals -->
+            <Color x:Key="PersianDatePickerHeaderForegroundColor">#FF666666</Color>
+            <Color x:Key="PersianDatePickerDayForegroundColor">#FF333333</Color>
+            <Color x:Key="PersianDatePickerDayHoverBackgroundColor">#FFE0E0E0</Color>
+            <Color x:Key="PersianDatePickerSelectedForegroundColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerMonthYearHoverBackgroundColor">#FFE0E0E0</Color>
+            <Color x:Key="PersianDatePickerDayFocusBackgroundColor">#FFE0E0E0</Color>
+            <Color x:Key="PersianDatePickerSelectedFocusBorderColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerSelectedFocusBackgroundColor">#FF1976D2</Color>
+        </ResourceDictionary>
+
+        <!-- Dark theme colors -->
+        <ResourceDictionary x:Key="Dark">
+            <!-- Main control -->
+            <Color x:Key="PersianDatePickerBackgroundColor">#FF2D2D2D</Color>
+            <Color x:Key="PersianDatePickerBorderColor">#FF555555</Color>
+            <Color x:Key="PersianDatePickerTextForegroundColor">#FFCCCCCC</Color>
+            <Color x:Key="PersianDatePickerWatermarkForegroundColor">#FF888888</Color>
+
+            <!-- Accent colors (lighter shades for dark backgrounds) -->
+            <Color x:Key="PersianDatePickerAccentColor">#FF64B5F6</Color>
+            <Color x:Key="PersianDatePickerAccentHoverColor">#FF2196F3</Color>
+            <Color x:Key="PersianDatePickerFocusBorderColor">#FF64B5F6</Color>
+
+            <!-- Popup -->
+            <Color x:Key="PersianDatePickerPopupBackgroundColor">#FF2D2D2D</Color>
+            <Color x:Key="PersianDatePickerPopupBorderColor">#FF555555</Color>
+            <Color x:Key="PersianDatePickerPopupShadowColor">#40000000</Color>
+
+            <!-- Calendar internals -->
+            <Color x:Key="PersianDatePickerHeaderForegroundColor">#FFAAAAAA</Color>
+            <Color x:Key="PersianDatePickerDayForegroundColor">#FFDDDDDD</Color>
+            <Color x:Key="PersianDatePickerDayHoverBackgroundColor">#FF404040</Color>
+            <Color x:Key="PersianDatePickerSelectedForegroundColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerMonthYearHoverBackgroundColor">#FF404040</Color>
+            <Color x:Key="PersianDatePickerDayFocusBackgroundColor">#FF404040</Color>
+            <Color x:Key="PersianDatePickerSelectedFocusBorderColor">#FFFFFFFF</Color>
+            <Color x:Key="PersianDatePickerSelectedFocusBackgroundColor">#FF2196F3</Color>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+</ResourceDictionary>

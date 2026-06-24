@@ -10,10 +10,41 @@
         Width="600" Height="750"
         WindowStartupLocation="CenterScreen">
     
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Margin="20">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#FFCCCCCC"/>
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFF5F5F5"/>
+                    <SolidColorBrush x:Key="ThemeForegroundBrush" Color="#FF666666"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="CardBorderBrush" Color="#FF444444"/>
+                    <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FF383838"/>
+                    <SolidColorBrush x:Key="ThemeForegroundBrush" Color="#FFAAAAAA"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+    
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" Margin="20">
+        
+        <!-- Theme toggle row -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Right"
+                    Margin="0,0,0,16">
+            <TextBlock Text="Theme:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"/>
+            <ToggleButton x:Name="ThemeToggle"
+                          Content="🌙 Dark"
+                          Click="OnThemeToggleClick"
+                          Width="100"/>
+        </StackPanel>
         
         <!-- Title -->
-        <TextBlock Grid.Row="0"
+        <TextBlock Grid.Row="1"
                    Text="Modern Persian DatePicker Control"
                    FontSize="24"
                    FontWeight="Bold"
@@ -21,8 +52,8 @@
                    HorizontalAlignment="Center"/>
         
         <!-- Basic Usage -->
-        <Border Grid.Row="1"
-                BorderBrush="#FFCCCCCC"
+        <Border Grid.Row="2"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="16"
@@ -40,13 +71,13 @@
                 <TextBlock x:Name="BasicDateText"
                            Text="Selected: "
                            Margin="0,8,0,0"
-                           Foreground="#FF666666"/>
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
             </StackPanel>
         </Border>
         
         <!-- English Names -->
-        <Border Grid.Row="2"
-                BorderBrush="#FFCCCCCC"
+        <Border Grid.Row="3"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
                 Padding="16"
@@ -67,16 +98,17 @@
                 <TextBlock x:Name="EnglishDateText"
                            Text="Selected: "
                            Margin="0,8,0,0"
-                           Foreground="#FF666666"/>
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
             </StackPanel>
         </Border>
         
-        <!-- With Min/Max Date -->
-        <Border Grid.Row="3"
-                BorderBrush="#FFCCCCCC"
+        <!-- With Custom Accent -->
+        <Border Grid.Row="4"
+                BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
-                Padding="16">
+                Padding="16"
+                Margin="0,0,0,16">
             <StackPanel>
                 <TextBlock Text="With Today Button &amp; Custom Format"
                            FontSize="16"
@@ -92,7 +124,7 @@
                 <TextBlock x:Name="CustomDateText"
                            Text="Selected: "
                            Margin="0,8,0,0"
-                           Foreground="#FF666666"/>
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
                 
                 <!-- Action Buttons -->
                 <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
@@ -109,13 +141,47 @@
                 <TextBlock x:Name="GregorianDateText"
                            Text="Gregorian: "
                            Margin="0,8,0,0"
-                           Foreground="#FF666666"/>
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+            </StackPanel>
+        </Border>
+        
+        <!-- Custom Accent Theme -->
+        <Border Grid.Row="5"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Custom Accent Brush (Green &amp; Purple)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+                
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <persian:ModernPersianDatePicker x:Name="GreenAccentDatePicker"
+                                                     AccentBrush="#FF4CAF50"
+                                                     Watermark="Green accent..."
+                                                     HorizontalAlignment="Left"
+                                                     MinWidth="200"/>
+                    
+                    <persian:ModernPersianDatePicker x:Name="PurpleAccentDatePicker"
+                                                     AccentBrush="#FF9C27B0"
+                                                     Watermark="Purple accent..."
+                                                     HorizontalAlignment="Left"
+                                                     MinWidth="200"/>
+                </StackPanel>
+                
+                <TextBlock x:Name="AccentDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
             </StackPanel>
         </Border>
         
         <!-- Information -->
-        <Border Grid.Row="4"
-                Background="#FFF5F5F5"
+        <Border Grid.Row="6"
+                Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"
                 Margin="0,16,0,0">
@@ -132,6 +198,8 @@
                 <TextBlock Text="• Convert to/from Gregorian dates"
                            Margin="0,2"/>
                 <TextBlock Text="• Leap year calculation"
+                           Margin="0,2"/>
+                <TextBlock Text="• Custom AccentBrush &amp; Light/Dark theme support"
                            Margin="0,2"/>
             </StackPanel>
         </Border>

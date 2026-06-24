@@ -34,6 +34,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Themes\ModernPersianDatePickerTheme.xaml" />
+    <AvaloniaResource Include="Themes\PersianDatePickerColors.xaml" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>

@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 
 namespace ModernPersianDatePicker;
 
@@ -38,6 +39,13 @@ public class ModernPersianDatePicker : TemplatedControl
     public static readonly StyledProperty<string> WatermarkProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, string>(nameof(Watermark), "Select date...");
 
+    /// <summary>
+    /// Accent brush used for the selected day background, today border and focus border.
+    /// When null (default), the theme's built-in accent color is used.
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> AccentBrushProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, IBrush?>(nameof(AccentBrush));
+
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
 
@@ -57,6 +65,7 @@ public class ModernPersianDatePicker : TemplatedControl
         SelectedDateProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateChanged(e));
         UseEnglishNamesProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLanguageChanged(e));
         IsEditableProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnIsEditableChanged(e));
+        AccentBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnAccentBrushChanged(e));
     }
 
     public ModernPersianDatePicker()
@@ -111,6 +120,16 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         get => GetValue(WatermarkProperty);
         set => SetValue(WatermarkProperty, value);
+    }
+
+    /// <summary>
+    /// Accent brush used for the selected day background, today border and focus border.
+    /// When null (default), the theme's built-in accent color is used.
+    /// </summary>
+    public IBrush? AccentBrush
+    {
+        get => GetValue(AccentBrushProperty);
+        set => SetValue(AccentBrushProperty, value);
     }
 
     // Protected Methods
@@ -417,6 +436,60 @@ public class ModernPersianDatePicker : TemplatedControl
 
         if (_editableTextBox != null)
             _editableTextBox.IsVisible = IsEditable;
+    }
+
+    /// <summary>
+    /// When AccentBrush is set, override the theme accent resources locally so a single
+    /// property can recolor the selected day, today border, focus border, etc.
+    /// When cleared (null), remove the overrides to fall back to the theme.
+    /// </summary>
+    private void OnAccentBrushChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        var brush = e.NewValue as IBrush;
+        UpdateAccentResources(brush);
+    }
+
+    /// <summary>
+    /// Applies or clears local accent resource overrides.
+    /// </summary>
+    private void UpdateAccentResources(IBrush? accentBrush)
+    {
+        if (accentBrush == null)
+        {
+            // Fall back to theme defaults
+            Resources.Remove("PersianDatePickerAccentBrush");
+            Resources.Remove("PersianDatePickerAccentHoverBrush");
+            Resources.Remove("PersianDatePickerFocusBorderBrush");
+            Resources.Remove("PersianDatePickerSelectedFocusBackgroundBrush");
+            return;
+        }
+
+        // Derive a darker hover shade when possible (SolidColorBrush only); otherwise reuse the same brush.
+        IBrush hoverBrush = accentBrush;
+        IBrush focusBrush = accentBrush;
+        if (accentBrush is ISolidColorBrush solid)
+        {
+            hoverBrush = DarkenBrush(solid, 0.12);
+        }
+
+        Resources["PersianDatePickerAccentBrush"] = accentBrush;
+        Resources["PersianDatePickerAccentHoverBrush"] = hoverBrush;
+        Resources["PersianDatePickerFocusBorderBrush"] = focusBrush;
+        Resources["PersianDatePickerSelectedFocusBackgroundBrush"] = hoverBrush;
+    }
+
+    /// <summary>
+    /// Returns a new SolidColorBrush that is <paramref name="factor"/> darker than the source.
+    /// </summary>
+    private static IBrush DarkenBrush(ISolidColorBrush source, double factor)
+    {
+        byte r = (byte)Math.Round(source.Color.R * (1 - factor));
+        byte g = (byte)Math.Round(source.Color.G * (1 - factor));
+        byte b = (byte)Math.Round(source.Color.B * (1 - factor));
+        return new SolidColorBrush(Color.FromArgb(source.Color.A, r, g, b), source.Opacity);
     }
 
     private void OnToggleButton_Click(object? sender, RoutedEventArgs e)

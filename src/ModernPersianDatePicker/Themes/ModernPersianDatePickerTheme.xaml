@@ -2,10 +2,38 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ModernPersianDatePicker;assembly=ModernPersianDatePicker">
 
+    <Styles.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceInclude Source="avares://ModernPersianDatePicker/Themes/PersianDatePickerColors.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Brush resources derived from theme color resources -->
+            <SolidColorBrush x:Key="PersianDatePickerBackgroundBrush" Color="{DynamicResource PersianDatePickerBackgroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="{DynamicResource PersianDatePickerBorderColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="{DynamicResource PersianDatePickerTextForegroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="{DynamicResource PersianDatePickerWatermarkForegroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="{DynamicResource PersianDatePickerAccentColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerAccentHoverBrush" Color="{DynamicResource PersianDatePickerAccentHoverColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerFocusBorderBrush" Color="{DynamicResource PersianDatePickerFocusBorderColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBackgroundBrush" Color="{DynamicResource PersianDatePickerPopupBackgroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerPopupBorderBrush" Color="{DynamicResource PersianDatePickerPopupBorderColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerPopupShadowBrush" Color="{DynamicResource PersianDatePickerPopupShadowColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="{DynamicResource PersianDatePickerHeaderForegroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="{DynamicResource PersianDatePickerDayForegroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="{DynamicResource PersianDatePickerDayHoverBackgroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="{DynamicResource PersianDatePickerSelectedForegroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="{DynamicResource PersianDatePickerMonthYearHoverBackgroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerDayFocusBackgroundBrush" Color="{DynamicResource PersianDatePickerDayFocusBackgroundColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBorderBrush" Color="{DynamicResource PersianDatePickerSelectedFocusBorderColor}"/>
+            <SolidColorBrush x:Key="PersianDatePickerSelectedFocusBackgroundBrush" Color="{DynamicResource PersianDatePickerSelectedFocusBackgroundColor}"/>
+        </ResourceDictionary>
+    </Styles.Resources>
+
     <!-- ModernPersianDatePicker Style -->
     <Style Selector="local|ModernPersianDatePicker">
-        <Setter Property="Background" Value="White"/>
-        <Setter Property="BorderBrush" Value="#FFABADB3"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
         <Setter Property="MinHeight" Value="30"/>
@@ -33,7 +61,7 @@
                                    Text="Select date..."
                                    VerticalAlignment="Center"
                                    Margin="8,0"
-                                   Foreground="#FF6D6D6D"
+                                   Foreground="{DynamicResource PersianDatePickerTextForegroundBrush}"
                                    FlowDirection="RightToLeft"/>
                         
                         <!-- Editable TextBox -->
@@ -71,11 +99,11 @@
                                Placement="Bottom"
                                IsOpen="False"
                                HorizontalOffset="-1">
-                            <Border Background="White"
-                                    BorderBrush="#FFABADB3"
+                            <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
+                                    BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 #40000000"
+                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
                                     MinWidth="280">
                                 <local:CalendarView x:Name="PART_CalendarView"
                                                     FlowDirection="RightToLeft"
@@ -90,30 +118,30 @@
     
     <!-- Hover state -->
     <Style Selector="local|ModernPersianDatePicker:pointerover">
-        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
     </Style>
     
     <!-- Focused state -->
     <Style Selector="local|ModernPersianDatePicker:focus">
-        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
     
     <!-- Focused with popup open -->
     <Style Selector="local|ModernPersianDatePicker:focus-within">
-        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
     
     <!-- Watermark style -->
     <Style Selector="local|ModernPersianDatePicker TextBlock.watermark">
-        <Setter Property="Foreground" Value="#FF999999"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerWatermarkForegroundBrush}"/>
         <Setter Property="FontStyle" Value="Italic"/>
     </Style>
 
     <!-- CalendarView Style -->
     <Style Selector="local|CalendarView">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerPopupBackgroundBrush}"/>
         <Setter Property="MinWidth" Value="280"/>
         <Setter Property="MinHeight" Value="300"/>
         <Setter Property="Padding" Value="8"/>
@@ -205,11 +233,11 @@
                                Placement="Bottom"
                                IsOpen="False"
                                VerticalOffset="4">
-                            <Border Background="White"
-                                    BorderBrush="#FFABADB3"
+                            <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
+                                    BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 #40000000"
+                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
                                     Padding="8">
                                 <Grid x:Name="PART_MonthGrid"
                                       ColumnDefinitions="*,*,*"
@@ -222,11 +250,11 @@
                                Placement="Bottom"
                                IsOpen="False"
                                VerticalOffset="4">
-                            <Border Background="White"
-                                    BorderBrush="#FFABADB3"
+                            <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
+                                    BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
                                     BorderThickness="1"
                                     CornerRadius="4"
-                                    BoxShadow="0 4 8 0 #40000000"
+                                    BoxShadow="0 4 8 0 {DynamicResource PersianDatePickerPopupShadowBrush}"
                                     Padding="8">
                                 <Grid x:Name="PART_YearGrid"
                                       ColumnDefinitions="*,*,*"
@@ -251,7 +279,7 @@
     <Style Selector="local|CalendarView TextBlock.day-header">
         <Setter Property="FontSize" Value="12"/>
         <Setter Property="FontWeight" Value="Bold"/>
-        <Setter Property="Foreground" Value="#FF666666"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHeaderForegroundBrush}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="Padding" Value="4"/>
         <Setter Property="Margin" Value="0,0,0,4"/>
@@ -265,7 +293,7 @@
         <Setter Property="Margin" Value="2"/>
         <Setter Property="CornerRadius" Value="18"/>
         <Setter Property="Background" Value="Transparent"/>
-        <Setter Property="Foreground" Value="#FF333333"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="VerticalAlignment" Value="Center"/>
         <Setter Property="Focusable" Value="True"/>
@@ -273,24 +301,24 @@
 
     <!-- Day button hover style -->
     <Style Selector="local|CalendarView Button.day-button:pointerover">
-        <Setter Property="Background" Value="#FFE0E0E0"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"/>
     </Style>
 
     <!-- Selected day button style -->
     <Style Selector="local|CalendarView Button.day-button.selected">
-        <Setter Property="Background" Value="#FF2196F3"/>
-        <Setter Property="Foreground" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
         <Setter Property="FontWeight" Value="Bold"/>
     </Style>
 
     <!-- Selected day button hover style -->
     <Style Selector="local|CalendarView Button.day-button.selected:pointerover">
-        <Setter Property="Background" Value="#FF1976D2"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentHoverBrush}"/>
     </Style>
 
     <!-- Today day button style -->
     <Style Selector="local|CalendarView Button.day-button.today">
-        <Setter Property="BorderBrush" Value="#FF2196F3"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
 
@@ -303,22 +331,22 @@
     </Style>
     
     <Style Selector="local|CalendarView Button.month-year-button:pointerover">
-        <Setter Property="Background" Value="#FFE0E0E0"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
         <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
     <!-- Day button focus style -->
     <Style Selector="local|CalendarView Button.day-button:focus">
-        <Setter Property="BorderBrush" Value="#FF5593EB"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
-        <Setter Property="Background" Value="#FFE0E0E0"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerDayFocusBackgroundBrush}"/>
     </Style>
 
     <!-- Focused and selected day button style -->
     <Style Selector="local|CalendarView Button.day-button.selected:focus">
-        <Setter Property="BorderBrush" Value="White"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerSelectedFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="3"/>
-        <Setter Property="Background" Value="#FF1976D2"/>
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerSelectedFocusBackgroundBrush}"/>
     </Style>
 
 </Styles>
