@@ -18,6 +18,7 @@ public partial class MainWindow : Window
         CustomDatePicker.SelectedDateChanged += OnCustomDateChanged;
         GreenAccentDatePicker.SelectedDateChanged += OnAccentDateChanged;
         PurpleAccentDatePicker.SelectedDateChanged += OnAccentDateChanged;
+        EditableDatePicker.SelectedDateChanged += OnEditableDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -92,6 +93,28 @@ public partial class MainWindow : Window
         {
             GregorianDateText.Text = "Gregorian: (no date selected)";
         }
+    }
+
+    private void OnEditableDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        if (e.NewDate.HasValue)
+        {
+            EditableDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")}";
+        }
+        else
+        {
+            EditableDateText.Text = "Selected: (none)";
+        }
+    }
+
+    private void OnInvalidActionChanged(object? sender, RoutedEventArgs e)
+    {
+        if (RbSetToNull.IsChecked == true)
+            EditableDatePicker.InvalidValueAction = InvalidValueAction.SetToNull;
+        else if (RbSetToToday.IsChecked == true)
+            EditableDatePicker.InvalidValueAction = InvalidValueAction.SetToToday;
+        else if (RbKeep.IsChecked == true)
+            EditableDatePicker.InvalidValueAction = InvalidValueAction.Keep;
     }
 
     private void OnThemeToggleClick(object? sender, RoutedEventArgs e)

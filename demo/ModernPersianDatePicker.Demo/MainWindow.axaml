@@ -7,7 +7,7 @@
         x:Class="ModernPersianDatePicker.Demo.MainWindow"
         Title="Modern Persian DatePicker Demo"
         Icon="app-icon.ico"
-        Width="600" Height="750"
+        Width="600" Height="850"
         WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
@@ -27,7 +27,7 @@
         </ResourceDictionary>
     </Window.Resources>
     
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,*,Auto" Margin="20">
         
         <!-- Theme toggle row -->
         <StackPanel Grid.Row="0"
@@ -179,8 +179,59 @@
             </StackPanel>
         </Border>
         
-        <!-- Information -->
+        <!-- Editable Date Input -->
         <Border Grid.Row="6"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Editable Date Input (IsEditable=True)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <TextBlock Text="You can type dates directly using /, -, or . separators (e.g. 1404/03/04)."
+                           FontSize="12"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"
+                           Margin="0,0,0,12"/>
+
+                <persian:ModernPersianDatePicker x:Name="EditableDatePicker"
+                                                 IsEditable="True"
+                                                 Watermark="Type a date..."
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+
+                <TextBlock x:Name="EditableDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+
+                <!-- Invalid Value Action Options -->
+                <TextBlock Text="On Invalid Input:"
+                           FontWeight="SemiBold"
+                           Margin="0,12,0,8"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <RadioButton x:Name="RbSetToNull"
+                                 GroupName="InvalidAction"
+                                 Content="Set to Null"
+                                 IsChecked="True"
+                                 Click="OnInvalidActionChanged"/>
+                    <RadioButton x:Name="RbSetToToday"
+                                 GroupName="InvalidAction"
+                                 Content="Set to Today"
+                                 Click="OnInvalidActionChanged"/>
+                    <RadioButton x:Name="RbKeep"
+                                 GroupName="InvalidAction"
+                                 Content="Keep"
+                                 Click="OnInvalidActionChanged"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Information -->
+        <Border Grid.Row="7"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"
@@ -200,6 +251,8 @@
                 <TextBlock Text="• Leap year calculation"
                            Margin="0,2"/>
                 <TextBlock Text="• Custom AccentBrush &amp; Light/Dark theme support"
+                           Margin="0,2"/>
+                <TextBlock Text="• Editable date input with manual typing &amp; validation"
                            Margin="0,2"/>
             </StackPanel>
         </Border>
