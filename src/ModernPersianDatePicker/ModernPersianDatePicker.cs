@@ -215,6 +215,8 @@ public class ModernPersianDatePicker : TemplatedControl
         // Detach previous event handlers safely
         if (_toggleButton != null)
             _toggleButton.Click -= OnToggleButton_Click;
+        if (_popup != null)
+            _popup.Closed -= OnPopup_Closed;
 
         if (_calendarView != null)
         {
@@ -233,6 +235,11 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_toggleButton != null)
         {
             _toggleButton.Click += OnToggleButton_Click;
+        }
+
+        if (_popup != null)
+        {
+            _popup.Closed += OnPopup_Closed;
         }
 
         // Add preview click handler to display text
@@ -710,8 +717,19 @@ public class ModernPersianDatePicker : TemplatedControl
             ClosePopup();
         else
             OpenPopup();
-            
+
         e.Handled = true;
+    }
+
+    private void OnPopup_Closed(object? sender, EventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        // Sync internal state when the popup is dismissed (e.g. by light dismiss).
+        _isPopupOpen = false;
+        if (_toggleButton != null)
+            _toggleButton.IsChecked = false;
     }
 
     private void OnCalendarView_DateSelected(object? sender, DateSelectedEventArgs e)

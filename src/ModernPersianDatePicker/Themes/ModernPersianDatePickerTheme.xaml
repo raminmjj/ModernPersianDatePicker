@@ -78,6 +78,7 @@
                                PlacementTarget="{TemplateBinding}"
                                Placement="Bottom"
                                IsOpen="False"
+                               IsLightDismissEnabled="True"
                                HorizontalOffset="-1">
                             <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
@@ -212,6 +213,7 @@
                         <Popup x:Name="PART_MonthPopup"
                                Placement="Bottom"
                                IsOpen="False"
+                               IsLightDismissEnabled="True"
                                VerticalOffset="4">
                             <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
@@ -229,6 +231,7 @@
                         <Popup x:Name="PART_YearPopup"
                                Placement="Bottom"
                                IsOpen="False"
+                               IsLightDismissEnabled="True"
                                VerticalOffset="4">
                             <Border Background="{DynamicResource PersianDatePickerPopupBackgroundBrush}"
                                     BorderBrush="{DynamicResource PersianDatePickerPopupBorderBrush}"
