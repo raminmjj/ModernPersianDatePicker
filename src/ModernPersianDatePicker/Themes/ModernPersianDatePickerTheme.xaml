@@ -369,15 +369,15 @@
                                       Width="24" Height="28"
                                       Focusable="False"
                                       FontSize="14"/>
-                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
-                                CornerRadius="2" Padding="4,2">
-                            <TextBlock x:Name="PART_HourText"
-                                       Text="00"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       MinWidth="28"
-                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                        </Border>
+                        <TextBox x:Name="PART_HourBox"
+                                 Text="00"
+                                 FontSize="14" FontWeight="SemiBold"
+                                 HorizontalContentAlignment="Center"
+                                 Width="36" Height="28"
+                                 Padding="4,2"
+                                 CornerRadius="2"
+                                 Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                 Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
                         <RepeatButton x:Name="PART_HourUp"
                                       Content="+"
                                       Width="24" Height="28"
@@ -398,15 +398,15 @@
                                       Width="24" Height="28"
                                       Focusable="False"
                                       FontSize="14"/>
-                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
-                                CornerRadius="2" Padding="4,2">
-                            <TextBlock x:Name="PART_MinuteText"
-                                       Text="00"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       MinWidth="28"
-                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                        </Border>
+                        <TextBox x:Name="PART_MinuteBox"
+                                 Text="00"
+                                 FontSize="14" FontWeight="SemiBold"
+                                 HorizontalContentAlignment="Center"
+                                 Width="36" Height="28"
+                                 Padding="4,2"
+                                 CornerRadius="2"
+                                 Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                 Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
                         <RepeatButton x:Name="PART_MinuteUp"
                                       Content="+"
                                       Width="24" Height="28"
@@ -427,15 +427,15 @@
                                       Width="24" Height="28"
                                       Focusable="False"
                                       FontSize="14"/>
-                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
-                                CornerRadius="2" Padding="4,2">
-                            <TextBlock x:Name="PART_SecondText"
-                                       Text="00"
-                                       FontSize="14" FontWeight="SemiBold"
-                                       HorizontalAlignment="Center"
-                                       MinWidth="28"
-                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                        </Border>
+                        <TextBox x:Name="PART_SecondBox"
+                                 Text="00"
+                                 FontSize="14" FontWeight="SemiBold"
+                                 HorizontalContentAlignment="Center"
+                                 Width="36" Height="28"
+                                 Padding="4,2"
+                                 CornerRadius="2"
+                                 Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                 Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
                         <RepeatButton x:Name="PART_SecondUp"
                                       Content="+"
                                       Width="24" Height="28"

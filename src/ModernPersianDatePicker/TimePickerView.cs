@@ -2,12 +2,13 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 
 namespace ModernPersianDatePicker;
 
 /// <summary>
-/// Time picker view with +/- spinners for Hour, Minute, and Second.
+/// Time picker view with +/- buttons and editable TextBoxes for Hour, Minute, and Second.
 /// Displayed inside the DatePicker popup when <see cref="ModernPersianDatePicker.IsTimePickerEnabled"/> is true.
 /// </summary>
 public class TimePickerView : TemplatedControl
@@ -26,21 +27,22 @@ public class TimePickerView : TemplatedControl
 
     public event EventHandler? TimeChanged;
 
-    private TextBlock? _hourText;
-    private TextBlock? _minuteText;
-    private TextBlock? _secondText;
+    private TextBox? _hourBox;
+    private TextBox? _minuteBox;
+    private TextBox? _secondBox;
     private RepeatButton? _hourUp;
     private RepeatButton? _hourDown;
     private RepeatButton? _minuteUp;
     private RepeatButton? _minuteDown;
     private RepeatButton? _secondUp;
     private RepeatButton? _secondDown;
+    private bool _isUpdatingText;
 
     static TimePickerView()
     {
-        HourProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
-        MinuteProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
-        SecondProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
+        HourProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
+        MinuteProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
+        SecondProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
     }
 
     public int Hour
@@ -63,12 +65,12 @@ public class TimePickerView : TemplatedControl
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        DetachButtons();
+        DetachAll();
         base.OnApplyTemplate(e);
 
-        _hourText = e.NameScope.Find<TextBlock>("PART_HourText");
-        _minuteText = e.NameScope.Find<TextBlock>("PART_MinuteText");
-        _secondText = e.NameScope.Find<TextBlock>("PART_SecondText");
+        _hourBox = e.NameScope.Find<TextBox>("PART_HourBox");
+        _minuteBox = e.NameScope.Find<TextBox>("PART_MinuteBox");
+        _secondBox = e.NameScope.Find<TextBox>("PART_SecondBox");
 
         _hourUp = e.NameScope.Find<RepeatButton>("PART_HourUp");
         _hourDown = e.NameScope.Find<RepeatButton>("PART_HourDown");
@@ -77,12 +79,15 @@ public class TimePickerView : TemplatedControl
         _secondUp = e.NameScope.Find<RepeatButton>("PART_SecondUp");
         _secondDown = e.NameScope.Find<RepeatButton>("PART_SecondDown");
 
-        AttachButtons();
-        UpdateDisplay();
+        AttachAll();
+        SyncFromValue();
     }
 
-    private void DetachButtons()
+    private void DetachAll()
     {
+        if (_hourBox != null) _hourBox.LostFocus -= OnBoxLostFocus;
+        if (_minuteBox != null) _minuteBox.LostFocus -= OnBoxLostFocus;
+        if (_secondBox != null) _secondBox.LostFocus -= OnBoxLostFocus;
         if (_hourUp != null) _hourUp.Click -= OnHourUp_Click;
         if (_hourDown != null) _hourDown.Click -= OnHourDown_Click;
         if (_minuteUp != null) _minuteUp.Click -= OnMinuteUp_Click;
@@ -91,8 +96,11 @@ public class TimePickerView : TemplatedControl
         if (_secondDown != null) _secondDown.Click -= OnSecondDown_Click;
     }
 
-    private void AttachButtons()
+    private void AttachAll()
     {
+        if (_hourBox != null) _hourBox.LostFocus += OnBoxLostFocus;
+        if (_minuteBox != null) _minuteBox.LostFocus += OnBoxLostFocus;
+        if (_secondBox != null) _secondBox.LostFocus += OnBoxLostFocus;
         if (_hourUp != null) _hourUp.Click += OnHourUp_Click;
         if (_hourDown != null) _hourDown.Click += OnHourDown_Click;
         if (_minuteUp != null) _minuteUp.Click += OnMinuteUp_Click;
@@ -108,11 +116,32 @@ public class TimePickerView : TemplatedControl
     private void OnSecondUp_Click(object? sender, RoutedEventArgs e) => Second = (Second + 1) % 60;
     private void OnSecondDown_Click(object? sender, RoutedEventArgs e) => Second = (Second + 59) % 60;
 
-    private void UpdateDisplay()
+    private void OnBoxLostFocus(object? sender, RoutedEventArgs e)
     {
-        if (_hourText != null) _hourText.Text = Hour.ToString("D2");
-        if (_minuteText != null) _minuteText.Text = Minute.ToString("D2");
-        if (_secondText != null) _secondText.Text = Second.ToString("D2");
+        if (_isUpdatingText) return;
+
+        if (sender == _hourBox && _hourBox != null)
+            Hour = ClampParsed(_hourBox.Text, 0, 23);
+        else if (sender == _minuteBox && _minuteBox != null)
+            Minute = ClampParsed(_minuteBox.Text, 0, 59);
+        else if (sender == _secondBox && _secondBox != null)
+            Second = ClampParsed(_secondBox.Text, 0, 59);
+    }
+
+    private static int ClampParsed(string? text, int min, int max)
+    {
+        if (int.TryParse(text, out int val))
+            return Math.Clamp(val, min, max);
+        return min;
+    }
+
+    private void SyncFromValue()
+    {
+        _isUpdatingText = true;
+        if (_hourBox != null) _hourBox.Text = Hour.ToString("D2");
+        if (_minuteBox != null) _minuteBox.Text = Minute.ToString("D2");
+        if (_secondBox != null) _secondBox.Text = Second.ToString("D2");
+        _isUpdatingText = false;
 
         TimeChanged?.Invoke(this, EventArgs.Empty);
     }
