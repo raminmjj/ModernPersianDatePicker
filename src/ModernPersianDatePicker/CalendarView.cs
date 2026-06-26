@@ -534,6 +534,35 @@ public class CalendarView : TemplatedControl
         }
     }
 
+    protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
+    {
+        base.OnPointerWheelChanged(e);
+        if (e.Handled) return;
+
+        int delta = e.Delta.Y > 0 ? -1 : 1;
+        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+        int newDay = _focusedDay + delta;
+
+        if (newDay >= 1 && newDay <= daysInMonth)
+        {
+            _focusedDay = newDay;
+        }
+        else if (newDay > daysInMonth)
+        {
+            NavigateToMonth(1);
+            _focusedDay = 1;
+        }
+        else
+        {
+            NavigateToMonth(-1);
+            daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+            _focusedDay = daysInMonth;
+        }
+
+        UpdateFocusedDay();
+        e.Handled = true;
+    }
+
     private void NavigateToMonth(int deltaMonths)
     {
         int newMonth = DisplayMonth + deltaMonths;
