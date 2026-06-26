@@ -131,21 +131,16 @@ public partial class MainWindow : Window
             EditableDatePicker.InvalidValueAction = InvalidValueAction.Keep;
     }
 
-    private void OnThemeToggleClick(object? sender, RoutedEventArgs e)
-    {
-        bool isDark = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark;
-        Application.Current!.RequestedThemeVariant = isDark ? ThemeVariant.Light : ThemeVariant.Dark;
-        ThemeToggle.Content = isDark ? "🌙 Dark" : "☀️ Light";
-    }
-
     private void OnThemeModeChanged(object? sender, RoutedEventArgs e)
     {
+        if (Application.Current == null) return;
+
         if (RbThemeSystem.IsChecked == true)
-            ThemedDatePicker.Theme = ThemeMode.System;
+            Application.Current.RequestedThemeVariant = ThemeVariant.Default;
         else if (RbThemeLight.IsChecked == true)
-            ThemedDatePicker.Theme = ThemeMode.Light;
+            Application.Current.RequestedThemeVariant = ThemeVariant.Light;
         else if (RbThemeDark.IsChecked == true)
-            ThemedDatePicker.Theme = ThemeMode.Dark;
+            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
     }
 
     private void OnThemedDateChanged(object? sender, SelectedDateChangedEventArgs e)
