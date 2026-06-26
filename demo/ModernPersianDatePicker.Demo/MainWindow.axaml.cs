@@ -25,6 +25,7 @@ public partial class MainWindow : Window
         CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
         TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
         RangeDatePicker.DateRangeSelected += OnRangeDateSelected;
+        LocalizedDatePicker.SelectedDateChanged += OnLocalizedDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -200,5 +201,24 @@ public partial class MainWindow : Window
         {
             RangeDateText.Text = "Selected: (none)";
         }
+    }
+
+    private void OnLanguageChanged(object? sender, RoutedEventArgs e)
+    {
+        if (RbLangFarsi.IsChecked == true)
+            LocalizedDatePicker.Language = CalendarLanguage.Farsi;
+        else if (RbLangEnglish.IsChecked == true)
+            LocalizedDatePicker.Language = CalendarLanguage.English;
+        else if (RbLangArabic.IsChecked == true)
+            LocalizedDatePicker.Language = CalendarLanguage.Arabic;
+        else if (RbLangKurdish.IsChecked == true)
+            LocalizedDatePicker.Language = CalendarLanguage.Kurdish;
+    }
+
+    private void OnLocalizedDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        LocalizedDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            : "Selected: (none)";
     }
 }

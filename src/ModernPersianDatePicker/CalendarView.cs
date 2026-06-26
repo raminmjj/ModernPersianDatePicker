@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
 
@@ -26,8 +27,8 @@ public class CalendarView : TemplatedControl
     public static readonly StyledProperty<PersianDate?> SelectedDateProperty =
         AvaloniaProperty.Register<CalendarView, PersianDate?>(nameof(SelectedDate));
 
-    public static readonly StyledProperty<bool> UseEnglishNamesProperty =
-        AvaloniaProperty.Register<CalendarView, bool>(nameof(UseEnglishNames));
+    public static readonly StyledProperty<ICalendarLocalization?> LocalizationProviderProperty =
+        AvaloniaProperty.Register<CalendarView, ICalendarLocalization?>(nameof(LocalizationProvider));
 
     /// <summary>
     /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
@@ -89,7 +90,7 @@ public class CalendarView : TemplatedControl
     {
         DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
-        UseEnglishNamesProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        LocalizationProviderProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         SelectedDateProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnSelectedDateChanged(e));
         WeeklyHolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
         HolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
@@ -112,7 +113,7 @@ public class CalendarView : TemplatedControl
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
     {
         // Only update calendar if the property actually changed
-        if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == UseEnglishNamesProperty)
+        if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == LocalizationProviderProperty)
         {
             UpdateCalendar();
         }
@@ -200,10 +201,10 @@ public class CalendarView : TemplatedControl
         set => SetValue(SelectedDateProperty, value);
     }
 
-    public bool UseEnglishNames
+    public ICalendarLocalization? LocalizationProvider
     {
-        get => GetValue(UseEnglishNamesProperty);
-        set => SetValue(UseEnglishNamesProperty, value);
+        get => GetValue(LocalizationProviderProperty);
+        set => SetValue(LocalizationProviderProperty, value);
     }
 
     /// <summary>
@@ -249,6 +250,11 @@ public class CalendarView : TemplatedControl
     {
         get => GetValue(RangeEndProperty);
         set => SetValue(RangeEndProperty, value);
+    }
+
+    private ICalendarLocalization GetLocalization()
+    {
+        return LocalizationProvider ?? new Localizations.FarsiLocalization();
     }
 
     /// <summary>
@@ -339,7 +345,7 @@ public class CalendarView : TemplatedControl
         {
             var button = new Button
             {
-                Content = PersianCalendarHelper.GetMonthName(month, UseEnglishNames),
+                Content = GetLocalization().MonthNames[month],
                 [Grid.RowProperty] = row,
                 [Grid.ColumnProperty] = col,
                 Margin = new Thickness(2),
@@ -709,7 +715,7 @@ public class CalendarView : TemplatedControl
         {
             if (_monthText != null)
             {
-                _monthText.Text = PersianCalendarHelper.GetMonthName(DisplayMonth, UseEnglishNames);
+                _monthText.Text = GetLocalization().MonthNames[DisplayMonth];
             }
             
             if (_yearText != null)
@@ -720,7 +726,7 @@ public class CalendarView : TemplatedControl
             if (_todayText != null)
             {
                 var today = PersianCalendarHelper.Today();
-                _todayText.Text = UseEnglishNames ? "Today" : "امروز";
+                _todayText.Text = GetLocalization().TodayLabel;
             }
 
             if (_daysGrid != null)
@@ -738,7 +744,7 @@ public class CalendarView : TemplatedControl
                 // Add day names header
                 for (int i = 0; i < 7; i++)
                 {
-                    var dayName = PersianCalendarHelper.GetDayName(i, UseEnglishNames, shortFormat: true);
+                    var dayName = GetLocalization().ShortDayNames[i];
                     var textBlock = new TextBlock
                     {
                         Text = dayName,

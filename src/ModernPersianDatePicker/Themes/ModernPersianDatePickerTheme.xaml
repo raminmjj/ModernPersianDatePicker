@@ -88,8 +88,7 @@
                                     MinWidth="280">
                                 <StackPanel>
                                     <local:CalendarView x:Name="PART_CalendarView"
-                                                        FlowDirection="RightToLeft"
-                                                        UseEnglishNames="{TemplateBinding UseEnglishNames}"/>
+                                                        FlowDirection="RightToLeft"/>
                                     <local:TimePickerView x:Name="PART_TimePickerView"
                                                            IsVisible="False"
                                                            Margin="0,8,0,0"/>

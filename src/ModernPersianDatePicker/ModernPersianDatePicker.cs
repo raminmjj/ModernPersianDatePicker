@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
+using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
 
@@ -24,8 +25,11 @@ public class ModernPersianDatePicker : TemplatedControl
     public static readonly StyledProperty<string> DisplayFormatProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, string>(nameof(DisplayFormat), "long");
 
-    public static readonly StyledProperty<bool> UseEnglishNamesProperty =
-        AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(UseEnglishNames));
+    public static readonly StyledProperty<CalendarLanguage> LanguageProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, CalendarLanguage>(nameof(Language));
+
+    public static readonly StyledProperty<ICalendarLocalization?> LocalizationProviderProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, ICalendarLocalization?>(nameof(LocalizationProvider));
 
     public static readonly StyledProperty<bool> IsEditableProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(IsEditable));
@@ -143,7 +147,8 @@ public class ModernPersianDatePicker : TemplatedControl
     static ModernPersianDatePicker()
     {
         SelectedDateProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateChanged(e));
-        UseEnglishNamesProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLanguageChanged(e));
+        LanguageProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLocalizationChanged(e));
+        LocalizationProviderProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLocalizationChanged(e));
         IsEditableProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnIsEditableChanged(e));
         AccentBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnAccentBrushChanged(e));
         ThemeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnThemeChanged(e));
@@ -179,10 +184,16 @@ public class ModernPersianDatePicker : TemplatedControl
         set => SetValue(DisplayFormatProperty, value);
     }
 
-    public bool UseEnglishNames
+    public CalendarLanguage Language
     {
-        get => GetValue(UseEnglishNamesProperty);
-        set => SetValue(UseEnglishNamesProperty, value);
+        get => GetValue(LanguageProperty);
+        set => SetValue(LanguageProperty, value);
+    }
+
+    public ICalendarLocalization? LocalizationProvider
+    {
+        get => GetValue(LocalizationProviderProperty);
+        set => SetValue(LocalizationProviderProperty, value);
     }
 
     public bool IsEditable
@@ -379,7 +390,7 @@ public class ModernPersianDatePicker : TemplatedControl
 
         if (_calendarView != null)
         {
-            _calendarView.UseEnglishNames = UseEnglishNames;
+            _calendarView.LocalizationProvider = GetLocalization();
             _calendarView.HolidayBrush = HolidayBrush;
             _calendarView.WeeklyHolidays = WeeklyHolidays;
             _calendarView.Holidays = Holidays;
@@ -645,15 +656,26 @@ public class ModernPersianDatePicker : TemplatedControl
         SelectedDateChanged?.Invoke(this, new SelectedDateChangedEventArgs(oldValue, newValue));
     }
 
-    private void OnLanguageChanged(AvaloniaPropertyChangedEventArgs e)
+    private void OnLocalizationChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_isDisposed)
             return;
 
         if (_calendarView != null)
-            _calendarView.UseEnglishNames = UseEnglishNames;
+            _calendarView.LocalizationProvider = GetLocalization();
 
         UpdateDisplayText();
+    }
+
+    private ICalendarLocalization GetLocalization()
+    {
+        return LocalizationProvider ?? Language switch
+        {
+            CalendarLanguage.English => new Localizations.EnglishLocalization(),
+            CalendarLanguage.Arabic => new Localizations.ArabicLocalization(),
+            CalendarLanguage.Kurdish => new Localizations.KurdishLocalization(),
+            _ => new Localizations.FarsiLocalization()
+        };
     }
 
     private void OnIsEditableChanged(AvaloniaPropertyChangedEventArgs e)
@@ -1068,7 +1090,7 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else if (SelectedDate.HasValue)
             {
-                displayText = SelectedDate.Value.ToString(DisplayFormat);
+                displayText = SelectedDate.Value.ToString(DisplayFormat, GetLocalization());
                 if (IsTimePickerEnabled)
                     displayText += $" {Hour:D2}:{Minute:D2}:{Second:D2}";
             }

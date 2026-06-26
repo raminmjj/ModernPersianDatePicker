@@ -201,6 +201,17 @@ public readonly struct PersianDate : IEquatable<PersianDate>, IComparable<Persia
         };
     }
 
+    public string ToString(string format, ICalendarLocalization localization)
+    {
+        return format.ToLower() switch
+        {
+            "long" => $"{localization.DayNames[DayOfWeek]} {Day} {localization.MonthNames[Month]} {Year}",
+            "short" => $"{Year}/{Month:D2}/{Day:D2}",
+            "month" => $"{localization.MonthNames[Month]} {Year}",
+            _ => ToString()
+        };
+    }
+
     public bool Equals(PersianDate other)
     {
         return Year == other.Year && Month == other.Month && Day == other.Day;
