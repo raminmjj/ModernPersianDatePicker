@@ -7,7 +7,7 @@ using Avalonia.Interactivity;
 namespace ModernPersianDatePicker;
 
 /// <summary>
-/// Time picker view with Hour/Minute/Second spinners for selecting a time component.
+/// Time picker view with +/- spinners for Hour, Minute, and Second.
 /// Displayed inside the DatePicker popup when <see cref="ModernPersianDatePicker.IsTimePickerEnabled"/> is true.
 /// </summary>
 public class TimePickerView : TemplatedControl
@@ -26,15 +26,21 @@ public class TimePickerView : TemplatedControl
 
     public event EventHandler? TimeChanged;
 
-    private NumericUpDown? _hourSpinner;
-    private NumericUpDown? _minuteSpinner;
-    private NumericUpDown? _secondSpinner;
+    private TextBlock? _hourText;
+    private TextBlock? _minuteText;
+    private TextBlock? _secondText;
+    private RepeatButton? _hourUp;
+    private RepeatButton? _hourDown;
+    private RepeatButton? _minuteUp;
+    private RepeatButton? _minuteDown;
+    private RepeatButton? _secondUp;
+    private RepeatButton? _secondDown;
 
     static TimePickerView()
     {
-        HourProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.OnTimeComponentChanged());
-        MinuteProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.OnTimeComponentChanged());
-        SecondProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.OnTimeComponentChanged());
+        HourProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
+        MinuteProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
+        SecondProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.UpdateDisplay());
     }
 
     public int Hour
@@ -57,52 +63,56 @@ public class TimePickerView : TemplatedControl
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
-        if (_hourSpinner != null)
-            _hourSpinner.ValueChanged -= OnSpinner_ValueChanged;
-        if (_minuteSpinner != null)
-            _minuteSpinner.ValueChanged -= OnSpinner_ValueChanged;
-        if (_secondSpinner != null)
-            _secondSpinner.ValueChanged -= OnSpinner_ValueChanged;
+        DetachButtons();
+        base.OnApplyTemplate(e);
 
-        _hourSpinner = e.NameScope.Find<NumericUpDown>("PART_HourSpinner");
-        _minuteSpinner = e.NameScope.Find<NumericUpDown>("PART_MinuteSpinner");
-        _secondSpinner = e.NameScope.Find<NumericUpDown>("PART_SecondSpinner");
+        _hourText = e.NameScope.Find<TextBlock>("PART_HourText");
+        _minuteText = e.NameScope.Find<TextBlock>("PART_MinuteText");
+        _secondText = e.NameScope.Find<TextBlock>("PART_SecondText");
 
-        if (_hourSpinner != null)
-        {
-            _hourSpinner.Value = Hour;
-            _hourSpinner.ValueChanged += OnSpinner_ValueChanged;
-        }
-        if (_minuteSpinner != null)
-        {
-            _minuteSpinner.Value = Minute;
-            _minuteSpinner.ValueChanged += OnSpinner_ValueChanged;
-        }
-        if (_secondSpinner != null)
-        {
-            _secondSpinner.Value = Second;
-            _secondSpinner.ValueChanged += OnSpinner_ValueChanged;
-        }
+        _hourUp = e.NameScope.Find<RepeatButton>("PART_HourUp");
+        _hourDown = e.NameScope.Find<RepeatButton>("PART_HourDown");
+        _minuteUp = e.NameScope.Find<RepeatButton>("PART_MinuteUp");
+        _minuteDown = e.NameScope.Find<RepeatButton>("PART_MinuteDown");
+        _secondUp = e.NameScope.Find<RepeatButton>("PART_SecondUp");
+        _secondDown = e.NameScope.Find<RepeatButton>("PART_SecondDown");
+
+        AttachButtons();
+        UpdateDisplay();
     }
 
-    private void OnSpinner_ValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    private void DetachButtons()
     {
-        if (_hourSpinner != null && _hourSpinner.Value.HasValue)
-            Hour = (int)_hourSpinner.Value.Value;
-        if (_minuteSpinner != null && _minuteSpinner.Value.HasValue)
-            Minute = (int)_minuteSpinner.Value.Value;
-        if (_secondSpinner != null && _secondSpinner.Value.HasValue)
-            Second = (int)_secondSpinner.Value.Value;
+        if (_hourUp != null) _hourUp.Click -= OnHourUp_Click;
+        if (_hourDown != null) _hourDown.Click -= OnHourDown_Click;
+        if (_minuteUp != null) _minuteUp.Click -= OnMinuteUp_Click;
+        if (_minuteDown != null) _minuteDown.Click -= OnMinuteDown_Click;
+        if (_secondUp != null) _secondUp.Click -= OnSecondUp_Click;
+        if (_secondDown != null) _secondDown.Click -= OnSecondDown_Click;
     }
 
-    private void OnTimeComponentChanged()
+    private void AttachButtons()
     {
-        if (_hourSpinner != null)
-            _hourSpinner.Value = Hour;
-        if (_minuteSpinner != null)
-            _minuteSpinner.Value = Minute;
-        if (_secondSpinner != null)
-            _secondSpinner.Value = Second;
+        if (_hourUp != null) _hourUp.Click += OnHourUp_Click;
+        if (_hourDown != null) _hourDown.Click += OnHourDown_Click;
+        if (_minuteUp != null) _minuteUp.Click += OnMinuteUp_Click;
+        if (_minuteDown != null) _minuteDown.Click += OnMinuteDown_Click;
+        if (_secondUp != null) _secondUp.Click += OnSecondUp_Click;
+        if (_secondDown != null) _secondDown.Click += OnSecondDown_Click;
+    }
+
+    private void OnHourUp_Click(object? sender, RoutedEventArgs e) => Hour = (Hour + 1) % 24;
+    private void OnHourDown_Click(object? sender, RoutedEventArgs e) => Hour = (Hour + 23) % 24;
+    private void OnMinuteUp_Click(object? sender, RoutedEventArgs e) => Minute = (Minute + 1) % 60;
+    private void OnMinuteDown_Click(object? sender, RoutedEventArgs e) => Minute = (Minute + 59) % 60;
+    private void OnSecondUp_Click(object? sender, RoutedEventArgs e) => Second = (Second + 1) % 60;
+    private void OnSecondDown_Click(object? sender, RoutedEventArgs e) => Second = (Second + 59) % 60;
+
+    private void UpdateDisplay()
+    {
+        if (_hourText != null) _hourText.Text = Hour.ToString("D2");
+        if (_minuteText != null) _minuteText.Text = Minute.ToString("D2");
+        if (_secondText != null) _secondText.Text = Second.ToString("D2");
 
         TimeChanged?.Invoke(this, EventArgs.Empty);
     }

@@ -359,29 +359,89 @@
         <Setter Property="Template">
             <ControlTemplate>
                 <StackPanel Orientation="Horizontal"
-                            Spacing="4"
+                            Spacing="2"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <NumericUpDown x:Name="PART_HourSpinner"
-                                   Minimum="0" Maximum="23"
-                                   Width="60" FormatString="D2"
-                                   Increment="1"/>
+                    <!-- Hour -->
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <RepeatButton x:Name="PART_HourDown"
+                                      Content="-"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                CornerRadius="2" Padding="4,2">
+                            <TextBlock x:Name="PART_HourText"
+                                       Text="00"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       MinWidth="28"
+                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                        </Border>
+                        <RepeatButton x:Name="PART_HourUp"
+                                      Content="+"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                    </StackPanel>
+
                     <TextBlock Text=":"
                                VerticalAlignment="Center"
                                FontSize="16" FontWeight="Bold"
+                               Margin="2,0"
                                Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                    <NumericUpDown x:Name="PART_MinuteSpinner"
-                                   Minimum="0" Maximum="59"
-                                   Width="60" FormatString="D2"
-                                   Increment="1"/>
+
+                    <!-- Minute -->
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <RepeatButton x:Name="PART_MinuteDown"
+                                      Content="-"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                CornerRadius="2" Padding="4,2">
+                            <TextBlock x:Name="PART_MinuteText"
+                                       Text="00"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       MinWidth="28"
+                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                        </Border>
+                        <RepeatButton x:Name="PART_MinuteUp"
+                                      Content="+"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                    </StackPanel>
+
                     <TextBlock Text=":"
                                VerticalAlignment="Center"
                                FontSize="16" FontWeight="Bold"
+                               Margin="2,0"
                                Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                    <NumericUpDown x:Name="PART_SecondSpinner"
-                                   Minimum="0" Maximum="59"
-                                   Width="60" FormatString="D2"
-                                   Increment="1"/>
+
+                    <!-- Second -->
+                    <StackPanel Orientation="Horizontal" Spacing="0">
+                        <RepeatButton x:Name="PART_SecondDown"
+                                      Content="-"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                        <Border Background="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"
+                                CornerRadius="2" Padding="4,2">
+                            <TextBlock x:Name="PART_SecondText"
+                                       Text="00"
+                                       FontSize="14" FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       MinWidth="28"
+                                       Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                        </Border>
+                        <RepeatButton x:Name="PART_SecondUp"
+                                      Content="+"
+                                      Width="24" Height="28"
+                                      Focusable="False"
+                                      FontSize="14"/>
+                    </StackPanel>
                 </StackPanel>
             </ControlTemplate>
         </Setter>
