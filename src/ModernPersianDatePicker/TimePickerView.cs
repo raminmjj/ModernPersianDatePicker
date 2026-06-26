@@ -85,9 +85,9 @@ public class TimePickerView : TemplatedControl
 
     private void DetachAll()
     {
-        if (_hourBox != null) _hourBox.LostFocus -= OnBoxLostFocus;
-        if (_minuteBox != null) _minuteBox.LostFocus -= OnBoxLostFocus;
-        if (_secondBox != null) _secondBox.LostFocus -= OnBoxLostFocus;
+        if (_hourBox != null) { _hourBox.LostFocus -= OnBoxLostFocus; _hourBox.PointerWheelChanged -= OnBoxPointerWheel; }
+        if (_minuteBox != null) { _minuteBox.LostFocus -= OnBoxLostFocus; _minuteBox.PointerWheelChanged -= OnBoxPointerWheel; }
+        if (_secondBox != null) { _secondBox.LostFocus -= OnBoxLostFocus; _secondBox.PointerWheelChanged -= OnBoxPointerWheel; }
         if (_hourUp != null) _hourUp.Click -= OnHourUp_Click;
         if (_hourDown != null) _hourDown.Click -= OnHourDown_Click;
         if (_minuteUp != null) _minuteUp.Click -= OnMinuteUp_Click;
@@ -98,15 +98,29 @@ public class TimePickerView : TemplatedControl
 
     private void AttachAll()
     {
-        if (_hourBox != null) _hourBox.LostFocus += OnBoxLostFocus;
-        if (_minuteBox != null) _minuteBox.LostFocus += OnBoxLostFocus;
-        if (_secondBox != null) _secondBox.LostFocus += OnBoxLostFocus;
+        if (_hourBox != null) { _hourBox.LostFocus += OnBoxLostFocus; _hourBox.PointerWheelChanged += OnBoxPointerWheel; }
+        if (_minuteBox != null) { _minuteBox.LostFocus += OnBoxLostFocus; _minuteBox.PointerWheelChanged += OnBoxPointerWheel; }
+        if (_secondBox != null) { _secondBox.LostFocus += OnBoxLostFocus; _secondBox.PointerWheelChanged += OnBoxPointerWheel; }
         if (_hourUp != null) _hourUp.Click += OnHourUp_Click;
         if (_hourDown != null) _hourDown.Click += OnHourDown_Click;
         if (_minuteUp != null) _minuteUp.Click += OnMinuteUp_Click;
         if (_minuteDown != null) _minuteDown.Click += OnMinuteDown_Click;
         if (_secondUp != null) _secondUp.Click += OnSecondUp_Click;
         if (_secondDown != null) _secondDown.Click += OnSecondDown_Click;
+    }
+
+    private void OnBoxPointerWheel(object? sender, PointerWheelEventArgs e)
+    {
+        int delta = e.Delta.Y > 0 ? 1 : -1;
+
+        if (sender == _hourBox)
+            Hour = (Hour + delta % 24 + 24) % 24;
+        else if (sender == _minuteBox)
+            Minute = (Minute + delta % 60 + 60) % 60;
+        else if (sender == _secondBox)
+            Second = (Second + delta % 60 + 60) % 60;
+
+        e.Handled = true;
     }
 
     private void OnHourUp_Click(object? sender, RoutedEventArgs e) => Hour = (Hour + 1) % 24;
