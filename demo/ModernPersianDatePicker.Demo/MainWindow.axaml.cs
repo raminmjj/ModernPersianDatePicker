@@ -24,6 +24,7 @@ public partial class MainWindow : Window
         SpecificHolidayDatePicker.SelectedDateChanged += OnSpecificHolidayDateChanged;
         CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
         TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
+        RangeDatePicker.DateRangeSelected += OnRangeDateSelected;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -182,6 +183,22 @@ public partial class MainWindow : Window
         else
         {
             TimePickerDateText.Text = "Selected: (none)";
+        }
+    }
+
+    private void OnRangeDateSelected(object? sender, DateRangeSelectedEventArgs e)
+    {
+        if (e.RangeStart.HasValue && e.RangeEnd.HasValue)
+        {
+            RangeDateText.Text = $"Range: {e.RangeStart.Value.ToString("short")} ~ {e.RangeEnd.Value.ToString("short")}";
+        }
+        else if (e.RangeStart.HasValue)
+        {
+            RangeDateText.Text = $"Start: {e.RangeStart.Value.ToString("short")} (click end date)";
+        }
+        else
+        {
+            RangeDateText.Text = "Selected: (none)";
         }
     }
 }

@@ -50,8 +50,18 @@ public class CalendarView : TemplatedControl
         AvaloniaProperty.Register<CalendarView, IReadOnlyList<PersianDate>>(nameof(Holidays),
             Array.Empty<PersianDate>());
 
+    public static readonly StyledProperty<bool> IsRangeModeProperty =
+        AvaloniaProperty.Register<CalendarView, bool>(nameof(IsRangeMode));
+
+    public static readonly StyledProperty<PersianDate?> RangeStartProperty =
+        AvaloniaProperty.Register<CalendarView, PersianDate?>(nameof(RangeStart));
+
+    public static readonly StyledProperty<PersianDate?> RangeEndProperty =
+        AvaloniaProperty.Register<CalendarView, PersianDate?>(nameof(RangeEnd));
+
     // Events
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
+    public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
     public event EventHandler<TodayClickedEventArgs>? TodayClicked;
 
     // Private fields
@@ -69,6 +79,7 @@ public class CalendarView : TemplatedControl
     private Popup? _monthPopup;
     private Popup? _yearPopup;
     private bool _isUpdatingCalendar;
+    private bool _isSelectingEnd;
 
     // Derived caches for holiday checks (rebuilt when the source properties change)
     private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
@@ -83,6 +94,8 @@ public class CalendarView : TemplatedControl
         WeeklyHolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
         HolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
         HolidayBrushProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidayBrushChanged(e));
+        RangeStartProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
+        RangeEndProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
     }
 
     public CalendarView()
@@ -218,6 +231,24 @@ public class CalendarView : TemplatedControl
     {
         get => GetValue(HolidaysProperty);
         set => SetValue(HolidaysProperty, value);
+    }
+
+    public bool IsRangeMode
+    {
+        get => GetValue(IsRangeModeProperty);
+        set => SetValue(IsRangeModeProperty, value);
+    }
+
+    public PersianDate? RangeStart
+    {
+        get => GetValue(RangeStartProperty);
+        set => SetValue(RangeStartProperty, value);
+    }
+
+    public PersianDate? RangeEnd
+    {
+        get => GetValue(RangeEndProperty);
+        set => SetValue(RangeEndProperty, value);
     }
 
     /// <summary>
@@ -770,6 +801,20 @@ public class CalendarView : TemplatedControl
                         button.Classes.Add("holiday");
                     }
 
+                    // Apply range classes
+                    if (IsRangeMode)
+                    {
+                        var buttonDate = new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn);
+                        bool isStart = RangeStart.HasValue && buttonDate == RangeStart.Value;
+                        bool isEnd = RangeEnd.HasValue && buttonDate == RangeEnd.Value;
+                        bool isIn = RangeStart.HasValue && RangeEnd.HasValue
+                            && buttonDate > RangeStart.Value && buttonDate < RangeEnd.Value;
+
+                        if (isStart) button.Classes.Add("range-start");
+                        if (isEnd) button.Classes.Add("range-end");
+                        if (isIn) button.Classes.Add("in-range");
+                    }
+
                     button.Click += OnDayClicked;
                     _daysGrid.Children.Add(button);
 
@@ -790,16 +835,38 @@ public class CalendarView : TemplatedControl
 
     private void OnDayClicked(int day)
     {
-        // Calculate the day of week for the selected date
-        var firstDayOfMonth = new PersianDate(DisplayYear, DisplayMonth, 1, 0);
         var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
         var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
-        
-        // Create the selected date with correct day of week
-        var selectedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
+        var clickedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
 
-        // Fire the event to parent control
-        DateSelected?.Invoke(this, new DateSelectedEventArgs(selectedDate));
+        if (IsRangeMode)
+        {
+            if (!_isSelectingEnd)
+            {
+                RangeStart = clickedDate;
+                RangeEnd = null;
+                _isSelectingEnd = true;
+            }
+            else
+            {
+                if (clickedDate < RangeStart)
+                {
+                    RangeEnd = RangeStart;
+                    RangeStart = clickedDate;
+                }
+                else
+                {
+                    RangeEnd = clickedDate;
+                }
+                _isSelectingEnd = false;
+                DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(RangeStart, RangeEnd));
+            }
+            UpdateCalendar();
+        }
+        else
+        {
+            DateSelected?.Invoke(this, new DateSelectedEventArgs(clickedDate));
+        }
     }
 
     private void OnDayClicked(object? sender, RoutedEventArgs e)

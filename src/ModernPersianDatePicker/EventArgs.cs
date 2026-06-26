@@ -63,3 +63,18 @@ public class TodayClickedEventArgs : EventArgs
         Today = today;
     }
 }
+
+/// <summary>
+/// Event arguments for date range selection
+/// </summary>
+public class DateRangeSelectedEventArgs : EventArgs
+{
+    public PersianDate? RangeStart { get; }
+    public PersianDate? RangeEnd { get; }
+
+    public DateRangeSelectedEventArgs(PersianDate? rangeStart, PersianDate? rangeEnd)
+    {
+        RangeStart = rangeStart;
+        RangeEnd = rangeEnd;
+    }
+}

@@ -353,6 +353,30 @@
         <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
     </Style>
 
+    <!-- Range styles -->
+    <Style Selector="local|CalendarView Button.day-button.in-range">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.range-start">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="CornerRadius" Value="18,4,4,18"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.range-end">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="CornerRadius" Value="4,18,18,4"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.range-start:pointerover">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentHoverBrush}"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.range-end:pointerover">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentHoverBrush}"/>
+    </Style>
+
     <!-- TimePickerView style -->
     <Style Selector="local|TimePickerView">
         <Setter Property="HorizontalAlignment" Value="Center"/>

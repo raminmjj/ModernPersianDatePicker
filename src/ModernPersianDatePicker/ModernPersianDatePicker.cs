@@ -78,6 +78,24 @@ public class ModernPersianDatePicker : TemplatedControl
             Array.Empty<PersianDate>());
 
     /// <summary>
+    /// When true, enables date range selection (click start, click end). Defaults to false.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsRangeModeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(IsRangeMode));
+
+    /// <summary>
+    /// Start of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<PersianDate?> RangeStartProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(RangeStart));
+
+    /// <summary>
+    /// End of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<PersianDate?> RangeEndProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(RangeEnd));
+
+    /// <summary>
     /// When true, displays Hour/Minute/Second spinners below the calendar in the popup.
     /// Defaults to false.
     /// </summary>
@@ -107,6 +125,7 @@ public class ModernPersianDatePicker : TemplatedControl
 
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
+    public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
 
     // Private fields
     private Popup? _popup;
@@ -131,6 +150,9 @@ public class ModernPersianDatePicker : TemplatedControl
         HolidayBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidayBrushChanged(e));
         WeeklyHolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
         HolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
+        IsRangeModeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeModeChanged(e));
+        RangeStartProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeChanged(e));
+        RangeEndProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeChanged(e));
         IsTimePickerEnabledProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimePickerEnabledChanged(e));
         HourProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
         MinuteProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
@@ -241,6 +263,33 @@ public class ModernPersianDatePicker : TemplatedControl
     }
 
     /// <summary>
+    /// When true, enables date range selection (click start, click end). Defaults to false.
+    /// </summary>
+    public bool IsRangeMode
+    {
+        get => GetValue(IsRangeModeProperty);
+        set => SetValue(IsRangeModeProperty, value);
+    }
+
+    /// <summary>
+    /// Start of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// </summary>
+    public PersianDate? RangeStart
+    {
+        get => GetValue(RangeStartProperty);
+        set => SetValue(RangeStartProperty, value);
+    }
+
+    /// <summary>
+    /// End of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// </summary>
+    public PersianDate? RangeEnd
+    {
+        get => GetValue(RangeEndProperty);
+        set => SetValue(RangeEndProperty, value);
+    }
+
+    /// <summary>
     /// When true, displays Hour/Minute/Second spinners below the calendar. Defaults to false.
     /// </summary>
     public bool IsTimePickerEnabled
@@ -290,6 +339,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_calendarView != null)
         {
             _calendarView.DateSelected -= OnCalendarView_DateSelected;
+            _calendarView.DateRangeSelected -= OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked -= OnCalendarView_TodayClicked;
         }
         if (_timePickerView != null)
@@ -333,7 +383,11 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.HolidayBrush = HolidayBrush;
             _calendarView.WeeklyHolidays = WeeklyHolidays;
             _calendarView.Holidays = Holidays;
+            _calendarView.IsRangeMode = IsRangeMode;
+            _calendarView.RangeStart = RangeStart;
+            _calendarView.RangeEnd = RangeEnd;
             _calendarView.DateSelected += OnCalendarView_DateSelected;
+            _calendarView.DateRangeSelected += OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
         }
 
@@ -810,6 +864,33 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    private void OnRangeModeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+            _calendarView.IsRangeMode = IsRangeMode;
+
+        UpdateDisplayText();
+    }
+
+    private void OnRangeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+        {
+            if (e.Property == RangeStartProperty)
+                _calendarView.RangeStart = RangeStart;
+            else
+                _calendarView.RangeEnd = RangeEnd;
+        }
+
+        UpdateDisplayText();
+    }
+
     private void OnTimePickerEnabledChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_isDisposed)
@@ -889,6 +970,17 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    private void OnCalendarView_DateRangeSelected(object? sender, DateRangeSelectedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        RangeStart = e.RangeStart;
+        RangeEnd = e.RangeEnd;
+        DateRangeSelected?.Invoke(this, e);
+        ClosePopup();
+    }
+
     private void OnCalendarView_TodayClicked(object? sender, TodayClickedEventArgs e)
     {
         if (_isDisposed)
@@ -965,7 +1057,16 @@ public class ModernPersianDatePicker : TemplatedControl
             _isUpdatingText = true;
 
             string displayText;
-            if (SelectedDate.HasValue)
+            if (IsRangeMode)
+            {
+                if (RangeStart.HasValue && RangeEnd.HasValue)
+                    displayText = $"{RangeStart.Value.ToString("short")} ~ {RangeEnd.Value.ToString("short")}";
+                else if (RangeStart.HasValue)
+                    displayText = $"{RangeStart.Value.ToString("short")} ~ ...";
+                else
+                    displayText = Watermark;
+            }
+            else if (SelectedDate.HasValue)
             {
                 displayText = SelectedDate.Value.ToString(DisplayFormat);
                 if (IsTimePickerEnabled)
@@ -980,7 +1081,8 @@ public class ModernPersianDatePicker : TemplatedControl
             if (_displayTextBlock != null)
             {
                 _displayTextBlock.Text = displayText;
-                if (SelectedDate.HasValue)
+                bool hasValue = IsRangeMode ? RangeStart.HasValue : SelectedDate.HasValue;
+                if (hasValue)
                     _displayTextBlock.Classes.Remove("watermark");
                 else
                     _displayTextBlock.Classes.Add("watermark");
@@ -989,7 +1091,14 @@ public class ModernPersianDatePicker : TemplatedControl
             // Update TextBox
             if (_editableTextBox != null)
             {
-                if (SelectedDate.HasValue)
+                if (IsRangeMode)
+                {
+                    if (RangeStart.HasValue && RangeEnd.HasValue)
+                        _editableTextBox.Text = $"{RangeStart.Value.ToString("short")} ~ {RangeEnd.Value.ToString("short")}";
+                    else
+                        _editableTextBox.Text = "";
+                }
+                else if (SelectedDate.HasValue)
                 {
                     var dateStr = SelectedDate.Value.ToString("short");
                     _editableTextBox.Text = IsTimePickerEnabled
