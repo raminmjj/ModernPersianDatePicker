@@ -77,6 +77,34 @@ public class ModernPersianDatePicker : TemplatedControl
         AvaloniaProperty.Register<ModernPersianDatePicker, IReadOnlyList<PersianDate>>(nameof(Holidays),
             Array.Empty<PersianDate>());
 
+    /// <summary>
+    /// When true, displays Hour/Minute/Second spinners below the calendar in the popup.
+    /// Defaults to false.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsTimePickerEnabledProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(IsTimePickerEnabled));
+
+    /// <summary>
+    /// Selected hour (0-23). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<int> HourProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Hour),
+            validate: v => v >= 0 && v <= 23);
+
+    /// <summary>
+    /// Selected minute (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<int> MinuteProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Minute),
+            validate: v => v >= 0 && v <= 59);
+
+    /// <summary>
+    /// Selected second (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<int> SecondProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Second),
+            validate: v => v >= 0 && v <= 59);
+
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
 
@@ -86,6 +114,7 @@ public class ModernPersianDatePicker : TemplatedControl
     private TextBlock? _displayTextBlock;
     private TextBox? _editableTextBox;
     private CalendarView? _calendarView;
+    private TimePickerView? _timePickerView;
     private bool _isPopupOpen;
     private bool _isDisposed;
     private bool _isUpdatingText;
@@ -102,6 +131,10 @@ public class ModernPersianDatePicker : TemplatedControl
         HolidayBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidayBrushChanged(e));
         WeeklyHolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
         HolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
+        IsTimePickerEnabledProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimePickerEnabledChanged(e));
+        HourProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
+        MinuteProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
+        SecondProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
     }
 
     public ModernPersianDatePicker()
@@ -207,6 +240,42 @@ public class ModernPersianDatePicker : TemplatedControl
         set => SetValue(HolidaysProperty, value);
     }
 
+    /// <summary>
+    /// When true, displays Hour/Minute/Second spinners below the calendar. Defaults to false.
+    /// </summary>
+    public bool IsTimePickerEnabled
+    {
+        get => GetValue(IsTimePickerEnabledProperty);
+        set => SetValue(IsTimePickerEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Selected hour (0-23). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public int Hour
+    {
+        get => GetValue(HourProperty);
+        set => SetValue(HourProperty, value);
+    }
+
+    /// <summary>
+    /// Selected minute (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public int Minute
+    {
+        get => GetValue(MinuteProperty);
+        set => SetValue(MinuteProperty, value);
+    }
+
+    /// <summary>
+    /// Selected second (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public int Second
+    {
+        get => GetValue(SecondProperty);
+        set => SetValue(SecondProperty, value);
+    }
+
     // Protected Methods
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -223,6 +292,8 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.DateSelected -= OnCalendarView_DateSelected;
             _calendarView.TodayClicked -= OnCalendarView_TodayClicked;
         }
+        if (_timePickerView != null)
+            _timePickerView.TimeChanged -= OnTimePickerView_TimeChanged;
 
         // Get template parts
         _popup = e.NameScope.Find<Popup>("PART_Popup");
@@ -230,6 +301,7 @@ public class ModernPersianDatePicker : TemplatedControl
         _displayTextBlock = e.NameScope.Find<TextBlock>("PART_DisplayText");
         _editableTextBox = e.NameScope.Find<TextBox>("PART_EditableText");
         _calendarView = e.NameScope.Find<CalendarView>("PART_CalendarView");
+        _timePickerView = e.NameScope.Find<TimePickerView>("PART_TimePickerView");
 
         // Attach event handlers
         if (_toggleButton != null)
@@ -263,6 +335,15 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.Holidays = Holidays;
             _calendarView.DateSelected += OnCalendarView_DateSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
+        }
+
+        if (_timePickerView != null)
+        {
+            _timePickerView.Hour = Hour;
+            _timePickerView.Minute = Minute;
+            _timePickerView.Second = Second;
+            _timePickerView.TimeChanged += OnTimePickerView_TimeChanged;
+            _timePickerView.IsVisible = IsTimePickerEnabled;
         }
 
         UpdateEditMode();
@@ -354,8 +435,12 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         try
         {
+            // Split date and time parts (time is optional)
+            var dateTimeParts = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var datePart = dateTimeParts[0];
+
             // Normalize separators
-            var normalized = input.Replace('-', '/').Replace('_', '/').Trim();
+            var normalized = datePart.Replace('-', '/').Replace('_', '/').Trim();
             var parts = normalized.Split('/');
 
             if (parts.Length != 3)
@@ -368,7 +453,6 @@ public class ModernPersianDatePicker : TemplatedControl
             // Handle 2-digit years
             if (year >= 0 && year < 100)
             {
-                // Assume 14xx for 2-digit years
                 year = 1400 + year;
             }
 
@@ -384,6 +468,24 @@ public class ModernPersianDatePicker : TemplatedControl
             int daysInMonth = PersianCalendarHelper.GetDaysInMonth(year, month);
             if (day > daysInMonth)
                 return null;
+
+            // Parse time component if present
+            if (IsTimePickerEnabled && dateTimeParts.Length > 1)
+            {
+                var timeParts = dateTimeParts[1].Split(':');
+                if (timeParts.Length >= 2)
+                {
+                    if (int.TryParse(timeParts[0], out int h) && h >= 0 && h <= 23)
+                        Hour = h;
+                    if (int.TryParse(timeParts[1], out int m) && m >= 0 && m <= 59)
+                        Minute = m;
+                }
+                if (timeParts.Length >= 3)
+                {
+                    if (int.TryParse(timeParts[2], out int s) && s >= 0 && s <= 59)
+                        Second = s;
+                }
+            }
 
             // Calculate day of week
             var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(year, month);
@@ -708,6 +810,49 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    private void OnTimePickerEnabledChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_timePickerView != null)
+            _timePickerView.IsVisible = IsTimePickerEnabled;
+
+        UpdateDisplayText();
+    }
+
+    private void OnTimeComponentChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_timePickerView != null)
+        {
+            if (e.Property == HourProperty)
+                _timePickerView.Hour = Hour;
+            else if (e.Property == MinuteProperty)
+                _timePickerView.Minute = Minute;
+            else if (e.Property == SecondProperty)
+                _timePickerView.Second = Second;
+        }
+
+        UpdateDisplayText();
+    }
+
+    private void OnTimePickerView_TimeChanged(object? sender, EventArgs e)
+    {
+        if (_isDisposed || _timePickerView == null)
+            return;
+
+        _isUpdatingText = true;
+        Hour = _timePickerView.Hour;
+        Minute = _timePickerView.Minute;
+        Second = _timePickerView.Second;
+        _isUpdatingText = false;
+
+        UpdateDisplayText();
+    }
+
     private void OnToggleButton_Click(object? sender, RoutedEventArgs e)
     {
         if (_isDisposed)
@@ -823,6 +968,8 @@ public class ModernPersianDatePicker : TemplatedControl
             if (SelectedDate.HasValue)
             {
                 displayText = SelectedDate.Value.ToString(DisplayFormat);
+                if (IsTimePickerEnabled)
+                    displayText += $" {Hour:D2}:{Minute:D2}:{Second:D2}";
             }
             else
             {
@@ -844,7 +991,10 @@ public class ModernPersianDatePicker : TemplatedControl
             {
                 if (SelectedDate.HasValue)
                 {
-                    _editableTextBox.Text = SelectedDate.Value.ToString("short");
+                    var dateStr = SelectedDate.Value.ToString("short");
+                    _editableTextBox.Text = IsTimePickerEnabled
+                        ? $"{dateStr} {Hour:D2}:{Minute:D2}:{Second:D2}"
+                        : dateStr;
                 }
                 else
                 {

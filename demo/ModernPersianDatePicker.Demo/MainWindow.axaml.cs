@@ -23,6 +23,7 @@ public partial class MainWindow : Window
         WeeklyHolidayDatePicker.SelectedDateChanged += OnWeeklyHolidayDateChanged;
         SpecificHolidayDatePicker.SelectedDateChanged += OnSpecificHolidayDateChanged;
         CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
+        TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -169,5 +170,18 @@ public partial class MainWindow : Window
         CustomHolidayBrushText.Text = e.NewDate.HasValue
             ? $"Selected: {e.NewDate.Value.ToString("long")}"
             : "Selected: (none)";
+    }
+
+    private void OnTimePickerDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        if (e.NewDate.HasValue)
+        {
+            var dp = TimePickerDatePicker;
+            TimePickerDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")} {dp.Hour:D2}:{dp.Minute:D2}:{dp.Second:D2}";
+        }
+        else
+        {
+            TimePickerDateText.Text = "Selected: (none)";
+        }
     }
 }

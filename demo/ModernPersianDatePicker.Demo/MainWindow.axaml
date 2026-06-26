@@ -28,7 +28,7 @@
     </Window.Resources>
     
     <ScrollViewer>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
 
         <!-- Title -->
         <TextBlock Grid.Row="0"
@@ -296,8 +296,38 @@
             </StackPanel>
         </Border>
 
-        <!-- Information -->
+        <!-- Time Picker -->
         <Border Grid.Row="7"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Time Picker (IsTimePickerEnabled=True)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <TextBlock Text="Enable time selection below the calendar with Hour/Minute/Second spinners."
+                           FontSize="12"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"
+                           Margin="0,0,0,12"/>
+
+                <persian:ModernPersianDatePicker x:Name="TimePickerDatePicker"
+                                                 IsTimePickerEnabled="True"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="280"/>
+
+                <TextBlock x:Name="TimePickerDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Information -->
+        <Border Grid.Row="8"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"
@@ -325,6 +355,8 @@
                 <TextBlock Text="• Specific date holidays with custom brush override"
                            Margin="0,2"/>
                 <TextBlock Text="• Editable date input with manual typing &amp; validation"
+                           Margin="0,2"/>
+                <TextBlock Text="• Optional time picker (Hour/Minute/Second spinners)"
                            Margin="0,2"/>
             </StackPanel>
         </Border>

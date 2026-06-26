@@ -86,9 +86,14 @@
                                     CornerRadius="4"
                                     BoxShadow="0 4 8 0 #40000000"
                                     MinWidth="280">
-                                <local:CalendarView x:Name="PART_CalendarView"
-                                                    FlowDirection="RightToLeft"
-                                                    UseEnglishNames="{TemplateBinding UseEnglishNames}"/>
+                                <StackPanel>
+                                    <local:CalendarView x:Name="PART_CalendarView"
+                                                        FlowDirection="RightToLeft"
+                                                        UseEnglishNames="{TemplateBinding UseEnglishNames}"/>
+                                    <local:TimePickerView x:Name="PART_TimePickerView"
+                                                           IsVisible="False"
+                                                           Margin="0,8,0,0"/>
+                                </StackPanel>
                             </Border>
                         </Popup>
                     </Grid>
@@ -346,6 +351,40 @@
     </Style>
     <Style Selector="local|CalendarView Button.day-button.holiday:pointerover">
         <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
+    </Style>
+
+    <!-- TimePickerView style -->
+    <Style Selector="local|TimePickerView">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <StackPanel Orientation="Horizontal"
+                            Spacing="4"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <NumericUpDown x:Name="PART_HourSpinner"
+                                   Minimum="0" Maximum="23"
+                                   Width="60" FormatString="D2"
+                                   Increment="1"/>
+                    <TextBlock Text=":"
+                               VerticalAlignment="Center"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                    <NumericUpDown x:Name="PART_MinuteSpinner"
+                                   Minimum="0" Maximum="59"
+                                   Width="60" FormatString="D2"
+                                   Increment="1"/>
+                    <TextBlock Text=":"
+                               VerticalAlignment="Center"
+                               FontSize="16" FontWeight="Bold"
+                               Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                    <NumericUpDown x:Name="PART_SecondSpinner"
+                                   Minimum="0" Maximum="59"
+                                   Width="60" FormatString="D2"
+                                   Increment="1"/>
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
     </Style>
 
 </Styles>
