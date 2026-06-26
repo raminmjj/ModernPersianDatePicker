@@ -22,6 +22,7 @@
             <!-- Calendar internals -->
             <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="#FF666666"/>
             <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="#FF333333"/>
+            <SolidColorBrush x:Key="PersianDatePickerHolidayForegroundBrush" Color="#FFE53935"/>
             <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="#FFE0E0E0"/>
             <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="#FFE0E0E0"/>
@@ -50,6 +51,7 @@
             <!-- Calendar internals -->
             <SolidColorBrush x:Key="PersianDatePickerHeaderForegroundBrush" Color="#FFAAAAAA"/>
             <SolidColorBrush x:Key="PersianDatePickerDayForegroundBrush" Color="#FFDDDDDD"/>
+            <SolidColorBrush x:Key="PersianDatePickerHolidayForegroundBrush" Color="#FFEF5350"/>
             <SolidColorBrush x:Key="PersianDatePickerDayHoverBackgroundBrush" Color="#FF404040"/>
             <SolidColorBrush x:Key="PersianDatePickerSelectedForegroundBrush" Color="#FFFFFFFF"/>
             <SolidColorBrush x:Key="PersianDatePickerMonthYearHoverBackgroundBrush" Color="#FF404040"/>

@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
+using Avalonia.Media;
 
 namespace ModernPersianDatePicker;
 
@@ -26,6 +29,27 @@ public class CalendarView : TemplatedControl
     public static readonly StyledProperty<bool> UseEnglishNamesProperty =
         AvaloniaProperty.Register<CalendarView, bool>(nameof(UseEnglishNames));
 
+    /// <summary>
+    /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> HolidayBrushProperty =
+        AvaloniaProperty.Register<CalendarView, IBrush?>(nameof(HolidayBrush));
+
+    /// <summary>
+    /// Days of the week (.NET <see cref="DayOfWeek"/>) treated as recurring weekly holidays,
+    /// e.g. <see cref="DayOfWeek.Friday"/> for the Persian weekend. Defaults to Friday.
+    /// </summary>
+    public static readonly StyledProperty<IReadOnlyList<DayOfWeek>> WeeklyHolidaysProperty =
+        AvaloniaProperty.Register<CalendarView, IReadOnlyList<DayOfWeek>>(nameof(WeeklyHolidays),
+            new[] { DayOfWeek.Friday });
+
+    /// <summary>
+    /// Specific calendar dates to mark as holidays, in addition to <see cref="WeeklyHolidays"/>.
+    /// </summary>
+    public static readonly StyledProperty<IReadOnlyList<PersianDate>> HolidaysProperty =
+        AvaloniaProperty.Register<CalendarView, IReadOnlyList<PersianDate>>(nameof(Holidays),
+            Array.Empty<PersianDate>());
+
     // Events
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
     public event EventHandler<TodayClickedEventArgs>? TodayClicked;
@@ -46,12 +70,19 @@ public class CalendarView : TemplatedControl
     private Popup? _yearPopup;
     private bool _isUpdatingCalendar;
 
+    // Derived caches for holiday checks (rebuilt when the source properties change)
+    private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
+    private HashSet<PersianDate> _holidays = new();
+
     static CalendarView()
     {
         DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         UseEnglishNamesProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         SelectedDateProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnSelectedDateChanged(e));
+        WeeklyHolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
+        HolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
+        HolidayBrushProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidayBrushChanged(e));
     }
 
     public CalendarView()
@@ -78,6 +109,29 @@ public class CalendarView : TemplatedControl
     {
         // Update the visual selection without rebuilding the entire calendar
         UpdateSelectedVisual();
+    }
+
+    private void OnHolidaysChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        // Rebuild the derived lookup caches from the source lists, then refresh the grid.
+        _weeklyHolidayIndices = WeeklyHolidays?
+            .Select(ToPersianWeekdayIndex)
+            .ToHashSet() ?? new HashSet<int>();
+
+        _holidays = Holidays != null
+            ? new HashSet<PersianDate>(Holidays)
+            : new HashSet<PersianDate>();
+
+        UpdateCalendar();
+    }
+
+    private void OnHolidayBrushChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        var brush = e.NewValue as IBrush;
+        if (brush == null)
+            Resources.Remove("PersianDatePickerHolidayForegroundBrush");
+        else
+            Resources["PersianDatePickerHolidayForegroundBrush"] = brush;
     }
 
     private void UpdateSelectedVisual()
@@ -138,6 +192,41 @@ public class CalendarView : TemplatedControl
         get => GetValue(UseEnglishNamesProperty);
         set => SetValue(UseEnglishNamesProperty, value);
     }
+
+    /// <summary>
+    /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
+    /// </summary>
+    public IBrush? HolidayBrush
+    {
+        get => GetValue(HolidayBrushProperty);
+        set => SetValue(HolidayBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Days of the week treated as recurring weekly holidays. Defaults to <see cref="DayOfWeek.Friday"/>.
+    /// </summary>
+    public IReadOnlyList<DayOfWeek> WeeklyHolidays
+    {
+        get => GetValue(WeeklyHolidaysProperty);
+        set => SetValue(WeeklyHolidaysProperty, value);
+    }
+
+    /// <summary>
+    /// Specific calendar dates to mark as holidays.
+    /// </summary>
+    public IReadOnlyList<PersianDate> Holidays
+    {
+        get => GetValue(HolidaysProperty);
+        set => SetValue(HolidaysProperty, value);
+    }
+
+    /// <summary>
+    /// Maps a .NET <see cref="DayOfWeek"/> (Sunday=0…Saturday=6) to the Persian weekday
+    /// index used by this calendar (Saturday=0 … Friday=6). Same formula used by the
+    /// calendar's own day-of-week computation: <c>((int)dotNetDayOfWeek + 1) % 7</c>.
+    /// </summary>
+    public static int ToPersianWeekdayIndex(DayOfWeek dotNetDayOfWeek)
+        => ((int)dotNetDayOfWeek + 1) % 7;
 
     // Private field for keyboard navigation
     private int _focusedDay = 1;
@@ -641,6 +730,15 @@ public class CalendarView : TemplatedControl
                     if (today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay)
                     {
                         button.Classes.Add("today");
+                    }
+
+                    // Check if this day is a holiday (weekly recurring or a specific date).
+                    // currentColumn is the Persian weekday index (Saturday=0 … Friday=6).
+                    bool isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
+                        || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn));
+                    if (isHoliday)
+                    {
+                        button.Classes.Add("holiday");
                     }
 
                     button.Click += OnDayClicked;

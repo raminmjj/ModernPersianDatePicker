@@ -7,7 +7,7 @@
         x:Class="ModernPersianDatePicker.Demo.MainWindow"
         Title="Modern Persian DatePicker Demo"
         Icon="app-icon.ico"
-        Width="600" Height="700"
+        Width="600" Height="1100"
         WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
@@ -28,7 +28,7 @@
     </Window.Resources>
     
     <ScrollViewer>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
         
         <!-- Theme toggle row -->
         <StackPanel Grid.Row="0"
@@ -231,8 +231,87 @@
             </StackPanel>
         </Border>
 
-        <!-- Information -->
+        <!-- Holidays & Theme -->
         <Border Grid.Row="7"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Holidays &amp; Theme Mode"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <!-- Theme selector -->
+                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
+                    <TextBlock Text="Theme:" VerticalAlignment="Center"/>
+                    <RadioButton x:Name="RbThemeSystem" GroupName="ThemeMode"
+                                 Content="System" IsChecked="True"
+                                 Click="OnThemeModeChanged"/>
+                    <RadioButton x:Name="RbThemeLight" GroupName="ThemeMode"
+                                 Content="Light"
+                                 Click="OnThemeModeChanged"/>
+                    <RadioButton x:Name="RbThemeDark" GroupName="ThemeMode"
+                                 Content="Dark"
+                                 Click="OnThemeModeChanged"/>
+                </StackPanel>
+
+                <!-- Per-instance theme demo -->
+                <TextBlock Text="Per-Instance Theme (follows OS or forced):"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,8"/>
+                <persian:ModernPersianDatePicker x:Name="ThemedDatePicker"
+                                                 Theme="System"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                <TextBlock x:Name="ThemedDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+
+                <!-- Weekly holidays demo -->
+                <TextBlock Text="Weekly Holidays (Friday + Saturday):"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,8"/>
+                <persian:ModernPersianDatePicker x:Name="WeeklyHolidayDatePicker"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                <TextBlock x:Name="WeeklyHolidayText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+
+                <!-- Specific holidays demo -->
+                <TextBlock Text="Specific Date Holidays (18 Dey &amp; 13 Farvardin):"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,8"/>
+                <persian:ModernPersianDatePicker x:Name="SpecificHolidayDatePicker"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                <TextBlock x:Name="SpecificHolidayText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+
+                <!-- Custom holiday brush demo -->
+                <TextBlock Text="Custom Holiday Brush (Orange):"
+                           FontWeight="SemiBold"
+                           Margin="0,16,0,8"/>
+                <persian:ModernPersianDatePicker x:Name="CustomHolidayBrushDatePicker"
+                                                 HolidayBrush="#FFFF8800"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="250"/>
+                <TextBlock x:Name="CustomHolidayBrushText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Information -->
+        <Border Grid.Row="8"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"
@@ -252,6 +331,12 @@
                 <TextBlock Text="• Leap year calculation"
                            Margin="0,2"/>
                 <TextBlock Text="• Custom AccentBrush &amp; Light/Dark theme support"
+                           Margin="0,2"/>
+                <TextBlock Text="• Per-instance ThemeMode (System/Light/Dark)"
+                           Margin="0,2"/>
+                <TextBlock Text="• Weekly holidays (configurable DayOfWeek list)"
+                           Margin="0,2"/>
+                <TextBlock Text="• Specific date holidays with custom brush override"
                            Margin="0,2"/>
                 <TextBlock Text="• Editable date input with manual typing &amp; validation"
                            Margin="0,2"/>

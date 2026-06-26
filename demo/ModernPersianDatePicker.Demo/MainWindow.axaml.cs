@@ -19,9 +19,23 @@ public partial class MainWindow : Window
         GreenAccentDatePicker.SelectedDateChanged += OnAccentDateChanged;
         PurpleAccentDatePicker.SelectedDateChanged += OnAccentDateChanged;
         EditableDatePicker.SelectedDateChanged += OnEditableDateChanged;
+        ThemedDatePicker.SelectedDateChanged += OnThemedDateChanged;
+        WeeklyHolidayDatePicker.SelectedDateChanged += OnWeeklyHolidayDateChanged;
+        SpecificHolidayDatePicker.SelectedDateChanged += OnSpecificHolidayDateChanged;
+        CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
+
+        // Configure weekly holidays: Friday + Saturday
+        WeeklyHolidayDatePicker.WeeklyHolidays = new[] { System.DayOfWeek.Friday, System.DayOfWeek.Saturday };
+
+        // Configure specific date holidays
+        SpecificHolidayDatePicker.Holidays = new[]
+        {
+            new PersianDate(1405, 1, 1, 1),  // 1 Farvardin (Nowruz)
+            new PersianDate(1404, 10, 18, 6), // 18 Dey
+        };
     }
 
     private void OnBasicDateChanged(object? sender, SelectedDateChangedEventArgs e)
@@ -122,5 +136,43 @@ public partial class MainWindow : Window
         bool isDark = Application.Current?.RequestedThemeVariant == ThemeVariant.Dark;
         Application.Current!.RequestedThemeVariant = isDark ? ThemeVariant.Light : ThemeVariant.Dark;
         ThemeToggle.Content = isDark ? "🌙 Dark" : "☀️ Light";
+    }
+
+    private void OnThemeModeChanged(object? sender, RoutedEventArgs e)
+    {
+        if (RbThemeSystem.IsChecked == true)
+            ThemedDatePicker.Theme = ThemeMode.System;
+        else if (RbThemeLight.IsChecked == true)
+            ThemedDatePicker.Theme = ThemeMode.Light;
+        else if (RbThemeDark.IsChecked == true)
+            ThemedDatePicker.Theme = ThemeMode.Dark;
+    }
+
+    private void OnThemedDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        ThemedDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            : "Selected: (none)";
+    }
+
+    private void OnWeeklyHolidayDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        WeeklyHolidayText.Text = e.NewDate.HasValue
+            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            : "Selected: (none)";
+    }
+
+    private void OnSpecificHolidayDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        SpecificHolidayText.Text = e.NewDate.HasValue
+            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            : "Selected: (none)";
+    }
+
+    private void OnCustomHolidayBrushDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        CustomHolidayBrushText.Text = e.NewDate.HasValue
+            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            : "Selected: (none)";
     }
 }

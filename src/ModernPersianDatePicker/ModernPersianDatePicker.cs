@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.Platform;
+using Avalonia.Styling;
 
 namespace ModernPersianDatePicker;
 
@@ -46,6 +49,34 @@ public class ModernPersianDatePicker : TemplatedControl
     public static readonly StyledProperty<IBrush?> AccentBrushProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, IBrush?>(nameof(AccentBrush));
 
+    /// <summary>
+    /// How this picker resolves its Light/Dark theme. Defaults to <see cref="ThemeMode.System"/>,
+    /// which tracks the operating system setting and updates live.
+    /// </summary>
+    public static readonly new StyledProperty<ThemeMode> ThemeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, ThemeMode>(nameof(Theme), ThemeMode.System);
+
+    /// <summary>
+    /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
+    /// </summary>
+    public static readonly StyledProperty<IBrush?> HolidayBrushProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, IBrush?>(nameof(HolidayBrush));
+
+    /// <summary>
+    /// Days of the week (.NET <see cref="DayOfWeek"/>) treated as recurring weekly holidays
+    /// (e.g. <see cref="DayOfWeek.Friday"/> for the Persian weekend). Defaults to Friday.
+    /// </summary>
+    public static readonly StyledProperty<IReadOnlyList<DayOfWeek>> WeeklyHolidaysProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, IReadOnlyList<DayOfWeek>>(nameof(WeeklyHolidays),
+            new[] { DayOfWeek.Friday });
+
+    /// <summary>
+    /// Specific calendar dates to mark as holidays, in addition to <see cref="WeeklyHolidays"/>.
+    /// </summary>
+    public static readonly StyledProperty<IReadOnlyList<PersianDate>> HolidaysProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, IReadOnlyList<PersianDate>>(nameof(Holidays),
+            Array.Empty<PersianDate>());
+
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
 
@@ -58,6 +89,10 @@ public class ModernPersianDatePicker : TemplatedControl
     private bool _isPopupOpen;
     private bool _isDisposed;
     private bool _isUpdatingText;
+    // True while subscribed to system theme changes (Theme == System).
+    private bool _isTrackingSystemTheme;
+    // Track whether we've already applied color overrides so ClearThemeOverrides can undo them.
+    private bool _hasThemeOverrides;
 
     // Constructors
     static ModernPersianDatePicker()
@@ -66,10 +101,16 @@ public class ModernPersianDatePicker : TemplatedControl
         UseEnglishNamesProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnLanguageChanged(e));
         IsEditableProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnIsEditableChanged(e));
         AccentBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnAccentBrushChanged(e));
+        ThemeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnThemeChanged(e));
+        HolidayBrushProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidayBrushChanged(e));
+        WeeklyHolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
+        HolidaysProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnHolidaysChanged(e));
     }
 
     public ModernPersianDatePicker()
     {
+        // Resolve the initial theme (system or explicit) for this instance.
+        ApplyTheme();
         UpdateDisplayText();
     }
 
@@ -132,6 +173,43 @@ public class ModernPersianDatePicker : TemplatedControl
         set => SetValue(AccentBrushProperty, value);
     }
 
+    /// <summary>
+    /// How this picker resolves its Light/Dark theme. Defaults to <see cref="ThemeMode.System"/>.
+    /// Applied per-instance, independent of the application-wide theme.
+    /// </summary>
+    public new ThemeMode Theme
+    {
+        get => GetValue(ThemeProperty);
+        set => SetValue(ThemeProperty, value);
+    }
+
+    /// <summary>
+    /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
+    /// </summary>
+    public IBrush? HolidayBrush
+    {
+        get => GetValue(HolidayBrushProperty);
+        set => SetValue(HolidayBrushProperty, value);
+    }
+
+    /// <summary>
+    /// Days of the week treated as recurring weekly holidays. Defaults to <see cref="DayOfWeek.Friday"/>.
+    /// </summary>
+    public IReadOnlyList<DayOfWeek> WeeklyHolidays
+    {
+        get => GetValue(WeeklyHolidaysProperty);
+        set => SetValue(WeeklyHolidaysProperty, value);
+    }
+
+    /// <summary>
+    /// Specific calendar dates to mark as holidays.
+    /// </summary>
+    public IReadOnlyList<PersianDate> Holidays
+    {
+        get => GetValue(HolidaysProperty);
+        set => SetValue(HolidaysProperty, value);
+    }
+
     // Protected Methods
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -176,6 +254,9 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_calendarView != null)
         {
             _calendarView.UseEnglishNames = UseEnglishNames;
+            _calendarView.HolidayBrush = HolidayBrush;
+            _calendarView.WeeklyHolidays = WeeklyHolidays;
+            _calendarView.Holidays = Holidays;
             _calendarView.DateSelected += OnCalendarView_DateSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
         }
@@ -388,6 +469,13 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _popup.IsOpen = false;
         }
+
+        // Stop tracking system theme changes to avoid leaking the handler.
+        if (_isTrackingSystemTheme && Application.Current?.PlatformSettings != null)
+        {
+            Application.Current.PlatformSettings.ColorValuesChanged -= OnSystemThemeChanged;
+            _isTrackingSystemTheme = false;
+        }
     }
 
     // Private Methods
@@ -490,6 +578,162 @@ public class ModernPersianDatePicker : TemplatedControl
         byte g = (byte)Math.Round(source.Color.G * (1 - factor));
         byte b = (byte)Math.Round(source.Color.B * (1 - factor));
         return new SolidColorBrush(Color.FromArgb(source.Color.A, r, g, b), source.Opacity);
+    }
+
+    // ---------- Theme ----------
+
+    private void OnThemeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        ApplyTheme();
+    }
+
+    /// <summary>
+    /// Resolves <see cref="Theme"/> into a concrete Light/Dark flag and applies colour
+    /// resource overrides on this control so that <c>DynamicResource</c> lookups
+    /// (inside the template) pick the right palette.  For <see cref="ThemeMode.System"/>
+    /// we subscribe to platform colour changes so the picker follows the OS setting live.
+    /// </summary>
+    private void ApplyTheme()
+    {
+        var settings = Application.Current?.PlatformSettings;
+
+        if (Theme == ThemeMode.System)
+        {
+            if (!_isTrackingSystemTheme && settings != null)
+            {
+                settings.ColorValuesChanged += OnSystemThemeChanged;
+                _isTrackingSystemTheme = true;
+            }
+        }
+        else
+        {
+            if (_isTrackingSystemTheme && settings != null)
+            {
+                settings.ColorValuesChanged -= OnSystemThemeChanged;
+                _isTrackingSystemTheme = false;
+            }
+        }
+
+        bool isDark = ResolveIsDark(settings);
+        ApplyThemeColors(isDark);
+    }
+
+    private void OnSystemThemeChanged(object? sender, PlatformColorValues values)
+    {
+        if (_isDisposed || Theme != ThemeMode.System)
+            return;
+
+        bool isDark = values.ThemeVariant == PlatformThemeVariant.Dark;
+        ApplyThemeColors(isDark);
+    }
+
+    private static bool ResolveIsDark(IPlatformSettings? settings)
+    {
+        if (settings == null)
+            return false;
+
+        return settings.GetColorValues().ThemeVariant == PlatformThemeVariant.Dark;
+    }
+
+    /// <summary>
+    /// Overrides the control-level resources so that all
+    /// <c>DynamicResource</c> bindings inside the template resolve to the correct
+    /// Light or Dark palette.  When <paramref name="isDark"/> is false, overrides are
+    /// removed so the default (Light) theme colours from <c>PersianDatePickerColors.xaml</c> apply.
+    /// </summary>
+    private void ApplyThemeColors(bool isDark)
+    {
+        if (isDark)
+        {
+            Resources["PersianDatePickerBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2D2D2D"));
+            Resources["PersianDatePickerBorderBrush"] = new SolidColorBrush(Color.Parse("#FF555555"));
+            Resources["PersianDatePickerTextForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFCCCCCC"));
+            Resources["PersianDatePickerWatermarkForegroundBrush"] = new SolidColorBrush(Color.Parse("#FF888888"));
+            Resources["PersianDatePickerAccentBrush"] = new SolidColorBrush(Color.Parse("#FF64B5F6"));
+            Resources["PersianDatePickerAccentHoverBrush"] = new SolidColorBrush(Color.Parse("#FF2196F3"));
+            Resources["PersianDatePickerFocusBorderBrush"] = new SolidColorBrush(Color.Parse("#FF64B5F6"));
+            Resources["PersianDatePickerPopupBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2D2D2D"));
+            Resources["PersianDatePickerPopupBorderBrush"] = new SolidColorBrush(Color.Parse("#FF555555"));
+            Resources["PersianDatePickerHeaderForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFAAAAAA"));
+            Resources["PersianDatePickerDayForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFDDDDDD"));
+            Resources["PersianDatePickerHolidayForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFEF5350"));
+            Resources["PersianDatePickerDayHoverBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
+            Resources["PersianDatePickerSelectedForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFFFFFFF"));
+            Resources["PersianDatePickerMonthYearHoverBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
+            Resources["PersianDatePickerDayFocusBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
+            Resources["PersianDatePickerSelectedFocusBorderBrush"] = new SolidColorBrush(Color.Parse("#FFFFFFFF"));
+            Resources["PersianDatePickerSelectedFocusBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2196F3"));
+            _hasThemeOverrides = true;
+        }
+        else
+        {
+            ClearThemeOverrides();
+        }
+
+        // Reapply accent brush overrides (if set) so they aren't shadowed by the theme swap.
+        if (_hasThemeOverrides)
+            UpdateAccentResources(AccentBrush);
+    }
+
+    private void ClearThemeOverrides()
+    {
+        if (!_hasThemeOverrides)
+            return;
+
+        var keys = new[]
+        {
+            "PersianDatePickerBackgroundBrush",
+            "PersianDatePickerBorderBrush",
+            "PersianDatePickerTextForegroundBrush",
+            "PersianDatePickerWatermarkForegroundBrush",
+            "PersianDatePickerAccentBrush",
+            "PersianDatePickerAccentHoverBrush",
+            "PersianDatePickerFocusBorderBrush",
+            "PersianDatePickerPopupBackgroundBrush",
+            "PersianDatePickerPopupBorderBrush",
+            "PersianDatePickerHeaderForegroundBrush",
+            "PersianDatePickerDayForegroundBrush",
+            "PersianDatePickerHolidayForegroundBrush",
+            "PersianDatePickerDayHoverBackgroundBrush",
+            "PersianDatePickerSelectedForegroundBrush",
+            "PersianDatePickerMonthYearHoverBackgroundBrush",
+            "PersianDatePickerDayFocusBackgroundBrush",
+            "PersianDatePickerSelectedFocusBorderBrush",
+            "PersianDatePickerSelectedFocusBackgroundBrush",
+        };
+        foreach (var key in keys)
+            Resources.Remove(key);
+
+        _hasThemeOverrides = false;
+    }
+
+    // ---------- Holidays ----------
+
+    private void OnHolidayBrushChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        var brush = e.NewValue as IBrush;
+        if (_calendarView != null)
+            _calendarView.HolidayBrush = brush;
+    }
+
+    private void OnHolidaysChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+        {
+            if (e.Property == WeeklyHolidaysProperty)
+                _calendarView.WeeklyHolidays = WeeklyHolidays;
+            else
+                _calendarView.Holidays = Holidays;
+        }
     }
 
     private void OnToggleButton_Click(object? sender, RoutedEventArgs e)

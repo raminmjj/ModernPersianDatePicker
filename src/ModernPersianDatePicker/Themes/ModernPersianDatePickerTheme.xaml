@@ -329,4 +329,20 @@
         <Setter Property="Background" Value="{DynamicResource PersianDatePickerSelectedFocusBackgroundBrush}"/>
     </Style>
 
+    <!-- Holiday day button style.
+         Ordered AFTER .selected/.selected:focus so a holiday keeps its red foreground
+         even when selected/focused (holiday wins per requirement). -->
+    <Style Selector="local|CalendarView Button.day-button.holiday">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.holiday.selected">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.holiday.selected:focus">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|CalendarView Button.day-button.holiday:pointerover">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
+    </Style>
+
 </Styles>
