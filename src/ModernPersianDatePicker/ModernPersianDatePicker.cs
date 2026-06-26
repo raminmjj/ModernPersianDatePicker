@@ -89,9 +89,6 @@ public class ModernPersianDatePicker : TemplatedControl
     private bool _isPopupOpen;
     private bool _isDisposed;
     private bool _isUpdatingText;
-    // True while subscribed to system theme changes (Theme == System).
-    private bool _isTrackingSystemTheme;
-    // Track whether we've already applied color overrides so ClearThemeOverrides can undo them.
     private bool _hasThemeOverrides;
 
     // Constructors
@@ -469,13 +466,6 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _popup.IsOpen = false;
         }
-
-        // Stop tracking system theme changes to avoid leaking the handler.
-        if (_isTrackingSystemTheme && Application.Current?.PlatformSettings != null)
-        {
-            Application.Current.PlatformSettings.ColorValuesChanged -= OnSystemThemeChanged;
-            _isTrackingSystemTheme = false;
-        }
     }
 
     // Private Methods
@@ -593,49 +583,24 @@ public class ModernPersianDatePicker : TemplatedControl
     /// <summary>
     /// Resolves <see cref="Theme"/> into a concrete Light/Dark flag and applies colour
     /// resource overrides on this control so that <c>DynamicResource</c> lookups
-    /// (inside the template) pick the right palette.  For <see cref="ThemeMode.System"/>
-    /// we subscribe to platform colour changes so the picker follows the OS setting live.
+    /// (inside the template) pick the right palette.
+    ///
+    /// For <see cref="ThemeMode.System"/> no overrides are applied — the template's
+    /// <c>DynamicResource</c> bindings resolve automatically via the active
+    /// <c>ThemeDictionaries</c> in PersianDatePickerColors.xaml.
     /// </summary>
     private void ApplyTheme()
     {
-        var settings = Application.Current?.PlatformSettings;
-
         if (Theme == ThemeMode.System)
         {
-            if (!_isTrackingSystemTheme && settings != null)
-            {
-                settings.ColorValuesChanged += OnSystemThemeChanged;
-                _isTrackingSystemTheme = true;
-            }
+            // Inherit the app/system theme via DynamicResource — no overrides needed.
+            ClearThemeOverrides();
         }
         else
         {
-            if (_isTrackingSystemTheme && settings != null)
-            {
-                settings.ColorValuesChanged -= OnSystemThemeChanged;
-                _isTrackingSystemTheme = false;
-            }
+            bool isDark = Theme == ThemeMode.Dark;
+            ApplyThemeColors(isDark);
         }
-
-        bool isDark = ResolveIsDark(settings);
-        ApplyThemeColors(isDark);
-    }
-
-    private void OnSystemThemeChanged(object? sender, PlatformColorValues values)
-    {
-        if (_isDisposed || Theme != ThemeMode.System)
-            return;
-
-        bool isDark = values.ThemeVariant == PlatformThemeVariant.Dark;
-        ApplyThemeColors(isDark);
-    }
-
-    private static bool ResolveIsDark(IPlatformSettings? settings)
-    {
-        if (settings == null)
-            return false;
-
-        return settings.GetColorValues().ThemeVariant == PlatformThemeVariant.Dark;
     }
 
     /// <summary>
