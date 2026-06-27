@@ -9,6 +9,10 @@ on:
         description: 'Package version (e.g. 1.0.0)'
         required: true
 
+permissions:
+  id-token: write   
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -44,5 +48,11 @@ jobs:
       - name: Pack
         run: dotnet pack src/ModernPersianDatePicker -c Release --no-build -p:Version=${{ steps.version.outputs.VERSION }} -o ./artifacts
 
+      - name: NuGet Login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Push to NuGet
-        run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        run: dotnet nuget push ./artifacts/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
