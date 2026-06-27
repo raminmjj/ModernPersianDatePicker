@@ -316,6 +316,13 @@
         <Setter Property="CornerRadius" Value="4"/>
     </Style>
 
+    <Style Selector="local|CalendarView Button.month-year-button.selected">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
+        <Setter Property="FontWeight" Value="Bold"/>
+        <Setter Property="CornerRadius" Value="4"/>
+    </Style>
+
     <!-- Day button focus style -->
     <Style Selector="local|CalendarView Button.day-button:focus">
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
