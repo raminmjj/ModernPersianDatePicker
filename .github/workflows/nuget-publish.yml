@@ -35,7 +35,10 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/v}"
             echo "VERSION=$TAG" >> $GITHUB_OUTPUT
           fi
-      
+
+      - name: Clean
+        run: dotnet clean
+        
       - name: Restore
         run: dotnet restore
 
