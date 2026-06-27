@@ -2,7 +2,6 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Styling;
-using ModernPersianDatePicker;
 
 namespace ModernPersianDatePicker.Demo;
 
@@ -38,7 +37,7 @@ public partial class MainWindow : Window
         SpecificHolidayDatePicker.Holidays = new[]
         {
             new PersianDate(1405, 1, 1, 1),  // 1 Farvardin (Nowruz)
-            new PersianDate(1404, 10, 18, 6), // 18 Dey
+            new PersianDate(1405, 1, 13, 6), // 13 Farvardin
         };
     }
 
