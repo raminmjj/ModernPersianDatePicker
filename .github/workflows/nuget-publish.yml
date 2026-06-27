@@ -37,7 +37,9 @@ jobs:
           fi
 
       - name: Restore
-        run: dotnet restore src/ModernPersianDatePicker
+        run: |
+          dotnet restore src/ModernPersianDatePicker
+          dotnet restore tests/ModernPersianDatePicker.Tests
 
       - name: Build
         run: dotnet build src/ModernPersianDatePicker -c Release --no-restore
