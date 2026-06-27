@@ -19,6 +19,7 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **Multi-Language Support** - Farsi, English, Arabic, Kurdish + custom via `ICalendarLocalization`
 - ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
+- ✅ **Mouse Scroll Navigation** - Scroll through months with mouse wheel when calendar is open
 - ✅ **Editable Mode** - Type dates manually with validation
 - ✅ **Month/Year Selection** - Quick dropdown selectors for month and year
 - ✅ **Today Button** - Quick access to current date
@@ -177,9 +178,9 @@ datePicker.DateRangeSelected += (sender, e) =>
 };
 ```
 
-## Keyboard Navigation
+## Keyboard & Mouse Navigation
 
-When the calendar is open, use these keys:
+When the calendar is open, use these keys and mouse actions:
 
 | Key | Action |
 |-----|--------|
@@ -193,6 +194,8 @@ When the calendar is open, use these keys:
 | `End` | Last day of month |
 | `Space` / `Enter` | Select focused day |
 | `Escape` | Close calendar |
+| `Mouse Scroll Up` | Previous month |
+| `Mouse Scroll Down` | Next month |
 
 ## Editable Mode
 
