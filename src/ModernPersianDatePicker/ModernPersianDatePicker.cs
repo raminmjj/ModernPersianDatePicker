@@ -947,7 +947,23 @@ public class ModernPersianDatePicker : TemplatedControl
             return;
 
         if (_calendarView != null)
+        {
             _calendarView.CalendarType = CalendarType;
+
+            // Reset DisplayYear/Month to the correct calendar's today
+            if (CalendarType == CalendarType.Gregorian)
+            {
+                var today = DateTime.Today;
+                _calendarView.DisplayYear = today.Year;
+                _calendarView.DisplayMonth = today.Month;
+            }
+            else
+            {
+                var today = PersianCalendarHelper.Today();
+                _calendarView.DisplayYear = today.Year;
+                _calendarView.DisplayMonth = today.Month;
+            }
+        }
 
         UpdateDisplayText();
     }
@@ -1048,8 +1064,23 @@ public class ModernPersianDatePicker : TemplatedControl
 
         try
         {
-            _calendarView.DisplayYear = SelectedDate?.Year ?? PersianCalendarHelper.Today().Year;
-            _calendarView.DisplayMonth = SelectedDate?.Month ?? PersianCalendarHelper.Today().Month;
+            if (SelectedDate.HasValue)
+            {
+                _calendarView.DisplayYear = SelectedDate.Value.Year;
+                _calendarView.DisplayMonth = SelectedDate.Value.Month;
+            }
+            else if (CalendarType == CalendarType.Gregorian)
+            {
+                var today = DateTime.Today;
+                _calendarView.DisplayYear = today.Year;
+                _calendarView.DisplayMonth = today.Month;
+            }
+            else
+            {
+                var today = PersianCalendarHelper.Today();
+                _calendarView.DisplayYear = today.Year;
+                _calendarView.DisplayMonth = today.Month;
+            }
             _calendarView.SelectedDate = SelectedDate;
 
             _popup.PlacementTarget = this;

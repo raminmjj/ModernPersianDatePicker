@@ -109,15 +109,24 @@ public class CalendarView : TemplatedControl
 
     public CalendarView()
     {
-        var today = PersianCalendarHelper.Today();
-        DisplayYear = today.Year;
-        DisplayMonth = today.Month;
-        _focusedDay = today.Day;
-        
-        // Make control focusable
+        // Set initial values based on CalendarType (default is Persian)
+        if (CalendarType == CalendarType.Gregorian)
+        {
+            var today = DateTime.Today;
+            DisplayYear = today.Year;
+            DisplayMonth = today.Month;
+            _focusedDay = today.Day;
+        }
+        else
+        {
+            var today = PersianCalendarHelper.Today();
+            DisplayYear = today.Year;
+            DisplayMonth = today.Month;
+            _focusedDay = today.Day;
+        }
+
         Focusable = true;
 
-        // Set initial FlowDirection (RTL for Persian, LTR for Gregorian)
         Visual.SetFlowDirection(this, CalendarType == CalendarType.Gregorian
             ? Avalonia.Media.FlowDirection.LeftToRight
             : Avalonia.Media.FlowDirection.RightToLeft);
