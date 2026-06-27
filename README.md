@@ -16,14 +16,22 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 
 - ✅ **Full Persian Calendar Support** - Accurate Jalali/Shamsi date calculations with leap year support
 - ✅ **RTL & LTR Layouts** - Right-to-left for Persian, Left-to-right for English
-- ✅ **Bilingual Support** - Persian month/day names (فروردین, شنبه) or English (Farvardin, Shanbeh)
+- ✅ **Multi-Language Support** - Farsi, English, Arabic, Kurdish + custom via `ICalendarLocalization`
+- ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
 - ✅ **Editable Mode** - Type dates manually with validation
 - ✅ **Month/Year Selection** - Quick dropdown selectors for month and year
 - ✅ **Today Button** - Quick access to current date
-- ✅ **Modern UI** - Beautiful styling with hover effects and visual feedback
+- ✅ **Time Picker** - Optional Hour/Minute/Second spinners
+- ✅ **Date Range Picker** - Select start and end dates
+- ✅ **Weekly Holidays** - Configurable `DayOfWeek` recurring holidays
+- ✅ **Specific Date Holidays** - Mark individual dates as holidays with custom brush
+- ✅ **Custom Accent Brush** - Override the theme accent for selected day, today border, etc.
+- ✅ **Light/Dark Theme** - Per-instance theme mode (System/Light/Dark) or app-wide
 - ✅ **Min/Max Date Validation** - Restrict date range
 - ✅ **Multiple Date Formats** - Long, short, and month display formats
+- ✅ **Modern UI** - Beautiful styling with hover effects and visual feedback
+- ✅ **MVVM Ready** - Full data binding support with compiled bindings
 
 ## Installation
 
@@ -68,14 +76,14 @@ dotnet add package ModernPersianDatePicker
         x:Class="YourApp.MainWindow">
     
     <StackPanel Margin="20">
-        <!-- Basic Usage -->
+        <!-- Basic Usage (Persian, RTL) -->
         <persian:ModernPersianDatePicker 
             Width="250"
             Margin="0,10"/>
         
-        <!-- English Names (LTR) -->
+        <!-- English Language (LTR) -->
         <persian:ModernPersianDatePicker 
-            UseEnglishNames="True"
+            Language="English"
             FlowDirection="LeftToRight"
             Width="250"
             Margin="0,10"/>
@@ -93,6 +101,26 @@ dotnet add package ModernPersianDatePicker
             MaxDate="1410/12/29"
             Width="250"
             Margin="0,10"/>
+
+        <!-- Time Picker -->
+        <persian:ModernPersianDatePicker 
+            IsTimePickerEnabled="True"
+            Width="250"
+            Margin="0,10"/>
+
+        <!-- Date Range Picker -->
+        <persian:ModernPersianDatePicker 
+            IsRangeMode="True"
+            Width="250"
+            Margin="0,10"/>
+
+        <!-- Custom Accent & Gregorian Calendar -->
+        <persian:ModernPersianDatePicker 
+            CalendarType="Gregorian"
+            Language="English"
+            AccentBrush="#FF4CAF50"
+            Width="250"
+            Margin="0,10"/>
     </StackPanel>
 </Window>
 ```
@@ -103,12 +131,26 @@ dotnet add package ModernPersianDatePicker
 |----------|------|---------|-------------|
 | `SelectedDate` | `PersianDate?` | `null` | The selected Persian date |
 | `DisplayFormat` | `string` | `"long"` | Date display format (`"long"`, `"short"`, `"month"`) |
-| `UseEnglishNames` | `bool` | `false` | Use English month/day names |
+| `Language` | `CalendarLanguage` | `Farsi` | Calendar language (Farsi, English, Arabic, Kurdish) |
+| `CalendarType` | `CalendarType` | `Auto` | Calendar system (Auto, Persian, Gregorian) |
 | `IsEditable` | `bool` | `false` | Allow manual date typing |
 | `InvalidValueAction` | `InvalidValueAction` | `SetToNull` | Action for invalid input |
 | `MinDate` | `PersianDate?` | `null` | Minimum selectable date |
 | `MaxDate` | `PersianDate?` | `null` | Maximum selectable date |
 | `Watermark` | `string` | `"Select date..."` | Placeholder text |
+| `Theme` | `ThemeMode` | `System` | Per-instance theme (System, Light, Dark) |
+| `AccentBrush` | `IBrush?` | `null` | Override accent color for selection and focus |
+| `HolidayBrush` | `IBrush?` | `null` | Override color for holiday day numbers |
+| `WeeklyHolidays` | `IReadOnlyList<DayOfWeek>` | `[Friday]` | Days of week treated as holidays |
+| `Holidays` | `IReadOnlyList<PersianDate>` | `[]` | Specific dates to mark as holidays |
+| `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar |
+| `Hour` | `int` | `0` | Selected hour (0-23) |
+| `Minute` | `int` | `0` | Selected minute (0-59) |
+| `Second` | `int` | `0` | Selected second (0-59) |
+| `IsRangeMode` | `bool` | `false` | Enable date range selection |
+| `RangeStart` | `PersianDate?` | `null` | Start of selected range |
+| `RangeEnd` | `PersianDate?` | `null` | End of selected range |
+| `LocalizationProvider` | `ICalendarLocalization?` | `null` | Custom localization provider |
 
 ## Events
 
@@ -122,6 +164,16 @@ datePicker.SelectedDateChanged += (sender, e) =>
     {
         Console.WriteLine($"Selected: {e.NewDate.Value.ToString("long")}");
     }
+};
+```
+
+### `DateRangeSelected`
+Fired when a date range is fully selected (in `IsRangeMode`).
+
+```csharp
+datePicker.DateRangeSelected += (sender, e) =>
+{
+    Console.WriteLine($"Range: {e.RangeStart} ~ {e.RangeEnd}");
 };
 ```
 
@@ -165,6 +217,73 @@ InvalidValueAction="SetToToday"
 
 // Keep current value if invalid
 InvalidValueAction="Keep"
+```
+
+## Localization
+
+Built-in languages: **Farsi**, **English**, **Arabic**, **Kurdish**.
+
+To add a custom language, implement `ICalendarLocalization`:
+
+```csharp
+public class MyLocalization : ICalendarLocalization
+{
+    public string[] MonthNames => new[] { "Month1", "Month2", /* ... */ };
+    public string[] DayNames => new[] { "Day1", "Day2", /* ... */ };
+    public string[] ShortMonthNames => new[] { "M1", "M2", /* ... */ };
+    public string[] ShortDayNames => new[] { "D1", "D2", /* ... */ };
+}
+
+// Use it:
+datePicker.LocalizationProvider = new MyLocalization();
+```
+
+## Theming
+
+### App-Wide Theme
+```xml
+<Application RequestedThemeVariant="Dark">
+```
+
+### Per-Instance Theme
+```xml
+<persian:ModernPersianDatePicker Theme="Dark" />
+```
+
+### Custom Accent
+```xml
+<persian:ModernPersianDatePicker AccentBrush="#FF4CAF50" />
+```
+
+## Holidays
+
+### Weekly Holidays
+```csharp
+// Friday + Saturday (Persian weekend)
+datePicker.WeeklyHolidays = new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
+```
+
+### Specific Date Holidays
+```csharp
+datePicker.Holidays = new[]
+{
+    new PersianDate(1405, 1, 1, 1),   // Nowruz
+    new PersianDate(1404, 10, 18, 6), // Yalda Night
+};
+```
+
+### Custom Holiday Brush
+```xml
+<persian:ModernPersianDatePicker HolidayBrush="#FFFF8800" />
+```
+
+## Gregorian Calendar Mode
+
+```xml
+<persian:ModernPersianDatePicker 
+    CalendarType="Gregorian"
+    Language="English"
+    FlowDirection="LeftToRight" />
 ```
 
 ## Helper Classes
@@ -215,7 +334,11 @@ DateTime gregorian = date.ToDateTime();
 
 ## Demo Application
 
-The solution includes a demo application showcasing all features:
+The solution includes a demo application showcasing all features, with three window variants:
+
+- **MainWindow** - Code-behind style
+- **MvvmWindow** - Manual MVVM (INotifyPropertyChanged + ICommand)
+- **MvvmToolkitWindow** - CommunityToolkit.Mvvm ([ObservableProperty] + [RelayCommand])
 
 ```bash
 cd demo/ModernPersianDatePicker.Demo
@@ -252,14 +375,22 @@ dotnet build demo/ModernPersianDatePicker.Demo
 
 # Run demo
 dotnet run --project demo/ModernPersianDatePicker.Demo
+
+# Run tests
+dotnet test
 ```
 
 ## Roadmap
 
-- [ ] Time picker component
-- [ ] Date range picker
-- [ ] Custom themes
-- [ ] More localization options
+- [x] Time picker component
+- [x] Date range picker
+- [x] Custom themes
+- [x] More localization options (Arabic, Kurdish + custom provider)
+- [x] Gregorian calendar mode
+- [x] Weekly & specific date holidays
+- [x] Custom accent brush
+- [x] Per-instance theme mode
+- [x] MVVM demo windows
 
 ## Contributing
 
