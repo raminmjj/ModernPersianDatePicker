@@ -116,6 +116,11 @@ public class CalendarView : TemplatedControl
         
         // Make control focusable
         Focusable = true;
+
+        // Set initial FlowDirection (RTL for Persian, LTR for Gregorian)
+        Visual.SetFlowDirection(this, CalendarType == CalendarType.Gregorian
+            ? Avalonia.Media.FlowDirection.LeftToRight
+            : Avalonia.Media.FlowDirection.RightToLeft);
     }
 
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
@@ -371,9 +376,12 @@ public class CalendarView : TemplatedControl
 
         for (int month = 1; month <= 12; month++)
         {
+            var monthName = CalendarType == CalendarType.Gregorian
+                ? PersianCalendarHelper.GetGregorianMonthName(month, GetLocalization())
+                : GetLocalization().MonthNames[month];
             var button = new Button
             {
-                Content = GetLocalization().MonthNames[month],
+                Content = monthName,
                 [Grid.RowProperty] = row,
                 [Grid.ColumnProperty] = col,
                 Margin = new Thickness(2),
@@ -800,12 +808,11 @@ public class CalendarView : TemplatedControl
                         button.Classes.Add("selected");
                     }
 
-                    var today = CalendarType == CalendarType.Gregorian
-                        ? DateTime.Today
-                        : PersianCalendarHelper.Today().ToDateTime();
+                    var todayPersian = PersianCalendarHelper.Today();
+                    var todayGregorian = DateTime.Today;
                     bool isToday = CalendarType == CalendarType.Gregorian
-                        ? today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay
-                        : today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay;
+                        ? todayGregorian.Year == DisplayYear && todayGregorian.Month == DisplayMonth && todayGregorian.Day == currentDay
+                        : todayPersian.Year == DisplayYear && todayPersian.Month == DisplayMonth && todayPersian.Day == currentDay;
                     if (isToday)
                     {
                         button.Classes.Add("today");
