@@ -28,10 +28,29 @@
     </Window.Resources>
     
     <ScrollViewer>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+
+        <!-- Calendar Type selector -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,16">
+            <TextBlock Text="Calendar:"
+                       VerticalAlignment="Center"
+                       Margin="0,0,8,0"/>
+            <RadioButton x:Name="RbCalAuto" GroupName="CalendarType"
+                         Content="Auto" IsChecked="True"
+                         Click="OnCalendarTypeDemoChanged"/>
+            <RadioButton x:Name="RbCalPersian" GroupName="CalendarType"
+                         Content="Persian"
+                         Click="OnCalendarTypeDemoChanged"/>
+            <RadioButton x:Name="RbCalGregorian" GroupName="CalendarType"
+                         Content="Gregorian"
+                         Click="OnCalendarTypeDemoChanged"/>
+        </StackPanel>
 
         <!-- Title -->
-        <TextBlock Grid.Row="0"
+        <TextBlock Grid.Row="1"
                    Text="Modern Persian DatePicker Control"
                    FontSize="24"
                    FontWeight="Bold"
@@ -39,7 +58,7 @@
                    HorizontalAlignment="Center"/>
         
         <!-- Basic Usage -->
-        <Border Grid.Row="1"
+        <Border Grid.Row="2"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -63,7 +82,7 @@
         </Border>
         
         <!-- English Names -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -90,7 +109,7 @@
         </Border>
         
         <!-- With Custom Accent -->
-        <Border Grid.Row="3"
+        <Border Grid.Row="4"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -133,7 +152,7 @@
         </Border>
         
         <!-- Custom Accent Theme -->
-        <Border Grid.Row="4"
+        <Border Grid.Row="5"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -167,7 +186,7 @@
         </Border>
         
         <!-- Editable Date Input -->
-        <Border Grid.Row="5"
+        <Border Grid.Row="6"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -218,7 +237,7 @@
         </Border>
 
         <!-- Holidays & Theme -->
-        <Border Grid.Row="6"
+        <Border Grid.Row="7"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -297,7 +316,7 @@
         </Border>
 
         <!-- Time Picker -->
-        <Border Grid.Row="7"
+        <Border Grid.Row="8"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -327,7 +346,7 @@
         </Border>
 
         <!-- Date Range Picker -->
-        <Border Grid.Row="8"
+        <Border Grid.Row="9"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -357,7 +376,7 @@
         </Border>
 
         <!-- Localization -->
-        <Border Grid.Row="9"
+        <Border Grid.Row="10"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -401,7 +420,7 @@
         </Border>
 
         <!-- Gregorian Calendar -->
-        <Border Grid.Row="10"
+        <Border Grid.Row="11"
                 BorderBrush="{DynamicResource CardBorderBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
@@ -419,7 +438,6 @@
                            Margin="0,0,0,12"/>
 
                 <persian:ModernPersianDatePicker x:Name="GregorianDatePicker"
-                                                 CalendarType="Gregorian"
                                                  Language="English"
                                                  HorizontalAlignment="Left"
                                                  MinWidth="280"/>
@@ -432,7 +450,7 @@
         </Border>
 
         <!-- Information -->
-        <Border Grid.Row="11"
+        <Border Grid.Row="12"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"

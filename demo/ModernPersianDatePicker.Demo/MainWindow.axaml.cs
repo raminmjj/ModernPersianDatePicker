@@ -235,4 +235,30 @@ public partial class MainWindow : Window
             GregorianCalendarText.Text = "Selected: (none)";
         }
     }
+
+    private void OnCalendarTypeDemoChanged(object? sender, RoutedEventArgs e)
+    {
+        CalendarType type;
+        if (RbCalPersian.IsChecked == true)
+            type = CalendarType.Persian;
+        else if (RbCalGregorian.IsChecked == true)
+            type = CalendarType.Gregorian;
+        else
+            type = CalendarType.Auto;
+
+        BasicDatePicker.CalendarType = type;
+        EnglishDatePicker.CalendarType = type;
+        CustomDatePicker.CalendarType = type;
+        GreenAccentDatePicker.CalendarType = type;
+        PurpleAccentDatePicker.CalendarType = type;
+        EditableDatePicker.CalendarType = type;
+        ThemedDatePicker.CalendarType = type;
+        WeeklyHolidayDatePicker.CalendarType = type;
+        SpecificHolidayDatePicker.CalendarType = type;
+        CustomHolidayBrushDatePicker.CalendarType = type;
+        TimePickerDatePicker.CalendarType = type;
+        RangeDatePicker.CalendarType = type;
+        LocalizedDatePicker.CalendarType = type;
+        GregorianDatePicker.CalendarType = type;
+    }
 }
