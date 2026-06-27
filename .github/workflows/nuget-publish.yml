@@ -35,11 +35,12 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/v}"
             echo "VERSION=$TAG" >> $GITHUB_OUTPUT
           fi
-
+      
       - name: Restore
-        run: |
-          dotnet restore src/ModernPersianDatePicker
-          dotnet restore tests/ModernPersianDatePicker.Tests
+        run: dotnet restore src/ModernPersianDatePicker
+        
+      - name: Restore Tests
+        run: dotnet restore tests/ModernPersianDatePicker.Tests
 
       - name: Build
         run: dotnet build src/ModernPersianDatePicker -c Release --no-restore
