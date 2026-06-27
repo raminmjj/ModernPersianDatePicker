@@ -397,6 +397,7 @@ public class CalendarView : TemplatedControl
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
             };
+            button.Classes.Add("month-year-button");
 
             if (month == currentMonth)
             {
@@ -456,6 +457,7 @@ public class CalendarView : TemplatedControl
                 HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Stretch,
                 HorizontalContentAlignment = Avalonia.Layout.HorizontalAlignment.Center
             };
+            button.Classes.Add("month-year-button");
 
             if (year == currentYear)
             {
