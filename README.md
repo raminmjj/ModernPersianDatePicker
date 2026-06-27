@@ -49,7 +49,7 @@ cd ModernPersianDatePicker
 <ProjectReference Include="..\ModernPersianDatePicker\ModernPersianDatePicker.csproj" />
 ```
 
-### Option 3: NuGet Package (Coming Soon)
+### Option 3: NuGet Package
 ```bash
 dotnet add package ModernPersianDatePicker
 ```
@@ -271,7 +271,7 @@ datePicker.WeeklyHolidays = new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
 datePicker.Holidays = new[]
 {
     new PersianDate(1405, 1, 1, 1),   // Nowruz
-    new PersianDate(1404, 10, 18, 6), // Yalda Night
+    new PersianDate(1404, 9, 30, 2), // Yalda Night
 };
 ```
 
@@ -413,7 +413,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Inspired by [HEskandari/FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms
 - Built with [Avalonia UI](https://avaloniaui.net/)
-- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io)
+- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io) & [MiMo](https://github.com/XiaomiMiMo/MiMo-Code)
 - Persian calendar algorithms based on standard Jalali calendar calculations
 
 ## Support
