@@ -424,7 +424,7 @@
                                                  HorizontalAlignment="Left"
                                                  MinWidth="280"/>
 
-                <TextBlock x:Name="GregorianDateText"
+                <TextBlock x:Name="GregorianCalendarText"
                            Text="Selected: "
                            Margin="0,8,0,0"
                            Foreground="{DynamicResource ThemeForegroundBrush}"/>

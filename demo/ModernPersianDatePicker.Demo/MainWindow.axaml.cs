@@ -228,11 +228,11 @@ public partial class MainWindow : Window
         if (e.NewDate.HasValue)
         {
             var d = e.NewDate.Value.ToDateTime();
-            GregorianDateText.Text = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
+            GregorianCalendarText.Text = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
         }
         else
         {
-            GregorianDateText.Text = "Selected: (none)";
+            GregorianCalendarText.Text = "Selected: (none)";
         }
     }
 }
