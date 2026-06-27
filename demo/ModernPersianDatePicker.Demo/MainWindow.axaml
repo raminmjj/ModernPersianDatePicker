@@ -28,7 +28,7 @@
     </Window.Resources>
     
     <ScrollViewer>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
 
         <!-- Title -->
         <TextBlock Grid.Row="0"
@@ -400,8 +400,39 @@
             </StackPanel>
         </Border>
 
-        <!-- Information -->
+        <!-- Gregorian Calendar -->
         <Border Grid.Row="10"
+                BorderBrush="{DynamicResource CardBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Padding="16"
+                Margin="0,0,0,16">
+            <StackPanel>
+                <TextBlock Text="Gregorian Calendar (CalendarType=Gregorian)"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Margin="0,0,0,12"/>
+
+                <TextBlock Text="Switches to Western calendar with LTR layout. Scroll direction reverses automatically."
+                           FontSize="12"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"
+                           Margin="0,0,0,12"/>
+
+                <persian:ModernPersianDatePicker x:Name="GregorianDatePicker"
+                                                 CalendarType="Gregorian"
+                                                 Language="English"
+                                                 HorizontalAlignment="Left"
+                                                 MinWidth="280"/>
+
+                <TextBlock x:Name="GregorianDateText"
+                           Text="Selected: "
+                           Margin="0,8,0,0"
+                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Information -->
+        <Border Grid.Row="11"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"
@@ -435,6 +466,8 @@
                 <TextBlock Text="• Date range picker mode (click start, click end)"
                            Margin="0,2"/>
                 <TextBlock Text="• Extensible localization (Farsi, English, Arabic, Kurdish + custom)"
+                           Margin="0,2"/>
+                <TextBlock Text="• Gregorian calendar mode with LTR layout"
                            Margin="0,2"/>
             </StackPanel>
         </Border>

@@ -30,6 +30,12 @@ public class CalendarView : TemplatedControl
     public static readonly StyledProperty<ICalendarLocalization?> LocalizationProviderProperty =
         AvaloniaProperty.Register<CalendarView, ICalendarLocalization?>(nameof(LocalizationProvider));
 
+    public static readonly StyledProperty<CalendarType> CalendarTypeProperty =
+        AvaloniaProperty.Register<CalendarView, CalendarType>(nameof(CalendarType));
+
+    public static readonly StyledProperty<int> FirstDayOfWeekProperty =
+        AvaloniaProperty.Register<CalendarView, int>(nameof(FirstDayOfWeek), 0);
+
     /// <summary>
     /// Override brush for holiday day numbers. When null, the theme's built-in holiday color is used.
     /// </summary>
@@ -91,6 +97,8 @@ public class CalendarView : TemplatedControl
         DisplayYearProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         DisplayMonthProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         LocalizationProviderProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        CalendarTypeProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
+        FirstDayOfWeekProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnDisplayYearMonthChanged(e));
         SelectedDateProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnSelectedDateChanged(e));
         WeeklyHolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
         HolidaysProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidaysChanged(e));
@@ -113,8 +121,16 @@ public class CalendarView : TemplatedControl
     private void OnDisplayYearMonthChanged(AvaloniaPropertyChangedEventArgs e)
     {
         // Only update calendar if the property actually changed
-        if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == LocalizationProviderProperty)
+        if (e.Property == DisplayYearProperty || e.Property == DisplayMonthProperty || e.Property == LocalizationProviderProperty
+            || e.Property == CalendarTypeProperty || e.Property == FirstDayOfWeekProperty)
         {
+            if (e.Property == CalendarTypeProperty)
+            {
+                // Set FlowDirection: LTR for Gregorian, RTL for Persian
+                Visual.SetFlowDirection(this, CalendarType == CalendarType.Gregorian
+                    ? Avalonia.Media.FlowDirection.LeftToRight
+                    : Avalonia.Media.FlowDirection.RightToLeft);
+            }
             UpdateCalendar();
         }
     }
@@ -205,6 +221,18 @@ public class CalendarView : TemplatedControl
     {
         get => GetValue(LocalizationProviderProperty);
         set => SetValue(LocalizationProviderProperty, value);
+    }
+
+    public CalendarType CalendarType
+    {
+        get => GetValue(CalendarTypeProperty);
+        set => SetValue(CalendarTypeProperty, value);
+    }
+
+    public int FirstDayOfWeek
+    {
+        get => GetValue(FirstDayOfWeekProperty);
+        set => SetValue(FirstDayOfWeekProperty, value);
     }
 
     /// <summary>
@@ -453,119 +481,83 @@ public class CalendarView : TemplatedControl
         if (e.Handled)
             return;
 
-        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+        bool isLtr = Visual.GetFlowDirection(this) == Avalonia.Media.FlowDirection.LeftToRight;
+        int daysInMonth = CalendarType == CalendarType.Gregorian
+            ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth)
+            : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
         bool moved = false;
         bool monthChanged = false;
 
         switch (e.Key)
         {
             case Key.Left:
-                // Move to next day (RTL: left is next day)
-                if (_focusedDay < daysInMonth)
+                if (isLtr)
                 {
-                    _focusedDay++;
-                    moved = true;
+                    if (_focusedDay > 1) { _focusedDay--; moved = true; }
+                    else { NavigateToMonth(-1); daysInMonth = CalendarType == CalendarType.Gregorian ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth) : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth); _focusedDay = daysInMonth; monthChanged = true; }
                 }
                 else
                 {
-                    // Move to next month
-                    NavigateToMonth(1);
-                    _focusedDay = 1;
-                    monthChanged = true;
+                    if (_focusedDay < daysInMonth) { _focusedDay++; moved = true; }
+                    else { NavigateToMonth(1); _focusedDay = 1; monthChanged = true; }
                 }
                 break;
 
             case Key.Right:
-                // Move to previous day (RTL: right is previous day)
-                if (_focusedDay > 1)
+                if (isLtr)
                 {
-                    _focusedDay--;
-                    moved = true;
+                    if (_focusedDay < daysInMonth) { _focusedDay++; moved = true; }
+                    else { NavigateToMonth(1); _focusedDay = 1; monthChanged = true; }
                 }
                 else
                 {
-                    // Move to previous month
-                    NavigateToMonth(-1);
-                    // Set to last day of previous month
-                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
-                    _focusedDay = daysInMonth;
-                    monthChanged = true;
+                    if (_focusedDay > 1) { _focusedDay--; moved = true; }
+                    else { NavigateToMonth(-1); daysInMonth = CalendarType == CalendarType.Gregorian ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth) : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth); _focusedDay = daysInMonth; monthChanged = true; }
                 }
                 break;
 
             case Key.Up:
-                // Move to previous week
-                if (_focusedDay > 7)
-                {
-                    _focusedDay -= 7;
-                    moved = true;
-                }
-                else
-                {
-                    // Move to previous month, same weekday
-                    NavigateToMonth(-1);
-                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
-                    _focusedDay = Math.Min(_focusedDay, daysInMonth);
-                    monthChanged = true;
-                }
+                if (_focusedDay > 7) { _focusedDay -= 7; moved = true; }
+                else { NavigateToMonth(-1); daysInMonth = CalendarType == CalendarType.Gregorian ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth) : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth); _focusedDay = Math.Min(_focusedDay, daysInMonth); monthChanged = true; }
                 break;
 
             case Key.Down:
-                // Move to next week
-                if (_focusedDay + 7 <= daysInMonth)
-                {
-                    _focusedDay += 7;
-                    moved = true;
-                }
-                else
-                {
-                    // Move to next month, same weekday
-                    NavigateToMonth(1);
-                    daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
-                    _focusedDay = Math.Min(_focusedDay, daysInMonth);
-                    monthChanged = true;
-                }
+                if (_focusedDay + 7 <= daysInMonth) { _focusedDay += 7; moved = true; }
+                else { NavigateToMonth(1); daysInMonth = CalendarType == CalendarType.Gregorian ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth) : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth); _focusedDay = Math.Min(_focusedDay, daysInMonth); monthChanged = true; }
                 break;
 
             case Key.PageUp:
-                // Move to previous month (faster navigation)
                 NavigateToMonth(-1);
                 monthChanged = true;
                 break;
 
             case Key.PageDown:
-                // Move to next month (faster navigation)
                 NavigateToMonth(1);
                 monthChanged = true;
                 break;
 
             case Key.Home:
-                // Move to first day of month
                 _focusedDay = 1;
                 moved = true;
                 break;
 
             case Key.End:
-                // Move to last day of month
                 _focusedDay = daysInMonth;
                 moved = true;
                 break;
 
             case Key.Space:
             case Key.Enter:
-                // Select the focused day
                 OnDayClicked(_focusedDay);
                 e.Handled = true;
                 return;
 
             case Key.Escape:
-                // Close popup (handled by parent)
                 return;
         }
 
         if (moved || monthChanged)
         {
-            // Update visual focus
             UpdateFocusedDay();
             e.Handled = true;
         }
@@ -576,8 +568,14 @@ public class CalendarView : TemplatedControl
         base.OnPointerWheelChanged(e);
         if (e.Handled) return;
 
-        int delta = e.Delta.Y > 0 ? -1 : 1;
-        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+        bool isLtr = Visual.GetFlowDirection(this) == Avalonia.Media.FlowDirection.LeftToRight;
+        int delta = isLtr
+            ? (e.Delta.Y > 0 ? 1 : -1)
+            : (e.Delta.Y > 0 ? -1 : 1);
+
+        int daysInMonth = CalendarType == CalendarType.Gregorian
+            ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth)
+            : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
         int newDay = _focusedDay + delta;
 
         if (newDay >= 1 && newDay <= daysInMonth)
@@ -592,7 +590,9 @@ public class CalendarView : TemplatedControl
         else
         {
             NavigateToMonth(-1);
-            daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+            daysInMonth = CalendarType == CalendarType.Gregorian
+                ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth)
+                : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
             _focusedDay = daysInMonth;
         }
 
@@ -713,9 +713,13 @@ public class CalendarView : TemplatedControl
         
         try
         {
+            var loc = GetLocalization();
+
             if (_monthText != null)
             {
-                _monthText.Text = GetLocalization().MonthNames[DisplayMonth];
+                _monthText.Text = CalendarType == CalendarType.Gregorian
+                    ? PersianCalendarHelper.GetGregorianMonthName(DisplayMonth, loc)
+                    : loc.MonthNames[DisplayMonth];
             }
             
             if (_yearText != null)
@@ -725,8 +729,7 @@ public class CalendarView : TemplatedControl
             
             if (_todayText != null)
             {
-                var today = PersianCalendarHelper.Today();
-                _todayText.Text = GetLocalization().TodayLabel;
+                _todayText.Text = loc.TodayLabel;
             }
 
             if (_daysGrid != null)
@@ -735,7 +738,6 @@ public class CalendarView : TemplatedControl
                 _daysGrid.ColumnDefinitions.Clear();
                 _daysGrid.RowDefinitions.Clear();
 
-                // Create 7 columns for days of week
                 for (int i = 0; i < 7; i++)
                 {
                     _daysGrid.ColumnDefinitions.Add(new ColumnDefinition(GridLength.Star));
@@ -744,7 +746,10 @@ public class CalendarView : TemplatedControl
                 // Add day names header
                 for (int i = 0; i < 7; i++)
                 {
-                    var dayName = GetLocalization().ShortDayNames[i];
+                    int dayIndex = (FirstDayOfWeek + i) % 7;
+                    var dayName = CalendarType == CalendarType.Gregorian
+                        ? PersianCalendarHelper.GetGregorianShortDayName(dayIndex, loc)
+                        : loc.ShortDayNames[dayIndex];
                     var textBlock = new TextBlock
                     {
                         Text = dayName,
@@ -757,23 +762,28 @@ public class CalendarView : TemplatedControl
                     _daysGrid.Children.Add(textBlock);
                 }
 
-                // Add rows for weeks (max 6 weeks + 1 for header = 7 total rows)
                 for (int i = 0; i < 7; i++)
                 {
                     _daysGrid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
                 }
 
-                // Get first day of month and days in month
-                int firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
-                int daysInMonth = PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
+                int firstDayOfWeek = CalendarType == CalendarType.Gregorian
+                    ? PersianCalendarHelper.GetGregorianFirstDayOfWeek(DisplayYear, DisplayMonth)
+                    : PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
+                int daysInMonth = CalendarType == CalendarType.Gregorian
+                    ? PersianCalendarHelper.GetGregorianDaysInMonth(DisplayYear, DisplayMonth)
+                    : PersianCalendarHelper.GetDaysInMonth(DisplayYear, DisplayMonth);
 
-                // Add day buttons
+                // Normalize firstDayOfWeek relative to FirstDayOfWeek setting
+                int startColumn = (firstDayOfWeek - FirstDayOfWeek + 7) % 7;
+
                 int currentRow = 1;
-                int currentColumn = firstDayOfWeek;
+                int currentColumn = startColumn;
 
                 for (int day = 1; day <= daysInMonth; day++)
                 {
-                    int currentDay = day; // Capture the current day value
+                    int currentDay = day;
+                    int dayOfWeekIndex = (startColumn + day - 1) % 7;
                     var button = new Button
                     {
                         Content = currentDay.ToString(),
@@ -782,7 +792,6 @@ public class CalendarView : TemplatedControl
                     };
                     button.Classes.Add("day-button");
 
-                    // Check if this is the selected date
                     if (SelectedDate.HasValue &&
                         SelectedDate.Value.Year == DisplayYear &&
                         SelectedDate.Value.Month == DisplayMonth &&
@@ -791,26 +800,30 @@ public class CalendarView : TemplatedControl
                         button.Classes.Add("selected");
                     }
 
-                    // Check if this is today
-                    var today = PersianCalendarHelper.Today();
-                    if (today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay)
+                    var today = CalendarType == CalendarType.Gregorian
+                        ? DateTime.Today
+                        : PersianCalendarHelper.Today().ToDateTime();
+                    bool isToday = CalendarType == CalendarType.Gregorian
+                        ? today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay
+                        : today.Year == DisplayYear && today.Month == DisplayMonth && today.Day == currentDay;
+                    if (isToday)
                     {
                         button.Classes.Add("today");
                     }
 
-                    // Check if this day is a holiday (weekly recurring or a specific date).
-                    // currentColumn is the Persian weekday index (Saturday=0 … Friday=6).
-                    bool isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
-                        || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn));
-                    if (isHoliday)
+                    if (CalendarType == CalendarType.Persian)
                     {
-                        button.Classes.Add("holiday");
+                        bool isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
+                            || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn));
+                        if (isHoliday)
+                        {
+                            button.Classes.Add("holiday");
+                        }
                     }
 
-                    // Apply range classes
                     if (IsRangeMode)
                     {
-                        var buttonDate = new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn);
+                        var buttonDate = new PersianDate(DisplayYear, DisplayMonth, currentDay, dayOfWeekIndex);
                         bool isStart = RangeStart.HasValue && buttonDate == RangeStart.Value;
                         bool isEnd = RangeEnd.HasValue && buttonDate == RangeEnd.Value;
                         bool isIn = RangeStart.HasValue && RangeEnd.HasValue

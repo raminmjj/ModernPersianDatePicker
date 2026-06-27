@@ -127,6 +127,12 @@ public class ModernPersianDatePicker : TemplatedControl
         AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Second),
             validate: v => v >= 0 && v <= 59);
 
+    /// <summary>
+    /// Calendar system to display. Defaults to <see cref="CalendarType.Persian"/>.
+    /// </summary>
+    public static readonly StyledProperty<CalendarType> CalendarTypeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, CalendarType>(nameof(CalendarType));
+
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
@@ -162,6 +168,7 @@ public class ModernPersianDatePicker : TemplatedControl
         HourProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
         MinuteProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
         SecondProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
+        CalendarTypeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnCalendarTypeChanged(e));
     }
 
     public ModernPersianDatePicker()
@@ -336,6 +343,15 @@ public class ModernPersianDatePicker : TemplatedControl
         set => SetValue(SecondProperty, value);
     }
 
+    /// <summary>
+    /// Calendar system to display. Defaults to <see cref="CalendarType.Persian"/>.
+    /// </summary>
+    public CalendarType CalendarType
+    {
+        get => GetValue(CalendarTypeProperty);
+        set => SetValue(CalendarTypeProperty, value);
+    }
+
     // Protected Methods
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
@@ -391,6 +407,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_calendarView != null)
         {
             _calendarView.LocalizationProvider = GetLocalization();
+            _calendarView.CalendarType = CalendarType;
             _calendarView.HolidayBrush = HolidayBrush;
             _calendarView.WeeklyHolidays = WeeklyHolidays;
             _calendarView.Holidays = Holidays;
@@ -924,6 +941,17 @@ public class ModernPersianDatePicker : TemplatedControl
         UpdateDisplayText();
     }
 
+    private void OnCalendarTypeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+            _calendarView.CalendarType = CalendarType;
+
+        UpdateDisplayText();
+    }
+
     private void OnTimeComponentChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_isDisposed)
@@ -1090,7 +1118,21 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else if (SelectedDate.HasValue)
             {
-                displayText = SelectedDate.Value.ToString(DisplayFormat, GetLocalization());
+                if (CalendarType == CalendarType.Gregorian)
+                {
+                    var loc = GetLocalization();
+                    var d = SelectedDate.Value.ToDateTime();
+                    displayText = DisplayFormat.ToLower() switch
+                    {
+                        "long" => $"{PersianCalendarHelper.GetGregorianDayName((int)d.DayOfWeek, loc)} {d.Day} {PersianCalendarHelper.GetGregorianMonthName(d.Month, loc)} {d.Year}",
+                        "month" => $"{PersianCalendarHelper.GetGregorianMonthName(d.Month, loc)} {d.Year}",
+                        _ => $"{d.Year}/{d.Month:D2}/{d.Day:D2}"
+                    };
+                }
+                else
+                {
+                    displayText = SelectedDate.Value.ToString(DisplayFormat, GetLocalization());
+                }
                 if (IsTimePickerEnabled)
                     displayText += $" {Hour:D2}:{Minute:D2}:{Second:D2}";
             }

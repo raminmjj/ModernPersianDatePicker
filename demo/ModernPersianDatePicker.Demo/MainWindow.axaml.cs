@@ -26,6 +26,7 @@ public partial class MainWindow : Window
         TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
         RangeDatePicker.DateRangeSelected += OnRangeDateSelected;
         LocalizedDatePicker.SelectedDateChanged += OnLocalizedDateChanged;
+        GregorianDatePicker.SelectedDateChanged += OnGregorianDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -220,5 +221,18 @@ public partial class MainWindow : Window
         LocalizedDateText.Text = e.NewDate.HasValue
             ? $"Selected: {e.NewDate.Value.ToString("long")}"
             : "Selected: (none)";
+    }
+
+    private void OnGregorianDateChanged(object? sender, SelectedDateChangedEventArgs e)
+    {
+        if (e.NewDate.HasValue)
+        {
+            var d = e.NewDate.Value.ToDateTime();
+            GregorianDateText.Text = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
+        }
+        else
+        {
+            GregorianDateText.Text = "Selected: (none)";
+        }
     }
 }

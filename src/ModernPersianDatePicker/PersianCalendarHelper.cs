@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
 
@@ -155,6 +156,120 @@ public static class PersianCalendarHelper
     public static PersianDate Today()
     {
         return ToPersianDate(DateTime.Today);
+    }
+
+    // ── Gregorian helpers ──
+
+    public static int GetGregorianDaysInMonth(int year, int month)
+    {
+        return DateTime.DaysInMonth(year, month);
+    }
+
+    public static int GetGregorianFirstDayOfWeek(int year, int month)
+    {
+        var firstDay = new DateTime(year, month, 1);
+        return (int)firstDay.DayOfWeek;
+    }
+
+    public static bool IsGregorianLeapYear(int year)
+    {
+        return DateTime.IsLeapYear(year);
+    }
+
+    public static string GetGregorianMonthName(int month, ICalendarLocalization localization)
+    {
+        if (localization is Localizations.FarsiLocalization)
+        {
+            return month switch
+            {
+                1 => "ژانویه", 2 => "فوریه", 3 => "مارس",
+                4 => "آوریل", 5 => "مه", 6 => "ژوئن",
+                7 => "ژوئیه", 8 => "اوت", 9 => "سپتامبر",
+                10 => "اکتبر", 11 => "نوامبر", 12 => "دسامبر",
+                _ => ""
+            };
+        }
+        if (localization is Localizations.KurdishLocalization)
+        {
+            return month switch
+            {
+                1 => "کانوونی یەکەم", 2 => "کانوونی دووەم", 3 => "ئازار",
+                4 => "نیسان", 5 => "ئایار", 6 => "حوزەیران",
+                7 => "تەمموز", 8 => "ئاب", 9 => "ئەیلوول",
+                10 => "تشرینی یەکەم", 11 => "تشرینی دووەم", 12 => "کانوونی یەکەم",
+                _ => ""
+            };
+        }
+        return month switch
+        {
+            1 => "January", 2 => "February", 3 => "March",
+            4 => "April", 5 => "May", 6 => "June",
+            7 => "July", 8 => "August", 9 => "September",
+            10 => "October", 11 => "November", 12 => "December",
+            _ => ""
+        };
+    }
+
+    public static string GetGregorianDayName(int dayIndex, ICalendarLocalization localization)
+    {
+        if (localization is Localizations.FarsiLocalization)
+        {
+            return dayIndex switch
+            {
+                0 => "یکشنبه", 1 => "دوشنبه", 2 => "سه‌شنبه",
+                3 => "چهارشنبه", 4 => "پنجشنبه", 5 => "جمعه",
+                6 => "شنبه",
+                _ => ""
+            };
+        }
+        if (localization is Localizations.KurdishLocalization)
+        {
+            return dayIndex switch
+            {
+                0 => "یەکشەممە", 1 => "دووشەممە", 2 => "سێشەممە",
+                3 => "چوارشەممە", 4 => "پێنجشەممە", 5 => "هەینی",
+                6 => "شەممە",
+                _ => ""
+            };
+        }
+        return dayIndex switch
+        {
+            0 => "Sunday", 1 => "Monday", 2 => "Tuesday",
+            3 => "Wednesday", 4 => "Thursday", 5 => "Friday",
+            6 => "Saturday",
+            _ => ""
+        };
+    }
+
+    public static string GetGregorianShortDayName(int dayIndex, ICalendarLocalization localization)
+    {
+        if (localization is Localizations.FarsiLocalization)
+        {
+            return dayIndex switch
+            {
+                0 => "ی", 1 => "د", 2 => "س",
+                3 => "چ", 4 => "پ", 5 => "ج",
+                6 => "ش",
+                _ => ""
+            };
+        }
+        if (localization is Localizations.KurdishLocalization)
+        {
+            return dayIndex switch
+            {
+                0 => "ی", 1 => "د", 2 => "س",
+                3 => "چ", 4 => "پ", 5 => "ه",
+                6 => "ش",
+                _ => ""
+            };
+        }
+        return dayIndex switch
+        {
+            0 => "Sun", 1 => "Mon", 2 => "Tue",
+            3 => "Wed", 4 => "Thu", 5 => "Fri",
+            6 => "Sat",
+            _ => ""
+        };
     }
 }
 

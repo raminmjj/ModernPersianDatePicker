@@ -41,8 +41,7 @@
                                    Text="Select date..."
                                    VerticalAlignment="Center"
                                    Margin="8,0"
-                                   Foreground="{DynamicResource PersianDatePickerTextForegroundBrush}"
-                                   FlowDirection="RightToLeft"/>
+                                   Foreground="{DynamicResource PersianDatePickerTextForegroundBrush}"/>
                         
                         <!-- Editable TextBox -->
                         <TextBox x:Name="PART_EditableText"
@@ -53,7 +52,6 @@
                                  Padding="8,4"
                                  Background="Transparent"
                                  BorderThickness="0"
-                                 FlowDirection="RightToLeft"
                                  IsVisible="False"/>
                         
                         <!-- Toggle Button -->
@@ -87,8 +85,7 @@
                                     BoxShadow="0 4 8 0 #40000000"
                                     MinWidth="280">
                                 <StackPanel>
-                                    <local:CalendarView x:Name="PART_CalendarView"
-                                                        FlowDirection="RightToLeft"/>
+                                    <local:CalendarView x:Name="PART_CalendarView"/>
                                     <local:TimePickerView x:Name="PART_TimePickerView"
                                                            IsVisible="False"
                                                            Margin="0,8,0,0"/>
@@ -161,8 +158,7 @@
                                     <TextBlock x:Name="PART_MonthText"
                                                Text="Month"
                                                FontSize="16"
-                                               FontWeight="SemiBold"
-                                               FlowDirection="RightToLeft"/>
+                                               FontWeight="SemiBold"/>
                                 </Button>
                                 
                                 <Button x:Name="PART_TodayButton"
@@ -181,8 +177,7 @@
                                         <TextBlock x:Name="PART_TodayText"
                                                    Text="Today"
                                                    FontSize="14"
-                                                   FontWeight="SemiBold"
-                                                   FlowDirection="RightToLeft"/>
+                                                   FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </Button>
                                 
@@ -196,8 +191,7 @@
                                     <TextBlock x:Name="PART_YearText"
                                                Text="Year"
                                                FontSize="16"
-                                               FontWeight="SemiBold"
-                                               FlowDirection="RightToLeft"/>
+                                               FontWeight="SemiBold"/>
                                 </Button>
                             </Grid>
 
