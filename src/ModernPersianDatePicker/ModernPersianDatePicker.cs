@@ -695,6 +695,17 @@ public class ModernPersianDatePicker : TemplatedControl
         };
     }
 
+    private CalendarType GetEffectiveCalendarType()
+    {
+        if (CalendarType != CalendarType.Auto)
+            return CalendarType;
+
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        return culture.TwoLetterISOLanguageName is "fa" or "ps"
+            ? CalendarType.Persian
+            : CalendarType.Gregorian;
+    }
+
     private void OnIsEditableChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_isDisposed)
@@ -951,7 +962,7 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.CalendarType = CalendarType;
 
             // Reset DisplayYear/Month to the correct calendar's today
-            if (CalendarType == CalendarType.Gregorian)
+            if (GetEffectiveCalendarType() == CalendarType.Gregorian)
             {
                 var today = DateTime.Today;
                 _calendarView.DisplayYear = today.Year;
@@ -1069,7 +1080,7 @@ public class ModernPersianDatePicker : TemplatedControl
                 _calendarView.DisplayYear = SelectedDate.Value.Year;
                 _calendarView.DisplayMonth = SelectedDate.Value.Month;
             }
-            else if (CalendarType == CalendarType.Gregorian)
+            else if (GetEffectiveCalendarType() == CalendarType.Gregorian)
             {
                 var today = DateTime.Today;
                 _calendarView.DisplayYear = today.Year;
@@ -1149,7 +1160,7 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else if (SelectedDate.HasValue)
             {
-                if (CalendarType == CalendarType.Gregorian)
+                if (GetEffectiveCalendarType() == CalendarType.Gregorian)
                 {
                     var loc = GetLocalization();
                     var d = SelectedDate.Value.ToDateTime();

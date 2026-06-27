@@ -6,10 +6,10 @@ namespace ModernPersianDatePicker.Tests;
 public class GregorianCalendarTests
 {
     [Fact]
-    public void CalendarType_DefaultIsPersian()
+    public void CalendarType_DefaultIsAuto()
     {
         var picker = new ModernPersianDatePicker();
-        Assert.Equal(CalendarType.Persian, picker.CalendarType);
+        Assert.Equal(CalendarType.Auto, picker.CalendarType);
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public class GregorianCalendarTests
     public void CalendarView_CalendarType_CanBeToggled()
     {
         var view = new CalendarView();
-        Assert.Equal(CalendarType.Persian, view.CalendarType);
+        Assert.Equal(CalendarType.Auto, view.CalendarType);
         view.CalendarType = CalendarType.Gregorian;
         Assert.Equal(CalendarType.Gregorian, view.CalendarType);
     }
