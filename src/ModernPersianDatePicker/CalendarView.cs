@@ -717,14 +717,15 @@ public class CalendarView : TemplatedControl
         }
         else
         {
-            var today = PersianCalendarHelper.Today();
-            if (today.Year == DisplayYear && today.Month == DisplayMonth)
+            if (CalendarType == CalendarType.Gregorian)
             {
-                _focusedDay = today.Day;
+                var today = DateTime.Today;
+                _focusedDay = (today.Year == DisplayYear && today.Month == DisplayMonth) ? today.Day : 1;
             }
             else
             {
-                _focusedDay = 1;
+                var today = PersianCalendarHelper.Today();
+                _focusedDay = (today.Year == DisplayYear && today.Month == DisplayMonth) ? today.Day : 1;
             }
         }
         
