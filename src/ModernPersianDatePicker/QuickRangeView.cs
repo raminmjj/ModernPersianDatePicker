@@ -51,6 +51,8 @@ public class QuickRangeView : TemplatedControl
     static QuickRangeView()
     {
         LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.UpdateLabels());
+        RangeStartProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
+        RangeEndProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
     }
 
     public QuickRangeView()
@@ -153,6 +155,14 @@ public class QuickRangeView : TemplatedControl
     private ICalendarLocalization GetLocalization()
     {
         return LocalizationProvider ?? new FarsiLocalization();
+    }
+
+    private void SyncPickersFromRange()
+    {
+        if (_fromPicker != null)
+            _fromPicker.SelectedDate = RangeStart;
+        if (_toPicker != null)
+            _toPicker.SelectedDate = RangeEnd;
     }
 
     private void UpdateLabels()
