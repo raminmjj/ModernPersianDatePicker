@@ -507,11 +507,13 @@
                 <Border Background="{TemplateBinding Background}"
                         CornerRadius="4"
                         Padding="{TemplateBinding Padding}">
-                    <StackPanel Spacing="8">
+                    <Grid RowDefinitions="Auto,Auto,*">
                         <!-- Row 1: From/To DatePickers + Apply -->
                         <StackPanel x:Name="PART_Row1Panel"
+                                    Grid.Row="0"
                                     Orientation="Horizontal"
                                     Spacing="4"
+                                    Margin="0,0,0,8"
                                     HorizontalAlignment="Center">
                             <local:ModernPersianDatePicker x:Name="PART_FromPicker"
                                                            MinWidth="120"
@@ -537,8 +539,10 @@
 
                         <!-- Row 2: Preset Buttons -->
                         <StackPanel x:Name="PART_Row2Panel"
+                                    Grid.Row="1"
                                     Orientation="Horizontal"
                                     Spacing="4"
+                                    Margin="0,0,0,8"
                                     HorizontalAlignment="Center">
                             <Button x:Name="PART_TodayButton"
                                     Classes="qr-button"
@@ -595,10 +599,10 @@
                         </StackPanel>
 
                         <!-- Row 3: Group Selector + Expandable Content + Back Button -->
-                        <Grid>
+                        <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
@@ -612,7 +616,8 @@
                                 <Button x:Name="PART_GroupMonthButton"
                                         Classes="qr-button-group"
                                         Padding="12,8"
-                                        MinWidth="80">
+                                        MinWidth="80"
+                                        VerticalAlignment="Center">
                                     <TextBlock Text="Month"
                                                FontSize="14"
                                                FontWeight="SemiBold"/>
@@ -620,7 +625,8 @@
                                 <Button x:Name="PART_GroupSeasonButton"
                                         Classes="qr-button-group"
                                         Padding="12,8"
-                                        MinWidth="80">
+                                        MinWidth="80"
+                                        VerticalAlignment="Center">
                                     <TextBlock Text="Season"
                                                FontSize="14"
                                                FontWeight="SemiBold"/>
@@ -628,7 +634,8 @@
                                 <Button x:Name="PART_GroupHalfYearButton"
                                         Classes="qr-button-group"
                                         Padding="12,8"
-                                        MinWidth="80">
+                                        MinWidth="80"
+                                        VerticalAlignment="Center">
                                     <TextBlock Text="Half-Year"
                                                FontSize="14"
                                                FontWeight="SemiBold"/>
@@ -639,8 +646,10 @@
                             <Border x:Name="PART_GroupContentBorder"
                                     Grid.Row="1"
                                     IsVisible="False"
+                                    VerticalAlignment="Center"
                                     Margin="0,4,0,0">
-                                <StackPanel x:Name="PART_GroupContentPanel"/>
+                                <StackPanel x:Name="PART_GroupContentPanel"
+                                            HorizontalAlignment="Center"/>
                             </Border>
 
                             <!-- Back Button (separate row) -->
@@ -661,7 +670,7 @@
                                 </StackPanel>
                             </Button>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
                 </Border>
             </ControlTemplate>
         </Setter>
