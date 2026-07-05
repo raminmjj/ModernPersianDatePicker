@@ -663,6 +663,40 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    protected override void OnLoaded(RoutedEventArgs e)
+    {
+        base.OnLoaded(e);
+        _isDisposed = false;
+
+        // Re-attach event handlers that were detached in OnUnloaded.
+        // Detach first to avoid double-attachment if OnApplyTemplate also runs.
+        if (_toggleButton != null)
+        {
+            _toggleButton.Click -= OnToggleButton_Click;
+            _toggleButton.Click += OnToggleButton_Click;
+        }
+        if (_displayTextBlock != null)
+        {
+            _displayTextBlock.PointerPressed -= OnDisplayText_PointerPressed;
+            _displayTextBlock.PointerPressed += OnDisplayText_PointerPressed;
+        }
+        if (_editableTextBox != null)
+        {
+            _editableTextBox.KeyDown -= OnEditableText_KeyDown;
+            _editableTextBox.KeyDown += OnEditableText_KeyDown;
+            _editableTextBox.LostFocus -= OnEditableText_LostFocus;
+            _editableTextBox.LostFocus += OnEditableText_LostFocus;
+        }
+        if (_popup != null)
+        {
+            _popup.Closed -= OnPopup_Closed;
+            _popup.Closed += OnPopup_Closed;
+        }
+
+        UpdateEditMode();
+        UpdateDisplayText();
+    }
+
     // Private Methods
     private void OnSelectedDateChanged(AvaloniaPropertyChangedEventArgs e)
     {
@@ -1033,7 +1067,8 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_isDisposed)
             return;
 
-        // Sync internal state when the popup is dismissed (e.g. by light dismiss).
+        if (_popup != null)
+            _popup.IsLightDismissEnabled = true;
         _isPopupOpen = false;
         if (_toggleButton != null)
             _toggleButton.IsChecked = false;
@@ -1098,6 +1133,9 @@ public class ModernPersianDatePicker : TemplatedControl
 
         try
         {
+            // Reset any stale state from a previous session
+            _calendarView.ResetQuickRangeView();
+
             if (SelectedDate.HasValue)
             {
                 _calendarView.DisplayYear = SelectedDate.Value.Year;
@@ -1144,6 +1182,7 @@ public class ModernPersianDatePicker : TemplatedControl
 
         try
         {
+            _popup.IsLightDismissEnabled = true;
             _popup.IsOpen = false;
             _isPopupOpen = false;
 
@@ -1152,7 +1191,7 @@ public class ModernPersianDatePicker : TemplatedControl
         }
         catch (Exception)
         {
-            // Silently handle any popup errors
+            _popup.IsLightDismissEnabled = true;
             _isPopupOpen = false;
             if (_toggleButton != null)
                 _toggleButton.IsChecked = false;

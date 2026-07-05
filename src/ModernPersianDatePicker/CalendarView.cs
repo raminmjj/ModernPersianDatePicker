@@ -423,6 +423,30 @@ public class CalendarView : TemplatedControl
         QuickRangeApplied?.Invoke(this, e);
     }
 
+    /// <summary>
+    /// Resets the quick range view to its default (hidden) state.
+    /// Called when the parent popup opens to ensure clean state.
+    /// </summary>
+    public void ResetQuickRangeView()
+    {
+        if (!_isQuickRangeViewVisible)
+            return;
+
+        _isQuickRangeViewVisible = false;
+        if (_daysGrid != null) _daysGrid.IsVisible = true;
+        if (_previousButton != null) _previousButton.IsVisible = true;
+        if (_nextButton != null) _nextButton.IsVisible = true;
+        if (_monthButton != null) _monthButton.IsVisible = true;
+        if (_yearButton != null) _yearButton.IsVisible = true;
+        if (_todayButton != null) _todayButton.IsVisible = true;
+        if (_monthText != null) _monthText.IsVisible = true;
+        if (_yearText != null) _yearText.IsVisible = true;
+        if (_quickRangeButton != null) _quickRangeButton.IsVisible = IsRangeMode;
+        if (_quickRangeView != null) _quickRangeView.IsVisible = false;
+
+        QuickRangeViewVisibilityChanged?.Invoke(this, false);
+    }
+
     private void ToggleQuickRangeView()
     {
         _isQuickRangeViewVisible = !_isQuickRangeViewVisible;
