@@ -44,4 +44,12 @@ public class KurdishLocalization : ICalendarLocalization
     public string HalfYearLabel { get; } = "نیوەساڵ";
 
     public string BackLabel { get; } = "گەڕانەوە";
+
+    public string FromLabel { get; } = "لە...";
+
+    public string ToLabel { get; } = "بۆ...";
+
+    public string SelectDateLabel { get; } = "بەروارێک هەڵبژێرە...";
+
+    public string GoToTodayLabel { get; } = "بۆ ئەمڕۆ بچۆ";
 }

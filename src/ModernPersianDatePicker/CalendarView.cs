@@ -865,6 +865,16 @@ public class CalendarView : TemplatedControl
                 _todayText.Text = loc.TodayLabel;
             }
 
+            if (_todayButton != null)
+            {
+                ToolTip.SetTip(_todayButton, loc.GoToTodayLabel);
+            }
+
+            if (_quickRangeText != null)
+            {
+                _quickRangeText.Text = loc.QuickRangeLabel;
+            }
+
             if (_daysGrid != null)
             {
                 _daysGrid.Children.Clear();

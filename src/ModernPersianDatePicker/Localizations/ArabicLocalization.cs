@@ -44,4 +44,12 @@ public class ArabicLocalization : ICalendarLocalization
     public string HalfYearLabel { get; } = "نصف سنة";
 
     public string BackLabel { get; } = "رجوع";
+
+    public string FromLabel { get; } = "من...";
+
+    public string ToLabel { get; } = "إلى...";
+
+    public string SelectDateLabel { get; } = "اختر تاريخاً...";
+
+    public string GoToTodayLabel { get; } = "انتقل إلى اليوم";
 }

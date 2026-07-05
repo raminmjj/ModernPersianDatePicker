@@ -44,4 +44,12 @@ public class FarsiLocalization : ICalendarLocalization
     public string HalfYearLabel { get; } = "نیم‌سال";
 
     public string BackLabel { get; } = "بازگشت";
+
+    public string FromLabel { get; } = "از...";
+
+    public string ToLabel { get; } = "تا...";
+
+    public string SelectDateLabel { get; } = "یک تاریخ انتخاب کنید...";
+
+    public string GoToTodayLabel { get; } = "برو به امروز";
 }

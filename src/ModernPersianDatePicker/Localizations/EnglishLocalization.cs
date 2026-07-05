@@ -44,4 +44,12 @@ public class EnglishLocalization : ICalendarLocalization
     public string HalfYearLabel { get; } = "Half-Year";
 
     public string BackLabel { get; } = "Back";
+
+    public string FromLabel { get; } = "From...";
+
+    public string ToLabel { get; } = "To...";
+
+    public string SelectDateLabel { get; } = "Select date...";
+
+    public string GoToTodayLabel { get; } = "Go to today";
 }

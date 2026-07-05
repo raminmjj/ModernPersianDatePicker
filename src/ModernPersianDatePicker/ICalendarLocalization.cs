@@ -70,4 +70,24 @@ public interface ICalendarLocalization
     /// Label for the "Back" button.
     /// </summary>
     string BackLabel { get; }
+
+    /// <summary>
+    /// Label for the "From" watermark.
+    /// </summary>
+    string FromLabel { get; }
+
+    /// <summary>
+    /// Label for the "To" watermark.
+    /// </summary>
+    string ToLabel { get; }
+
+    /// <summary>
+    /// Default watermark text for the date picker.
+    /// </summary>
+    string SelectDateLabel { get; }
+
+    /// <summary>
+    /// Tooltip for the "Go to today" button.
+    /// </summary>
+    string GoToTodayLabel { get; }
 }

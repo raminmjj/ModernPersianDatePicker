@@ -1216,7 +1216,12 @@ public class ModernPersianDatePicker : TemplatedControl
                 else if (RangeStart.HasValue)
                     displayText = $"{RangeStart.Value.ToString("short")} ~ ...";
                 else
-                    displayText = Watermark;
+                {
+                    var loc = GetLocalization();
+                    displayText = string.IsNullOrEmpty(Watermark) || Watermark == "Select date..."
+                        ? loc.SelectDateLabel
+                        : Watermark;
+                }
             }
             else if (SelectedDate.HasValue)
             {
@@ -1240,7 +1245,10 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else
             {
-                displayText = Watermark;
+                var loc = GetLocalization();
+                displayText = string.IsNullOrEmpty(Watermark) || Watermark == "Select date..."
+                    ? loc.SelectDateLabel
+                    : Watermark;
             }
 
             // Update TextBlock

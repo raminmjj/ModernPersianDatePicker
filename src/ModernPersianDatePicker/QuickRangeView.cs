@@ -169,6 +169,10 @@ public class QuickRangeView : TemplatedControl
     {
         var loc = GetLocalization();
 
+        if (_fromPicker != null)
+            _fromPicker.Watermark = loc.FromLabel;
+        if (_toPicker != null)
+            _toPicker.Watermark = loc.ToLabel;
         if (_applyButton != null)
             _applyButton.Content = loc.ApplyLabel;
         if (_todayButton != null)
