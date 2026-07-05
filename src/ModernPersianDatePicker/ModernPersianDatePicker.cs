@@ -1120,10 +1120,8 @@ public class ModernPersianDatePicker : TemplatedControl
 
     private void OnCalendarView_QuickRangeViewVisibilityChanged(object? sender, bool isVisible)
     {
-        if (_isDisposed || _popup == null)
-            return;
-
-        _popup.IsLightDismissEnabled = !isVisible;
+        // Light dismiss stays enabled at all times so clicking outside
+        // the popup closes it normally.
     }
 
     private void OpenPopup()
