@@ -26,4 +26,22 @@ public class FarsiLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "امروز";
+
+    public string QuickRangeLabel { get; } = "انتخاب سریع";
+
+    public string ApplyLabel { get; } = "اعمال";
+
+    public string CurrentWeekLabel { get; } = "این هفته";
+
+    public string CurrentMonthLabel { get; } = "این ماه";
+
+    public string CurrentYearLabel { get; } = "امسال";
+
+    public string MonthLabel { get; } = "ماه";
+
+    public string SeasonLabel { get; } = "فصل";
+
+    public string HalfYearLabel { get; } = "نیم‌سال";
+
+    public string BackLabel { get; } = "بازگشت";
 }

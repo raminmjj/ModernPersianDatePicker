@@ -25,4 +25,49 @@ public interface ICalendarLocalization
     /// Label for the "Today" button.
     /// </summary>
     string TodayLabel { get; }
+
+    /// <summary>
+    /// Label for the "Quick Range" button.
+    /// </summary>
+    string QuickRangeLabel { get; }
+
+    /// <summary>
+    /// Label for the "Apply" button.
+    /// </summary>
+    string ApplyLabel { get; }
+
+    /// <summary>
+    /// Label for the "Current Week" preset.
+    /// </summary>
+    string CurrentWeekLabel { get; }
+
+    /// <summary>
+    /// Label for the "Current Month" preset.
+    /// </summary>
+    string CurrentMonthLabel { get; }
+
+    /// <summary>
+    /// Label for the "Current Year" preset.
+    /// </summary>
+    string CurrentYearLabel { get; }
+
+    /// <summary>
+    /// Label for the "Month" group selector.
+    /// </summary>
+    string MonthLabel { get; }
+
+    /// <summary>
+    /// Label for the "Season" group selector.
+    /// </summary>
+    string SeasonLabel { get; }
+
+    /// <summary>
+    /// Label for the "Half-Year" group selector.
+    /// </summary>
+    string HalfYearLabel { get; }
+
+    /// <summary>
+    /// Label for the "Back" button.
+    /// </summary>
+    string BackLabel { get; }
 }

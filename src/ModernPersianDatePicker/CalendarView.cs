@@ -70,6 +70,8 @@ public class CalendarView : TemplatedControl
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
     public event EventHandler<TodayClickedEventArgs>? TodayClicked;
+    public event EventHandler<QuickRangeSelectedEventArgs>? QuickRangeApplied;
+    public event EventHandler<bool>? QuickRangeViewVisibilityChanged;
 
     // Private fields
     private TextBlock? _monthText;
@@ -85,8 +87,12 @@ public class CalendarView : TemplatedControl
     private Button? _todayButton;
     private Popup? _monthPopup;
     private Popup? _yearPopup;
+    private Button? _quickRangeButton;
+    private TextBlock? _quickRangeText;
+    private QuickRangeView? _quickRangeView;
     private bool _isUpdatingCalendar;
     private bool _isSelectingEnd;
+    private bool _isQuickRangeViewVisible;
 
     // Derived caches for holiday checks (rebuilt when the source properties change)
     private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
@@ -336,6 +342,10 @@ public class CalendarView : TemplatedControl
             _yearButton.Click -= OnYearButton_Click;
         if (_todayButton != null)
             _todayButton.Click -= OnTodayButton_Click;
+        if (_quickRangeButton != null)
+            _quickRangeButton.Click -= OnQuickRangeButton_Click;
+        if (_quickRangeView != null)
+            _quickRangeView.QuickRangeApplied -= OnQuickRangeView_Applied;
 
         // Get template parts
         _monthText = e.NameScope.Find<TextBlock>("PART_MonthText");
@@ -351,6 +361,9 @@ public class CalendarView : TemplatedControl
         _todayButton = e.NameScope.Find<Button>("PART_TodayButton");
         _monthPopup = e.NameScope.Find<Popup>("PART_MonthPopup");
         _yearPopup = e.NameScope.Find<Popup>("PART_YearPopup");
+        _quickRangeButton = e.NameScope.Find<Button>("PART_QuickRangeButton");
+        _quickRangeText = e.NameScope.Find<TextBlock>("PART_QuickRangeText");
+        _quickRangeView = e.NameScope.Find<QuickRangeView>("PART_QuickRangeView");
 
         // Attach new event handlers
         if (_previousButton != null)
@@ -363,6 +376,14 @@ public class CalendarView : TemplatedControl
             _yearButton.Click += OnYearButton_Click;
         if (_todayButton != null)
             _todayButton.Click += OnTodayButton_Click;
+        if (_quickRangeButton != null)
+            _quickRangeButton.Click += OnQuickRangeButton_Click;
+        if (_quickRangeView != null)
+        {
+            _quickRangeView.QuickRangeApplied += OnQuickRangeView_Applied;
+            _quickRangeView.LocalizationProvider = GetLocalization();
+            _quickRangeView.CalendarType = GetEffectiveCalendarType();
+        }
 
         UpdateCalendar();
     }
@@ -382,6 +403,63 @@ public class CalendarView : TemplatedControl
         // Fire event to parent to select today and close popup
         var today = PersianCalendarHelper.Today();
         TodayClicked?.Invoke(this, new TodayClickedEventArgs(today));
+    }
+
+    private void OnQuickRangeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        ToggleQuickRangeView();
+    }
+
+    private void OnQuickRangeView_Applied(object? sender, QuickRangeSelectedEventArgs e)
+    {
+        // Set range on this CalendarView
+        RangeStart = e.RangeStart;
+        RangeEnd = e.RangeEnd;
+
+        // Toggle back to calendar view
+        ToggleQuickRangeView();
+
+        // Fire the event to parent
+        QuickRangeApplied?.Invoke(this, e);
+    }
+
+    private void ToggleQuickRangeView()
+    {
+        _isQuickRangeViewVisible = !_isQuickRangeViewVisible;
+
+        if (_isQuickRangeViewVisible)
+        {
+            if (_daysGrid != null) _daysGrid.IsVisible = false;
+            if (_previousButton != null) _previousButton.IsVisible = false;
+            if (_nextButton != null) _nextButton.IsVisible = false;
+            if (_monthButton != null) _monthButton.IsVisible = false;
+            if (_yearButton != null) _yearButton.IsVisible = false;
+            if (_todayButton != null) _todayButton.IsVisible = false;
+            if (_monthText != null) _monthText.IsVisible = false;
+            if (_yearText != null) _yearText.IsVisible = false;
+            if (_quickRangeButton != null) _quickRangeButton.IsVisible = false;
+            if (_quickRangeView != null)
+            {
+                _quickRangeView.IsVisible = true;
+                _quickRangeView.RangeStart = RangeStart;
+                _quickRangeView.RangeEnd = RangeEnd;
+            }
+        }
+        else
+        {
+            if (_daysGrid != null) _daysGrid.IsVisible = true;
+            if (_previousButton != null) _previousButton.IsVisible = true;
+            if (_nextButton != null) _nextButton.IsVisible = true;
+            if (_monthButton != null) _monthButton.IsVisible = true;
+            if (_yearButton != null) _yearButton.IsVisible = true;
+            if (_todayButton != null) _todayButton.IsVisible = true;
+            if (_monthText != null) _monthText.IsVisible = true;
+            if (_yearText != null) _yearText.IsVisible = true;
+            if (_quickRangeButton != null) _quickRangeButton.IsVisible = IsRangeMode;
+            if (_quickRangeView != null) _quickRangeView.IsVisible = false;
+        }
+
+        QuickRangeViewVisibilityChanged?.Invoke(this, _isQuickRangeViewVisible);
     }
 
     private void ShowMonthSelection()
@@ -879,6 +957,17 @@ public class CalendarView : TemplatedControl
         finally
         {
             _isUpdatingCalendar = false;
+        }
+
+        // Show/hide Quick Range button based on IsRangeMode
+        if (_quickRangeButton != null)
+            _quickRangeButton.IsVisible = IsRangeMode && !_isQuickRangeViewVisible;
+
+        // Update QuickRangeView localization
+        if (_quickRangeView != null)
+        {
+            _quickRangeView.LocalizationProvider = GetLocalization();
+            _quickRangeView.CalendarType = GetEffectiveCalendarType();
         }
     }
 

@@ -78,3 +78,20 @@ public class DateRangeSelectedEventArgs : EventArgs
         RangeEnd = rangeEnd;
     }
 }
+
+/// <summary>
+/// Event arguments for quick range selection
+/// </summary>
+public class QuickRangeSelectedEventArgs : EventArgs
+{
+    public PersianDate RangeStart { get; }
+    public PersianDate RangeEnd { get; }
+    public string RangeType { get; }
+
+    public QuickRangeSelectedEventArgs(PersianDate rangeStart, PersianDate rangeEnd, string rangeType)
+    {
+        RangeStart = rangeStart;
+        RangeEnd = rangeEnd;
+        RangeType = rangeType;
+    }
+}

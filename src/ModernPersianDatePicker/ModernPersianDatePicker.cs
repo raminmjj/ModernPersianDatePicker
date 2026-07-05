@@ -368,6 +368,8 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.DateSelected -= OnCalendarView_DateSelected;
             _calendarView.DateRangeSelected -= OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked -= OnCalendarView_TodayClicked;
+            _calendarView.QuickRangeApplied -= OnCalendarView_QuickRangeApplied;
+            _calendarView.QuickRangeViewVisibilityChanged -= OnCalendarView_QuickRangeViewVisibilityChanged;
         }
         if (_timePickerView != null)
             _timePickerView.TimeChanged -= OnTimePickerView_TimeChanged;
@@ -417,6 +419,8 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.DateSelected += OnCalendarView_DateSelected;
             _calendarView.DateRangeSelected += OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
+            _calendarView.QuickRangeApplied += OnCalendarView_QuickRangeApplied;
+            _calendarView.QuickRangeViewVisibilityChanged += OnCalendarView_QuickRangeViewVisibilityChanged;
         }
 
         if (_timePickerView != null)
@@ -1066,6 +1070,25 @@ public class ModernPersianDatePicker : TemplatedControl
         // Select today and close popup
         SelectedDate = e.Today;
         ClosePopup();
+    }
+
+    private void OnCalendarView_QuickRangeApplied(object? sender, QuickRangeSelectedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        RangeStart = e.RangeStart;
+        RangeEnd = e.RangeEnd;
+        DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(e.RangeStart, e.RangeEnd));
+        ClosePopup();
+    }
+
+    private void OnCalendarView_QuickRangeViewVisibilityChanged(object? sender, bool isVisible)
+    {
+        if (_isDisposed || _popup == null)
+            return;
+
+        _popup.IsLightDismissEnabled = !isVisible;
     }
 
     private void OpenPopup()

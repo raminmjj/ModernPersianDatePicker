@@ -26,4 +26,22 @@ public class ArabicLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "اليوم";
+
+    public string QuickRangeLabel { get; } = "اختيار سريع";
+
+    public string ApplyLabel { get; } = "تطبيق";
+
+    public string CurrentWeekLabel { get; } = "هذا الأسبوع";
+
+    public string CurrentMonthLabel { get; } = "هذا الشهر";
+
+    public string CurrentYearLabel { get; } = "هذا العام";
+
+    public string MonthLabel { get; } = "شهر";
+
+    public string SeasonLabel { get; } = "فصول";
+
+    public string HalfYearLabel { get; } = "نصف سنة";
+
+    public string BackLabel { get; } = "رجوع";
 }

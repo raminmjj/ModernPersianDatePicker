@@ -26,4 +26,22 @@ public class KurdishLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "ئەمڕۆ";
+
+    public string QuickRangeLabel { get; } = "هەڵبژاردنی خێرا";
+
+    public string ApplyLabel { get; } = "جێبەجێکردن";
+
+    public string CurrentWeekLabel { get; } = "ئەم هەفتەیە";
+
+    public string CurrentMonthLabel { get; } = "ئەم مانگەیە";
+
+    public string CurrentYearLabel { get; } = "ئەم ساڵەیە";
+
+    public string MonthLabel { get; } = "مانگ";
+
+    public string SeasonLabel { get; } = "وانان";
+
+    public string HalfYearLabel { get; } = "نیوەساڵ";
+
+    public string BackLabel { get; } = "گەڕانەوە";
 }

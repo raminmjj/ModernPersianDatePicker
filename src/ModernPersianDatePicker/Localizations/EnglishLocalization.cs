@@ -26,4 +26,22 @@ public class EnglishLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "Today";
+
+    public string QuickRangeLabel { get; } = "Quick Range";
+
+    public string ApplyLabel { get; } = "Apply";
+
+    public string CurrentWeekLabel { get; } = "Current Week";
+
+    public string CurrentMonthLabel { get; } = "Current Month";
+
+    public string CurrentYearLabel { get; } = "Current Year";
+
+    public string MonthLabel { get; } = "Month";
+
+    public string SeasonLabel { get; } = "Season";
+
+    public string HalfYearLabel { get; } = "Half-Year";
+
+    public string BackLabel { get; } = "Back";
 }
