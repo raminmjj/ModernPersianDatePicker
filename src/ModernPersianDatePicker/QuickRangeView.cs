@@ -133,6 +133,7 @@ public class QuickRangeView : TemplatedControl
         if (_fromPicker != null)
         {
             _fromPicker.IsRangeMode = false;
+            _fromPicker.IsEditable = true;
             _fromPicker.CalendarType = CalendarType;
             _fromPicker.LocalizationProvider = LocalizationProvider;
             if (RangeStart.HasValue)
@@ -142,6 +143,7 @@ public class QuickRangeView : TemplatedControl
         if (_toPicker != null)
         {
             _toPicker.IsRangeMode = false;
+            _toPicker.IsEditable = true;
             _toPicker.CalendarType = CalendarType;
             _toPicker.LocalizationProvider = LocalizationProvider;
             if (RangeEnd.HasValue)
