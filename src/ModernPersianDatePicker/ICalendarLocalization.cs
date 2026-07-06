@@ -90,4 +90,9 @@ public interface ICalendarLocalization
     /// Tooltip for the "Go to today" button.
     /// </summary>
     string GoToTodayLabel { get; }
+
+    /// <summary>
+    /// Season names indexed 0-3 (Spring, Summer, Autumn, Winter).
+    /// </summary>
+    string[] SeasonNames { get; }
 }

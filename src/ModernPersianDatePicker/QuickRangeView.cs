@@ -157,10 +157,60 @@ public class QuickRangeView : TemplatedControl
         ShowGroupSelector();
     }
 
+    // ── Calendar-aware helpers ──
+
+    private bool IsGregorian => GetEffectiveCalendarType() == CalendarType.Gregorian;
+
+    private CalendarType GetEffectiveCalendarType()
+    {
+        if (CalendarType != CalendarType.Auto)
+            return CalendarType;
+
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        return culture.TwoLetterISOLanguageName is "fa" or "ps"
+            ? CalendarType.Persian
+            : CalendarType.Gregorian;
+    }
+
     private ICalendarLocalization GetLocalization()
     {
-        return LocalizationProvider ?? new FarsiLocalization();
+        if (LocalizationProvider != null)
+            return LocalizationProvider;
+
+        return IsGregorian
+            ? new EnglishLocalization()
+            : new FarsiLocalization();
     }
+
+    private PersianDate GetToday()
+    {
+        if (IsGregorian)
+            return PersianCalendarHelper.ToPersianDate(DateTime.Today);
+        return PersianCalendarHelper.Today();
+    }
+
+    private int GetDaysInMonth(int year, int month)
+    {
+        if (IsGregorian)
+            return DateTime.DaysInMonth(year, month);
+        return PersianCalendarHelper.GetDaysInMonth(year, month);
+    }
+
+    private int GetFirstDayOfWeek(int year, int month)
+    {
+        if (IsGregorian)
+            return PersianCalendarHelper.GetGregorianFirstDayOfWeek(year, month);
+        return PersianCalendarHelper.GetFirstDayOfWeek(year, month);
+    }
+
+    private PersianDate MakeDate(int year, int month, int day)
+    {
+        int dow = GetFirstDayOfWeek(year, month);
+        int dayOfWeek = (dow + day - 1) % 7;
+        return new PersianDate(year, month, day, dayOfWeek);
+    }
+
+    // ── Label sync ──
 
     private void SyncPickersFromRange()
     {
@@ -217,6 +267,8 @@ public class QuickRangeView : TemplatedControl
         }
     }
 
+    // ── Preset handlers ──
+
     private void OnApply_Click(object? sender, RoutedEventArgs e)
     {
         var from = _fromPicker?.SelectedDate;
@@ -232,16 +284,17 @@ public class QuickRangeView : TemplatedControl
 
     private void OnToday_Click(object? sender, RoutedEventArgs e)
     {
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(today, today, "today"));
     }
 
     private void OnWeek_Click(object? sender, RoutedEventArgs e)
     {
-        var today = PersianCalendarHelper.Today();
-        int dayOfWeek = today.DayOfWeek; // 0=Saturday, 6=Friday
+        var today = GetToday();
+        int dayOfWeek = today.DayOfWeek;
 
-        // Calculate week start (Saturday)
+        // Calculate week start (Saturday for Persian, Sunday for Gregorian)
+        int weekStartDow = IsGregorian ? 0 : 0; // Both use 0-based for the start calculation
         int startDay = today.Day - dayOfWeek;
         int startMonth = today.Month;
         int startYear = today.Year;
@@ -254,15 +307,15 @@ public class QuickRangeView : TemplatedControl
                 startMonth = 12;
                 startYear--;
             }
-            startDay += PersianCalendarHelper.GetDaysInMonth(startYear, startMonth);
+            startDay += GetDaysInMonth(startYear, startMonth);
         }
 
-        // Calculate week end (Friday)
+        // Calculate week end (Friday for Persian, Saturday for Gregorian)
         int endDay = today.Day + (6 - dayOfWeek);
         int endMonth = today.Month;
         int endYear = today.Year;
 
-        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(endYear, endMonth);
+        int daysInMonth = GetDaysInMonth(endYear, endMonth);
         if (endDay > daysInMonth)
         {
             endDay -= daysInMonth;
@@ -274,70 +327,43 @@ public class QuickRangeView : TemplatedControl
             }
         }
 
-        var startDow1 = PersianCalendarHelper.GetFirstDayOfWeek(startYear, startMonth);
-        var weekStart = new PersianDate(startYear, startMonth, startDay, (startDow1 + startDay - 1) % 7);
-
-        var startDow2 = PersianCalendarHelper.GetFirstDayOfWeek(endYear, endMonth);
-        var weekEnd = new PersianDate(endYear, endMonth, endDay, (startDow2 + endDay - 1) % 7);
+        var weekStart = MakeDate(startYear, startMonth, startDay);
+        var weekEnd = MakeDate(endYear, endMonth, endDay);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(weekStart, weekEnd, "week"));
     }
 
     private void OnPresetMonth_Click(object? sender, RoutedEventArgs e)
     {
-        var today = PersianCalendarHelper.Today();
-        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(today.Year, today.Month);
+        var today = GetToday();
+        int daysInMonth = GetDaysInMonth(today.Year, today.Month);
 
-        var startDow = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, today.Month);
-        var monthStart = new PersianDate(today.Year, today.Month, 1, startDow);
-        var monthEnd = new PersianDate(today.Year, today.Month, daysInMonth, (startDow + daysInMonth - 1) % 7);
+        var monthStart = MakeDate(today.Year, today.Month, 1);
+        var monthEnd = MakeDate(today.Year, today.Month, daysInMonth);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(monthStart, monthEnd, "month"));
     }
 
     private void OnYear_Click(object? sender, RoutedEventArgs e)
     {
-        var today = PersianCalendarHelper.Today();
-        int daysInLastMonth = PersianCalendarHelper.GetDaysInMonth(today.Year, 12);
+        var today = GetToday();
+        int daysInLastMonth = GetDaysInMonth(today.Year, 12);
 
-        var startDow1 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, 1);
-        var yearStart = new PersianDate(today.Year, 1, 1, startDow1);
-
-        var startDow2 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, 12);
-        var yearEnd = new PersianDate(today.Year, 12, daysInLastMonth, (startDow2 + daysInLastMonth - 1) % 7);
+        var yearStart = MakeDate(today.Year, 1, 1);
+        var yearEnd = MakeDate(today.Year, 12, daysInLastMonth);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(yearStart, yearEnd, "year"));
     }
 
-    private void OnGroupMonth_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowMonthGrid();
-    }
+    // ── Group selectors ──
 
-    private void OnGroupSeason_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowSeasonGrid();
-    }
+    private void OnGroupMonth_Click(object? sender, RoutedEventArgs e) => ShowMonthGrid();
+    private void OnGroupSeason_Click(object? sender, RoutedEventArgs e) => ShowSeasonGrid();
+    private void OnGroupHalfYear_Click(object? sender, RoutedEventArgs e) => ShowHalfYearGrid();
+    private void OnBack_Click(object? sender, RoutedEventArgs e) => ShowGroupSelector();
 
-    private void OnGroupHalfYear_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowHalfYearGrid();
-    }
-
-    private void OnBack_Click(object? sender, RoutedEventArgs e)
-    {
-        ShowGroupSelector();
-    }
-
-    private void ShowGroupSelector()
-    {
-        Animate(showContent: false);
-    }
-
-    private void ShowGroupContent()
-    {
-        Animate(showContent: true);
-    }
+    private void ShowGroupSelector() => Animate(showContent: false);
+    private void ShowGroupContent() => Animate(showContent: true);
 
     public void ResetRow3()
     {
@@ -360,6 +386,8 @@ public class QuickRangeView : TemplatedControl
             _backButton.Opacity = 1;
         }
     }
+
+    // ── Animations ──
 
     private Animation CreateFadeIn() => new()
     {
@@ -458,6 +486,8 @@ public class QuickRangeView : TemplatedControl
         }
     }
 
+    // ── Month grid ──
+
     private void ShowMonthGrid()
     {
         if (_groupContentPanel == null) return;
@@ -466,7 +496,7 @@ public class QuickRangeView : TemplatedControl
         _groupContentPanel.Children.Clear();
 
         var loc = GetLocalization();
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
 
         for (int i = 0; i < 4; i++)
@@ -500,15 +530,16 @@ public class QuickRangeView : TemplatedControl
 
     private void OnMonthSelected(int month)
     {
-        var today = PersianCalendarHelper.Today();
-        int daysInMonth = PersianCalendarHelper.GetDaysInMonth(today.Year, month);
-        int startDow = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, month);
+        var today = GetToday();
+        int daysInMonth = GetDaysInMonth(today.Year, month);
 
-        var monthStart = new PersianDate(today.Year, month, 1, startDow);
-        var monthEnd = new PersianDate(today.Year, month, daysInMonth, (startDow + daysInMonth - 1) % 7);
+        var monthStart = MakeDate(today.Year, month, 1);
+        var monthEnd = MakeDate(today.Year, month, daysInMonth);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(monthStart, monthEnd, "month"));
     }
+
+    // ── Season grid ──
 
     private void ShowSeasonGrid()
     {
@@ -518,18 +549,8 @@ public class QuickRangeView : TemplatedControl
         _groupContentPanel.Children.Clear();
 
         var loc = GetLocalization();
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         int currentSeason = (today.Month - 1) / 3; // 0-3
-
-        string[] seasonNames;
-        if (loc is FarsiLocalization)
-            seasonNames = new[] { "بهار", "تابستان", "پاییز", "زمستان" };
-        else if (loc is KurdishLocalization)
-            seasonNames = new[] { "بەهار", "تابستان", "پاییز", "زستان" };
-        else if (loc is ArabicLocalization)
-            seasonNames = new[] { "ربيع", "صيف", "خريف", "شتاء" };
-        else
-            seasonNames = new[] { "Spring", "Summer", "Autumn", "Winter" };
 
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*") };
         grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
@@ -538,7 +559,7 @@ public class QuickRangeView : TemplatedControl
         {
             var button = new Button
             {
-                Content = seasonNames[i],
+                Content = loc.SeasonNames[i],
                 [Grid.RowProperty] = 0,
                 [Grid.ColumnProperty] = i,
                 Margin = new Thickness(2),
@@ -558,19 +579,18 @@ public class QuickRangeView : TemplatedControl
 
     private void OnSeasonSelected(int seasonIndex)
     {
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         int startMonth = seasonIndex * 3 + 1;
         int endMonth = startMonth + 2;
-        int daysInEndMonth = PersianCalendarHelper.GetDaysInMonth(today.Year, endMonth);
+        int daysInEndMonth = GetDaysInMonth(today.Year, endMonth);
 
-        var startDow1 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, startMonth);
-        var rangeStart = new PersianDate(today.Year, startMonth, 1, startDow1);
-
-        var startDow2 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, endMonth);
-        var rangeEnd = new PersianDate(today.Year, endMonth, daysInEndMonth, (startDow2 + daysInEndMonth - 1) % 7);
+        var rangeStart = MakeDate(today.Year, startMonth, 1);
+        var rangeEnd = MakeDate(today.Year, endMonth, daysInEndMonth);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(rangeStart, rangeEnd, "season"));
     }
+
+    // ── Half-year grid ──
 
     private void ShowHalfYearGrid()
     {
@@ -580,7 +600,7 @@ public class QuickRangeView : TemplatedControl
         _groupContentPanel.Children.Clear();
 
         var loc = GetLocalization();
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         int currentHalf = today.Month <= 6 ? 0 : 1;
 
         string h1Label, h2Label;
@@ -620,16 +640,13 @@ public class QuickRangeView : TemplatedControl
 
     private void OnHalfYearSelected(int halfIndex)
     {
-        var today = PersianCalendarHelper.Today();
+        var today = GetToday();
         int startMonth = halfIndex == 0 ? 1 : 7;
         int endMonth = halfIndex == 0 ? 6 : 12;
-        int daysInEndMonth = PersianCalendarHelper.GetDaysInMonth(today.Year, endMonth);
+        int daysInEndMonth = GetDaysInMonth(today.Year, endMonth);
 
-        var startDow1 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, startMonth);
-        var rangeStart = new PersianDate(today.Year, startMonth, 1, startDow1);
-
-        var startDow2 = PersianCalendarHelper.GetFirstDayOfWeek(today.Year, endMonth);
-        var rangeEnd = new PersianDate(today.Year, endMonth, daysInEndMonth, (startDow2 + daysInEndMonth - 1) % 7);
+        var rangeStart = MakeDate(today.Year, startMonth, 1);
+        var rangeEnd = MakeDate(today.Year, endMonth, daysInEndMonth);
 
         QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(rangeStart, rangeEnd, "halfyear"));
     }

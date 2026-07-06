@@ -52,4 +52,6 @@ public class EnglishLocalization : ICalendarLocalization
     public string SelectDateLabel { get; } = "Select date...";
 
     public string GoToTodayLabel { get; } = "Go to today";
+
+    public string[] SeasonNames { get; } = { "Spring", "Summer", "Autumn", "Winter" };
 }

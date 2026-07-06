@@ -52,4 +52,6 @@ public class KurdishLocalization : ICalendarLocalization
     public string SelectDateLabel { get; } = "بەروارێک هەڵبژێرە...";
 
     public string GoToTodayLabel { get; } = "بۆ ئەمڕۆ بچۆ";
+
+    public string[] SeasonNames { get; } = { "بەهار", "تابستان", "پاییز", "زستان" };
 }

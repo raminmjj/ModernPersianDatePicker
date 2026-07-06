@@ -52,4 +52,6 @@ public class ArabicLocalization : ICalendarLocalization
     public string SelectDateLabel { get; } = "اختر تاريخاً...";
 
     public string GoToTodayLabel { get; } = "انتقل إلى اليوم";
+
+    public string[] SeasonNames { get; } = { "ربيع", "صيف", "خريف", "شتاء" };
 }

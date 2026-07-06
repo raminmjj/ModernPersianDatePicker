@@ -52,4 +52,6 @@ public class FarsiLocalization : ICalendarLocalization
     public string SelectDateLabel { get; } = "یک تاریخ انتخاب کنید...";
 
     public string GoToTodayLabel { get; } = "برو به امروز";
+
+    public string[] SeasonNames { get; } = { "بهار", "تابستان", "پاییز", "زمستان" };
 }
