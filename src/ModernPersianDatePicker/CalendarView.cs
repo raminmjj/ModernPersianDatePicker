@@ -465,6 +465,7 @@ public class CalendarView : TemplatedControl
             if (_quickRangeView != null)
             {
                 _quickRangeView.IsVisible = true;
+                _quickRangeView.ResetRow3();
                 _quickRangeView.RangeStart = RangeStart;
                 _quickRangeView.RangeEnd = RangeEnd;
             }

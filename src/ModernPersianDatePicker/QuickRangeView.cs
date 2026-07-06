@@ -339,6 +339,28 @@ public class QuickRangeView : TemplatedControl
         Animate(showContent: true);
     }
 
+    public void ResetRow3()
+    {
+        if (_groupSelectorPanel != null)
+        {
+            _groupSelectorPanel.IsVisible = true;
+            _groupSelectorPanel.IsHitTestVisible = true;
+            _groupSelectorPanel.Opacity = 1;
+        }
+        if (_groupContentBorder != null)
+        {
+            _groupContentBorder.IsVisible = false;
+            _groupContentBorder.IsHitTestVisible = false;
+            _groupContentBorder.Opacity = 1;
+        }
+        if (_backButton != null)
+        {
+            _backButton.IsVisible = false;
+            _backButton.IsHitTestVisible = false;
+            _backButton.Opacity = 1;
+        }
+    }
+
     private Animation CreateFadeIn() => new()
     {
         Duration = TimeSpan.FromMilliseconds(200),
@@ -465,9 +487,6 @@ public class QuickRangeView : TemplatedControl
             };
             button.Classes.Add("month-year-button");
 
-            if (month == today.Month)
-                button.Classes.Add("selected");
-
             int selectedMonth = month;
             button.Click += (s, e) => OnMonthSelected(selectedMonth);
 
@@ -527,9 +546,6 @@ public class QuickRangeView : TemplatedControl
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
             button.Classes.Add("month-year-button");
-
-            if (i == currentSeason)
-                button.Classes.Add("selected");
 
             int seasonIndex = i;
             button.Click += (s, e) => OnSeasonSelected(seasonIndex);
@@ -592,9 +608,6 @@ public class QuickRangeView : TemplatedControl
                 HorizontalContentAlignment = HorizontalAlignment.Center
             };
             button.Classes.Add("month-year-button");
-
-            if (i == currentHalf)
-                button.Classes.Add("selected");
 
             int halfIndex = i;
             button.Click += (s, e) => OnHalfYearSelected(halfIndex);
