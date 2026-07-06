@@ -505,7 +505,9 @@ public class QuickRangeView : TemplatedControl
         int row = 0, col = 0;
         for (int month = 1; month <= 12; month++)
         {
-            var monthName = loc.MonthNames[month];
+            var monthName = IsGregorian
+                ? PersianCalendarHelper.GetGregorianMonthName(month, loc)
+                : loc.MonthNames[month];
             var button = new Button
             {
                 Content = monthName,
