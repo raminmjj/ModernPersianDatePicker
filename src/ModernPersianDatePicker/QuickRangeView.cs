@@ -1,10 +1,12 @@
 using System;
 using Avalonia;
+using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Styling;
 using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
@@ -328,39 +330,89 @@ public class QuickRangeView : TemplatedControl
 
     private void ShowGroupSelector()
     {
-        if (_groupSelectorPanel != null)
-        {
-            _groupSelectorPanel.IsVisible = true;
-            _groupSelectorPanel.IsHitTestVisible = true;
-        }
-        if (_groupContentBorder != null)
-        {
-            _groupContentBorder.IsVisible = false;
-            _groupContentBorder.IsHitTestVisible = false;
-        }
-        if (_backButton != null)
-        {
-            _backButton.IsVisible = false;
-            _backButton.IsHitTestVisible = false;
-        }
+        Animate(showContent: false);
     }
 
     private void ShowGroupContent()
     {
-        if (_groupSelectorPanel != null)
+        Animate(showContent: true);
+    }
+
+    private Animation CreateFadeIn() => new()
+    {
+        Duration = TimeSpan.FromMilliseconds(200),
+        FillMode = FillMode.Forward,
+        Children =
         {
-            _groupSelectorPanel.IsVisible = false;
-            _groupSelectorPanel.IsHitTestVisible = false;
+            new KeyFrame { Cue = new Cue(0), Setters = { new Setter(Visual.OpacityProperty, 0.0) } },
+            new KeyFrame { Cue = new Cue(1), Setters = { new Setter(Visual.OpacityProperty, 1.0) } }
         }
-        if (_groupContentBorder != null)
+    };
+
+    private Animation CreateFadeOut() => new()
+    {
+        Duration = TimeSpan.FromMilliseconds(200),
+        FillMode = FillMode.Forward,
+        Children =
         {
-            _groupContentBorder.IsVisible = true;
-            _groupContentBorder.IsHitTestVisible = true;
+            new KeyFrame { Cue = new Cue(0), Setters = { new Setter(Visual.OpacityProperty, 1.0) } },
+            new KeyFrame { Cue = new Cue(1), Setters = { new Setter(Visual.OpacityProperty, 0.0) } }
         }
-        if (_backButton != null)
+    };
+
+    private async void Animate(bool showContent)
+    {
+        if (showContent)
         {
-            _backButton.IsVisible = true;
-            _backButton.IsHitTestVisible = true;
+            if (_groupSelectorPanel != null && _groupSelectorPanel.IsVisible)
+            {
+                _groupSelectorPanel.IsHitTestVisible = false;
+                await CreateFadeOut().RunAsync(_groupSelectorPanel);
+                _groupSelectorPanel.IsVisible = false;
+                _groupSelectorPanel.Opacity = 1;
+            }
+
+            if (_groupContentBorder != null)
+            {
+                _groupContentBorder.IsVisible = true;
+                _groupContentBorder.IsHitTestVisible = true;
+                _groupContentBorder.Opacity = 0;
+                await CreateFadeIn().RunAsync(_groupContentBorder);
+            }
+
+            if (_backButton != null)
+            {
+                _backButton.IsVisible = true;
+                _backButton.IsHitTestVisible = true;
+                _backButton.Opacity = 0;
+                await CreateFadeIn().RunAsync(_backButton);
+            }
+        }
+        else
+        {
+            if (_groupContentBorder != null && _groupContentBorder.IsVisible)
+            {
+                _groupContentBorder.IsHitTestVisible = false;
+                await CreateFadeOut().RunAsync(_groupContentBorder);
+                _groupContentBorder.IsVisible = false;
+                _groupContentBorder.Opacity = 1;
+            }
+
+            if (_backButton != null && _backButton.IsVisible)
+            {
+                _backButton.IsHitTestVisible = false;
+                await CreateFadeOut().RunAsync(_backButton);
+                _backButton.IsVisible = false;
+                _backButton.Opacity = 1;
+            }
+
+            if (_groupSelectorPanel != null)
+            {
+                _groupSelectorPanel.IsVisible = true;
+                _groupSelectorPanel.IsHitTestVisible = true;
+                _groupSelectorPanel.Opacity = 0;
+                await CreateFadeIn().RunAsync(_groupSelectorPanel);
+            }
         }
     }
 

@@ -34,7 +34,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        
+
                         <!-- Display Text (non-editable mode) -->
                         <TextBlock x:Name="PART_DisplayText"
                                    Grid.Column="0"
@@ -42,7 +42,7 @@
                                    VerticalAlignment="Center"
                                    Margin="8,0"
                                    Foreground="{DynamicResource PersianDatePickerTextForegroundBrush}"/>
-                        
+
                         <!-- Editable TextBox -->
                         <TextBox x:Name="PART_EditableText"
                                  Grid.Column="0"
@@ -53,22 +53,22 @@
                                  Background="Transparent"
                                  BorderThickness="0"
                                  IsVisible="False"/>
-                        
+
                         <!-- Toggle Button -->
                         <ToggleButton x:Name="PART_ToggleButton"
-                                Grid.Column="1"
-                                Width="30"
-                                Height="24"
-                                Margin="0,0,4,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Focusable="False"
-                                ClickMode="Press">
+                                      Grid.Column="1"
+                                      Width="30"
+                                      Height="24"
+                                      Margin="0,0,4,0"
+                                      HorizontalAlignment="Right"
+                                      VerticalAlignment="Center"
+                                      Focusable="False"
+                                      ClickMode="Press">
                             <PathIcon Data="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M16,17H18V15H16M13,17H15V15H13M10,17H12V15H10M7,17H9V15H7M16,14H18V12H16M13,14H15V12H13M10,14H12V12H10M7,14H9V12H7M16,11H18V9H16M13,11H15V9H13M10,11H12V9H10M7,11H9V9H7M19,7H5V5H19V7Z"
                                       Width="16"
                                       Height="16"/>
                         </ToggleButton>
-                        
+
                         <!-- Popup -->
                         <Popup x:Name="PART_Popup"
                                Grid.Column="0"
@@ -87,8 +87,8 @@
                                 <StackPanel>
                                     <local:CalendarView x:Name="PART_CalendarView"/>
                                     <local:TimePickerView x:Name="PART_TimePickerView"
-                                                           IsVisible="False"
-                                                           Margin="0,8,0,0"/>
+                                                          IsVisible="False"
+                                                          Margin="0,8,0,0"/>
                                 </StackPanel>
                             </Border>
                         </Popup>
@@ -97,24 +97,24 @@
             </ControlTemplate>
         </Setter>
     </Style>
-    
+
     <!-- Hover state -->
     <Style Selector="local|ModernPersianDatePicker:pointerover">
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
     </Style>
-    
+
     <!-- Focused state -->
     <Style Selector="local|ModernPersianDatePicker:focus">
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
-    
+
     <!-- Focused with popup open -->
     <Style Selector="local|ModernPersianDatePicker:focus-within">
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
         <Setter Property="BorderThickness" Value="2"/>
     </Style>
-    
+
     <!-- Watermark style -->
     <Style Selector="local|ModernPersianDatePicker TextBlock.watermark">
         <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerWatermarkForegroundBrush}"/>
@@ -160,7 +160,7 @@
                                                FontSize="16"
                                                FontWeight="SemiBold"/>
                                 </Button>
-                                
+
                                 <Button x:Name="PART_TodayButton"
                                         Grid.Column="1"
                                         HorizontalAlignment="Center"
@@ -180,7 +180,7 @@
                                                    FontWeight="SemiBold"/>
                                     </StackPanel>
                                 </Button>
-                                
+
                                 <Button x:Name="PART_YearButton"
                                         Grid.Column="2"
                                         HorizontalAlignment="Right"
@@ -273,9 +273,9 @@
 
                         <!-- Quick Range View (hidden by default) -->
                         <local:QuickRangeView x:Name="PART_QuickRangeView"
-                                               Grid.Row="0"
-                                               Grid.RowSpan="3"
-                                               IsVisible="False"/>
+                                              Grid.Row="0"
+                                              Grid.RowSpan="3"
+                                              IsVisible="False"/>
                     </Grid>
                 </Border>
             </ControlTemplate>
@@ -336,7 +336,7 @@
         <Setter Property="Padding" Value="8,4"/>
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    
+
     <Style Selector="local|CalendarView Button.month-year-button:pointerover">
         <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
         <Setter Property="CornerRadius" Value="4"/>
@@ -364,8 +364,8 @@
     </Style>
 
     <!-- Holiday day button style.
-         Ordered AFTER .selected/.selected:focus so a holiday keeps its red foreground
-         even when selected/focused (holiday wins per requirement). -->
+    Ordered AFTER .selected/.selected:focus so a holiday keeps its red foreground
+    even when selected/focused (holiday wins per requirement). -->
     <Style Selector="local|CalendarView Button.day-button.holiday">
         <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHolidayForegroundBrush}"/>
     </Style>
