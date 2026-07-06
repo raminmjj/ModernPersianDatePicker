@@ -24,8 +24,6 @@ public partial class MainWindow : Window
         CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
         TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
         RangeDatePicker.DateRangeSelected += OnRangeDateSelected;
-        LocalizedDatePicker.SelectedDateChanged += OnLocalizedDateChanged;
-        GregorianDatePicker.SelectedDateChanged += OnGregorianDateChanged;
 
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
@@ -205,34 +203,30 @@ public partial class MainWindow : Window
 
     private void OnLanguageChanged(object? sender, RoutedEventArgs e)
     {
+        CalendarLanguage lang;
         if (RbLangFarsi.IsChecked == true)
-            LocalizedDatePicker.Language = CalendarLanguage.Farsi;
+            lang = CalendarLanguage.Farsi;
         else if (RbLangEnglish.IsChecked == true)
-            LocalizedDatePicker.Language = CalendarLanguage.English;
+            lang = CalendarLanguage.English;
         else if (RbLangArabic.IsChecked == true)
-            LocalizedDatePicker.Language = CalendarLanguage.Arabic;
+            lang = CalendarLanguage.Arabic;
         else if (RbLangKurdish.IsChecked == true)
-            LocalizedDatePicker.Language = CalendarLanguage.Kurdish;
-    }
-
-    private void OnLocalizedDateChanged(object? sender, SelectedDateChangedEventArgs e)
-    {
-        LocalizedDateText.Text = e.NewDate.HasValue
-            ? $"Selected: {e.NewDate.Value.ToString("long")}"
-            : "Selected: (none)";
-    }
-
-    private void OnGregorianDateChanged(object? sender, SelectedDateChangedEventArgs e)
-    {
-        if (e.NewDate.HasValue)
-        {
-            var d = e.NewDate.Value.ToDateTime();
-            GregorianCalendarText.Text = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
-        }
+            lang = CalendarLanguage.Kurdish;
         else
-        {
-            GregorianCalendarText.Text = "Selected: (none)";
-        }
+            lang = CalendarLanguage.Farsi;
+
+        BasicDatePicker.Language = lang;
+        EnglishDatePicker.Language = lang;
+        CustomDatePicker.Language = lang;
+        GreenAccentDatePicker.Language = lang;
+        PurpleAccentDatePicker.Language = lang;
+        EditableDatePicker.Language = lang;
+        ThemedDatePicker.Language = lang;
+        WeeklyHolidayDatePicker.Language = lang;
+        SpecificHolidayDatePicker.Language = lang;
+        CustomHolidayBrushDatePicker.Language = lang;
+        TimePickerDatePicker.Language = lang;
+        RangeDatePicker.Language = lang;
     }
 
     private void OnCalendarTypeDemoChanged(object? sender, RoutedEventArgs e)
@@ -257,7 +251,5 @@ public partial class MainWindow : Window
         CustomHolidayBrushDatePicker.CalendarType = type;
         TimePickerDatePicker.CalendarType = type;
         RangeDatePicker.CalendarType = type;
-        LocalizedDatePicker.CalendarType = type;
-        GregorianDatePicker.CalendarType = type;
     }
 }

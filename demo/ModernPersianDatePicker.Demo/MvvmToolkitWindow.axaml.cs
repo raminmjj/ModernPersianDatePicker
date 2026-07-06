@@ -25,8 +25,6 @@ public partial class MvvmToolkitWindow : Window
         CustomHolidayBrushDatePicker.SelectedDateChanged += (_, e) => _vm.OnCustomHolidayBrushDateChanged(e.NewDate);
         TimePickerDatePicker.SelectedDateChanged += (_, e) => _vm.OnTimePickerDateChanged(e.NewDate);
         RangeDatePicker.DateRangeSelected += (_, e) => _vm.OnRangeDateSelected(e.RangeStart, e.RangeEnd);
-        LocalizedDatePicker.SelectedDateChanged += (_, e) => _vm.OnLocalizedDateChanged(e.NewDate);
-        GregorianDatePicker.SelectedDateChanged += (_, e) => _vm.OnGregorianDateChanged(e.NewDate);
 
         RbSetToNull.Click += OnInvalidActionChanged;
         RbSetToToday.Click += OnInvalidActionChanged;

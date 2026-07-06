@@ -34,26 +34,57 @@
     </Window.Resources>
 
     <ScrollViewer>
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Margin="20">
 
-        <!-- Calendar Type selector -->
-        <StackPanel Grid.Row="0"
-                    Orientation="Horizontal"
-                    HorizontalAlignment="Center"
-                    Margin="0,0,0,16">
-            <TextBlock Text="Calendar:"
-                       VerticalAlignment="Center"
-                       Margin="0,0,8,0"/>
-            <RadioButton GroupName="CalendarType"
-                         Content="Auto" IsChecked="True"
-                         Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Auto"/>
-            <RadioButton GroupName="CalendarType"
-                         Content="Persian"
-                         Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Persian"/>
-            <RadioButton GroupName="CalendarType"
-                         Content="Gregorian"
-                         Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Gregorian"/>
-        </StackPanel>
+        <!-- Options Row: Calendar + Language -->
+        <Grid Grid.Row="0" RowDefinitions="Auto,Auto" Margin="0,0,0,16">
+            <!-- Calendar Type selector -->
+            <StackPanel Grid.Row="0"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,8">
+                <TextBlock Text="Calendar:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <RadioButton GroupName="CalendarType"
+                             Content="Auto" IsChecked="True"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Auto"/>
+                <RadioButton GroupName="CalendarType"
+                             Content="Persian"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Persian"/>
+                <RadioButton GroupName="CalendarType"
+                             Content="Gregorian"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeCalendarTypeCommand}" CommandParameter="Gregorian"/>
+            </StackPanel>
+
+            <!-- Language selector -->
+            <StackPanel Grid.Row="1"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+                <TextBlock Text="Language:"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <RadioButton GroupName="Language"
+                             Content="Farsi" IsChecked="True"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeLanguageCommand}" CommandParameter="Farsi"/>
+                <RadioButton GroupName="Language"
+                             Content="English"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeLanguageCommand}" CommandParameter="English"/>
+                <RadioButton GroupName="Language"
+                             Content="Arabic"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeLanguageCommand}" CommandParameter="Arabic"/>
+                <RadioButton GroupName="Language"
+                             Content="Kurdish"
+                             Margin="0,0,8,0"
+                             Command="{Binding ChangeLanguageCommand}" CommandParameter="Kurdish"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Title -->
         <TextBlock Grid.Row="1"
@@ -154,7 +185,7 @@
                             Command="{Binding ShowGregorianCommand}"/>
                 </StackPanel>
 
-                <TextBlock Text="{Binding GregorianDateText}"
+                <TextBlock Text="{Binding CustomDateText}"
                            Margin="0,8,0,0"
                            Foreground="{DynamicResource ThemeForegroundBrush}"/>
             </StackPanel>
@@ -394,83 +425,6 @@
                                                  MinWidth="280"/>
 
                 <TextBlock Text="{Binding RangeDateText}"
-                           Margin="0,8,0,0"
-                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Localization -->
-        <Border Grid.Row="10"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16"
-                Margin="0,0,0,16">
-            <StackPanel>
-                <TextBlock Text="Localization (Language selector)"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
-
-                <TextBlock Text="Switch between Farsi, English, Arabic, and Kurdish. Implement ICalendarLocalization for custom languages."
-                           FontSize="12"
-                           Foreground="{DynamicResource ThemeForegroundBrush}"
-                           Margin="0,0,0,12"/>
-
-                <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,12">
-                    <RadioButton GroupName="Language"
-                                 Content="Farsi" IsChecked="True"
-                                 Command="{Binding LocalizedLanguageCommand}" CommandParameter="Farsi"/>
-                    <RadioButton GroupName="Language"
-                                 Content="English"
-                                 Command="{Binding LocalizedLanguageCommand}" CommandParameter="English"/>
-                    <RadioButton GroupName="Language"
-                                 Content="Arabic"
-                                 Command="{Binding LocalizedLanguageCommand}" CommandParameter="Arabic"/>
-                    <RadioButton GroupName="Language"
-                                 Content="Kurdish"
-                                 Command="{Binding LocalizedLanguageCommand}" CommandParameter="Kurdish"/>
-                </StackPanel>
-
-                <persian:ModernPersianDatePicker x:Name="LocalizedDatePicker"
-                                                 SelectedDate="{Binding LocalizedDatePicker.SelectedDate}"
-                                                 Language="{Binding LocalizedDatePicker.Language}"
-                                                 CalendarType="{Binding LocalizedDatePicker.CalendarType}"
-                                                 HorizontalAlignment="Left"
-                                                 MinWidth="280"/>
-
-                <TextBlock Text="{Binding LocalizedDateText}"
-                           Margin="0,8,0,0"
-                           Foreground="{DynamicResource ThemeForegroundBrush}"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Gregorian Calendar -->
-        <Border Grid.Row="11"
-                BorderBrush="{DynamicResource CardBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="8"
-                Padding="16"
-                Margin="0,0,0,16">
-            <StackPanel>
-                <TextBlock Text="Gregorian Calendar (CalendarType=Gregorian)"
-                           FontSize="16"
-                           FontWeight="SemiBold"
-                           Margin="0,0,0,12"/>
-
-                <TextBlock Text="Switches to Western calendar with LTR layout. Scroll direction reverses automatically."
-                           FontSize="12"
-                           Foreground="{DynamicResource ThemeForegroundBrush}"
-                           Margin="0,0,0,12"/>
-
-                <persian:ModernPersianDatePicker x:Name="GregorianDatePicker"
-                                                 SelectedDate="{Binding GregorianDatePicker.SelectedDate}"
-                                                 Language="{Binding GregorianDatePicker.Language}"
-                                                 CalendarType="{Binding GregorianDatePicker.CalendarType}"
-                                                 HorizontalAlignment="Left"
-                                                 MinWidth="280"/>
-
-                <TextBlock Text="{Binding GregorianCalendarText}"
                            Margin="0,8,0,0"
                            Foreground="{DynamicResource ThemeForegroundBrush}"/>
             </StackPanel>

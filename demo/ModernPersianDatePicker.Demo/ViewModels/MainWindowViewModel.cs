@@ -24,7 +24,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
         CalendarTypeCommand = new RelayCommand<string>(OnCalendarTypeChanged);
         LanguageCommand = new RelayCommand<string>(OnLanguageChanged);
-        LocalizedLanguageCommand = new RelayCommand<string>(OnLocalizedLanguageChanged);
         ThemeCommand = new RelayCommand<string>(OnThemeChanged);
         SetToTodayCommand = new RelayCommand(SetToToday);
         ClearCommand = new RelayCommand(Clear);
@@ -43,12 +42,9 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public DatePickerConfig CustomHolidayBrushDatePicker { get; } = new() { HolidayBrush = "#FFFF8800" };
     public DatePickerConfig TimePickerDatePicker { get; } = new() { IsTimePickerEnabled = true };
     public DatePickerConfig RangeDatePicker { get; } = new() { IsRangeMode = true };
-    public DatePickerConfig LocalizedDatePicker { get; } = new();
-    public DatePickerConfig GregorianDatePicker { get; } = new() { Language = CalendarLanguage.English };
 
     public ICommand CalendarTypeCommand { get; }
     public ICommand LanguageCommand { get; }
-    public ICommand LocalizedLanguageCommand { get; }
     public ICommand ThemeCommand { get; }
     public ICommand SetToTodayCommand { get; }
     public ICommand ClearCommand { get; }
@@ -86,15 +82,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
 
     private string _rangeDateText = "Selected: ";
     public string RangeDateText { get => _rangeDateText; set { _rangeDateText = value; OnPropertyChanged(); } }
-
-    private string _localizedDateText = "Selected: ";
-    public string LocalizedDateText { get => _localizedDateText; set { _localizedDateText = value; OnPropertyChanged(); } }
-
-    private string _gregorianDateText = "Selected: ";
-    public string GregorianDateText { get => _gregorianDateText; set { _gregorianDateText = value; OnPropertyChanged(); } }
-
-    private string _gregorianCalendarText = "Selected: ";
-    public string GregorianCalendarText { get => _gregorianCalendarText; set { _gregorianCalendarText = value; OnPropertyChanged(); } }
 
     private string _invalidAction = "SetToNull";
     public string InvalidAction
@@ -146,21 +133,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
             RangeDateText = "Selected: (none)";
     }
 
-    public void OnLocalizedDateChanged(PersianDate? date) => LocalizedDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-
-    public void OnGregorianDateChanged(PersianDate? date)
-    {
-        if (date.HasValue)
-        {
-            var d = date.Value.ToDateTime();
-            GregorianDateText = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
-        }
-        else
-        {
-            GregorianDateText = "Selected: (none)";
-        }
-    }
-
     private void OnCalendarTypeChanged(string? type)
     {
         CalendarType calType = type switch
@@ -182,8 +154,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
         CustomHolidayBrushDatePicker.CalendarType = calType;
         TimePickerDatePicker.CalendarType = calType;
         RangeDatePicker.CalendarType = calType;
-        LocalizedDatePicker.CalendarType = calType;
-        GregorianDatePicker.CalendarType = calType;
     }
 
     private void OnLanguageChanged(string? lang)
@@ -208,19 +178,6 @@ public class MainWindowViewModel : INotifyPropertyChanged
         CustomHolidayBrushDatePicker.Language = language;
         TimePickerDatePicker.Language = language;
         RangeDatePicker.Language = language;
-        LocalizedDatePicker.Language = language;
-        GregorianDatePicker.Language = language;
-    }
-
-    private void OnLocalizedLanguageChanged(string? lang)
-    {
-        LocalizedDatePicker.Language = lang switch
-        {
-            "English" => CalendarLanguage.English,
-            "Arabic" => CalendarLanguage.Arabic,
-            "Kurdish" => CalendarLanguage.Kurdish,
-            _ => CalendarLanguage.Farsi,
-        };
     }
 
     private void OnThemeChanged(string? theme)
@@ -243,11 +200,11 @@ public class MainWindowViewModel : INotifyPropertyChanged
         if (CustomDatePicker.SelectedDate.HasValue)
         {
             var gregorianDate = CustomDatePicker.SelectedDate.Value.ToDateTime();
-            GregorianDateText = $"Gregorian: {gregorianDate:yyyy/MM/dd} ({gregorianDate:MMMM dd, yyyy})";
+            CustomDateText = $"Gregorian: {gregorianDate:yyyy/MM/dd} ({gregorianDate:MMMM dd, yyyy})";
         }
         else
         {
-            GregorianDateText = "Gregorian: (no date selected)";
+            CustomDateText = "Gregorian: (no date selected)";
         }
     }
 

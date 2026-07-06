@@ -32,8 +32,6 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     public ToolkitDatePickerConfig CustomHolidayBrushDatePicker { get; } = new() { HolidayBrush = "#FFFF8800" };
     public ToolkitDatePickerConfig TimePickerDatePicker { get; } = new() { IsTimePickerEnabled = true };
     public ToolkitDatePickerConfig RangeDatePicker { get; } = new() { IsRangeMode = true };
-    public ToolkitDatePickerConfig LocalizedDatePicker { get; } = new();
-    public ToolkitDatePickerConfig GregorianDatePicker { get; } = new() { Language = CalendarLanguage.English };
 
     [ObservableProperty] private string _basicDateText = "Selected: ";
     [ObservableProperty] private string _englishDateText = "Selected: ";
@@ -46,9 +44,6 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     [ObservableProperty] private string _customHolidayBrushText = "Selected: ";
     [ObservableProperty] private string _timePickerDateText = "Selected: ";
     [ObservableProperty] private string _rangeDateText = "Selected: ";
-    [ObservableProperty] private string _localizedDateText = "Selected: ";
-    [ObservableProperty] private string _gregorianDateText = "Selected: ";
-    [ObservableProperty] private string _gregorianCalendarText = "Selected: ";
     [ObservableProperty] private string _invalidAction = "SetToNull";
 
     [RelayCommand]
@@ -77,18 +72,6 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void LocalizedLanguage(string? lang)
-    {
-        LocalizedDatePicker.Language = lang switch
-        {
-            "English" => CalendarLanguage.English,
-            "Arabic" => CalendarLanguage.Arabic,
-            "Kurdish" => CalendarLanguage.Kurdish,
-            _ => CalendarLanguage.Farsi,
-        };
-    }
-
-    [RelayCommand]
     private void Theme(string? theme)
     {
         if (Application.Current == null) return;
@@ -112,11 +95,11 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
         if (CustomDatePicker.SelectedDate.HasValue)
         {
             var d = CustomDatePicker.SelectedDate.Value.ToDateTime();
-            GregorianDateText = $"Gregorian: {d:yyyy/MM/dd} ({d:MMMM dd, yyyy})";
+            CustomDateText = $"Gregorian: {d:yyyy/MM/dd} ({d:MMMM dd, yyyy})";
         }
         else
         {
-            GregorianDateText = "Gregorian: (no date selected)";
+            CustomDateText = "Gregorian: (no date selected)";
         }
     }
 
@@ -144,8 +127,6 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
         action(CustomHolidayBrushDatePicker);
         action(TimePickerDatePicker);
         action(RangeDatePicker);
-        action(LocalizedDatePicker);
-        action(GregorianDatePicker);
     }
 
     public void OnBasicDateChanged(PersianDate? date) => BasicDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
@@ -174,21 +155,6 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
             RangeDateText = $"Start: {start.Value.ToString("short")} (click end date)";
         else
             RangeDateText = "Selected: (none)";
-    }
-
-    public void OnLocalizedDateChanged(PersianDate? date) => LocalizedDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-
-    public void OnGregorianDateChanged(PersianDate? date)
-    {
-        if (date.HasValue)
-        {
-            var d = date.Value.ToDateTime();
-            GregorianDateText = $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
-        }
-        else
-        {
-            GregorianDateText = "Selected: (none)";
-        }
     }
 }
 
