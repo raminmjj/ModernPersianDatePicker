@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 
 namespace ModernPersianDatePicker;
 
@@ -81,6 +82,38 @@ public class TimePickerView : TemplatedControl
 
         AttachAll();
         SyncFromValue();
+
+        // Block wheel events on all elements except text boxes.
+        // Text boxes handle their own wheel events (changing values).
+        // Everything else (buttons, ":" separators) should block propagation.
+        AttachRepeatButtonWheelHandlers();
+        AttachSeparatorWheelHandlers();
+    }
+
+    private void AttachRepeatButtonWheelHandlers()
+    {
+        if (_hourUp != null) _hourUp.PointerWheelChanged += OnBlockWheel;
+        if (_hourDown != null) _hourDown.PointerWheelChanged += OnBlockWheel;
+        if (_minuteUp != null) _minuteUp.PointerWheelChanged += OnBlockWheel;
+        if (_minuteDown != null) _minuteDown.PointerWheelChanged += OnBlockWheel;
+        if (_secondUp != null) _secondUp.PointerWheelChanged += OnBlockWheel;
+        if (_secondDown != null) _secondDown.PointerWheelChanged += OnBlockWheel;
+    }
+
+    private void AttachSeparatorWheelHandlers()
+    {
+        // Find the ":" TextBlocks by traversing the visual tree
+        foreach (var child in VisualChildren)
+        {
+            if (child is Panel panel)
+            {
+                foreach (var panelChild in panel.Children)
+                {
+                    if (panelChild is TextBlock tb && tb.Text == ":")
+                        tb.PointerWheelChanged += OnBlockWheel;
+                }
+            }
+        }
     }
 
     private void DetachAll()
@@ -88,12 +121,12 @@ public class TimePickerView : TemplatedControl
         if (_hourBox != null) { _hourBox.LostFocus -= OnBoxLostFocus; _hourBox.PointerWheelChanged -= OnBoxPointerWheel; }
         if (_minuteBox != null) { _minuteBox.LostFocus -= OnBoxLostFocus; _minuteBox.PointerWheelChanged -= OnBoxPointerWheel; }
         if (_secondBox != null) { _secondBox.LostFocus -= OnBoxLostFocus; _secondBox.PointerWheelChanged -= OnBoxPointerWheel; }
-        if (_hourUp != null) _hourUp.Click -= OnHourUp_Click;
-        if (_hourDown != null) _hourDown.Click -= OnHourDown_Click;
-        if (_minuteUp != null) _minuteUp.Click -= OnMinuteUp_Click;
-        if (_minuteDown != null) _minuteDown.Click -= OnMinuteDown_Click;
-        if (_secondUp != null) _secondUp.Click -= OnSecondUp_Click;
-        if (_secondDown != null) _secondDown.Click -= OnSecondDown_Click;
+        if (_hourUp != null) { _hourUp.Click -= OnHourUp_Click; _hourUp.PointerWheelChanged -= OnBlockWheel; }
+        if (_hourDown != null) { _hourDown.Click -= OnHourDown_Click; _hourDown.PointerWheelChanged -= OnBlockWheel; }
+        if (_minuteUp != null) { _minuteUp.Click -= OnMinuteUp_Click; _minuteUp.PointerWheelChanged -= OnBlockWheel; }
+        if (_minuteDown != null) { _minuteDown.Click -= OnMinuteDown_Click; _minuteDown.PointerWheelChanged -= OnBlockWheel; }
+        if (_secondUp != null) { _secondUp.Click -= OnSecondUp_Click; _secondUp.PointerWheelChanged -= OnBlockWheel; }
+        if (_secondDown != null) { _secondDown.Click -= OnSecondDown_Click; _secondDown.PointerWheelChanged -= OnBlockWheel; }
     }
 
     private void AttachAll()
@@ -120,6 +153,11 @@ public class TimePickerView : TemplatedControl
         else if (sender == _secondBox)
             Second = (Second + delta % 60 + 60) % 60;
 
+        e.Handled = true;
+    }
+
+    private void OnBlockWheel(object? sender, PointerWheelEventArgs e)
+    {
         e.Handled = true;
     }
 
