@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Animation;
 using Avalonia.Controls;
@@ -364,12 +365,12 @@ public class QuickRangeView : TemplatedControl
     {
         if (showContent)
         {
+            var tasks = new List<System.Threading.Tasks.Task>();
+
             if (_groupSelectorPanel != null && _groupSelectorPanel.IsVisible)
             {
                 _groupSelectorPanel.IsHitTestVisible = false;
-                await CreateFadeOut().RunAsync(_groupSelectorPanel);
-                _groupSelectorPanel.IsVisible = false;
-                _groupSelectorPanel.Opacity = 1;
+                tasks.Add(CreateFadeOut().RunAsync(_groupSelectorPanel));
             }
 
             if (_groupContentBorder != null)
@@ -377,7 +378,7 @@ public class QuickRangeView : TemplatedControl
                 _groupContentBorder.IsVisible = true;
                 _groupContentBorder.IsHitTestVisible = true;
                 _groupContentBorder.Opacity = 0;
-                await CreateFadeIn().RunAsync(_groupContentBorder);
+                tasks.Add(CreateFadeIn().RunAsync(_groupContentBorder));
             }
 
             if (_backButton != null)
@@ -385,25 +386,31 @@ public class QuickRangeView : TemplatedControl
                 _backButton.IsVisible = true;
                 _backButton.IsHitTestVisible = true;
                 _backButton.Opacity = 0;
-                await CreateFadeIn().RunAsync(_backButton);
+                tasks.Add(CreateFadeIn().RunAsync(_backButton));
+            }
+
+            await System.Threading.Tasks.Task.WhenAll(tasks);
+
+            if (_groupSelectorPanel != null)
+            {
+                _groupSelectorPanel.IsVisible = false;
+                _groupSelectorPanel.Opacity = 1;
             }
         }
         else
         {
+            var tasks = new List<System.Threading.Tasks.Task>();
+
             if (_groupContentBorder != null && _groupContentBorder.IsVisible)
             {
                 _groupContentBorder.IsHitTestVisible = false;
-                await CreateFadeOut().RunAsync(_groupContentBorder);
-                _groupContentBorder.IsVisible = false;
-                _groupContentBorder.Opacity = 1;
+                tasks.Add(CreateFadeOut().RunAsync(_groupContentBorder));
             }
 
             if (_backButton != null && _backButton.IsVisible)
             {
                 _backButton.IsHitTestVisible = false;
-                await CreateFadeOut().RunAsync(_backButton);
-                _backButton.IsVisible = false;
-                _backButton.Opacity = 1;
+                tasks.Add(CreateFadeOut().RunAsync(_backButton));
             }
 
             if (_groupSelectorPanel != null)
@@ -411,7 +418,20 @@ public class QuickRangeView : TemplatedControl
                 _groupSelectorPanel.IsVisible = true;
                 _groupSelectorPanel.IsHitTestVisible = true;
                 _groupSelectorPanel.Opacity = 0;
-                await CreateFadeIn().RunAsync(_groupSelectorPanel);
+                tasks.Add(CreateFadeIn().RunAsync(_groupSelectorPanel));
+            }
+
+            await System.Threading.Tasks.Task.WhenAll(tasks);
+
+            if (_groupContentBorder != null)
+            {
+                _groupContentBorder.IsVisible = false;
+                _groupContentBorder.Opacity = 1;
+            }
+            if (_backButton != null)
+            {
+                _backButton.IsVisible = false;
+                _backButton.Opacity = 1;
             }
         }
     }
