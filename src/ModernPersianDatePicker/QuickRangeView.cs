@@ -185,7 +185,12 @@ public class QuickRangeView : TemplatedControl
     private PersianDate GetToday()
     {
         if (IsGregorian)
-            return PersianCalendarHelper.ToPersianDate(DateTime.Today);
+        {
+            var today = DateTime.Today;
+            int dow = PersianCalendarHelper.GetGregorianFirstDayOfWeek(today.Year, today.Month);
+            int dayOfWeek = (dow + today.Day - 1) % 7;
+            return new PersianDate(today.Year, today.Month, today.Day, dayOfWeek);
+        }
         return PersianCalendarHelper.Today();
     }
 
