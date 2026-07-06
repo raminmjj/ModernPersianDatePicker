@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
@@ -465,9 +466,14 @@ public class CalendarView : TemplatedControl
             if (_quickRangeView != null)
             {
                 _quickRangeView.IsVisible = true;
+                _quickRangeView.CalendarType = GetEffectiveCalendarType();
+                _quickRangeView.LocalizationProvider = GetLocalization();
                 _quickRangeView.ResetRow3();
                 _quickRangeView.RangeStart = RangeStart;
                 _quickRangeView.RangeEnd = RangeEnd;
+                // Delay refresh to ensure embedded pickers' templates are applied
+                Dispatcher.UIThread.Post(() => _quickRangeView.RefreshPickers(),
+                    Avalonia.Threading.DispatcherPriority.Loaded);
             }
         }
         else

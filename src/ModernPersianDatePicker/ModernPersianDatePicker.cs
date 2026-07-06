@@ -1307,4 +1307,22 @@ public class ModernPersianDatePicker : TemplatedControl
 
         SelectedDate = PersianCalendarHelper.Today();
     }
+
+    /// <summary>
+    /// Forces the internal calendar view to re-apply all current settings (localization, calendar type, etc.).
+    /// Useful when this control is embedded inside another popup and needs to refresh after becoming visible.
+    /// </summary>
+    public void ForceRefreshSettings()
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+        {
+            _calendarView.LocalizationProvider = GetLocalization();
+            _calendarView.CalendarType = CalendarType;
+        }
+
+        UpdateDisplayText();
+    }
 }

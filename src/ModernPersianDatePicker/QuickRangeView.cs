@@ -53,7 +53,8 @@ public class QuickRangeView : TemplatedControl
 
     static QuickRangeView()
     {
-        LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.UpdateLabels());
+        LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => { x.UpdateLabels(); x.SyncPickersSettings(); });
+        CalendarTypeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
         RangeStartProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
         RangeEndProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
     }
@@ -223,6 +224,33 @@ public class QuickRangeView : TemplatedControl
             _fromPicker.SelectedDate = RangeStart;
         if (_toPicker != null)
             _toPicker.SelectedDate = RangeEnd;
+    }
+
+    private void SyncPickersSettings()
+    {
+        if (_fromPicker != null)
+        {
+            _fromPicker.CalendarType = CalendarType;
+            _fromPicker.LocalizationProvider = LocalizationProvider;
+        }
+        if (_toPicker != null)
+        {
+            _toPicker.CalendarType = CalendarType;
+            _toPicker.LocalizationProvider = LocalizationProvider;
+        }
+    }
+
+    /// <summary>
+    /// Called when the Quick Range view becomes visible to force pickers to refresh.
+    /// Handles the case where pickers were not yet templated when properties changed.
+    /// </summary>
+    public void RefreshPickers()
+    {
+        SyncPickersSettings();
+        SyncPickersFromRange();
+        // Force embedded pickers to re-apply all settings to their internal calendar views
+        _fromPicker?.ForceRefreshSettings();
+        _toPicker?.ForceRefreshSettings();
     }
 
     private void UpdateLabels()
