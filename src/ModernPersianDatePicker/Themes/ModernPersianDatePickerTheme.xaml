@@ -47,6 +47,7 @@
                         <TextBox x:Name="PART_EditableText"
                                  Grid.Column="0"
                                  Text=""
+                                 Watermark="{TemplateBinding Watermark}"
                                  VerticalAlignment="Center"
                                  Margin="4,0"
                                  Padding="8,4"

@@ -439,6 +439,14 @@ public class ModernPersianDatePicker : TemplatedControl
         }
 
         UpdateEditMode();
+
+        // Set initial watermark on editable TextBox
+        if (_editableTextBox != null)
+        {
+            var loc = GetLocalization();
+            _editableTextBox.Watermark = loc.SelectDateLabel;
+        }
+
         UpdateDisplayText();
     }
 
@@ -728,6 +736,13 @@ public class ModernPersianDatePicker : TemplatedControl
 
         if (_calendarView != null)
             _calendarView.LocalizationProvider = GetLocalization();
+
+        // Update editable TextBox watermark to reflect current language
+        if (_editableTextBox != null)
+        {
+            var loc = GetLocalization();
+            _editableTextBox.Watermark = loc.SelectDateLabel;
+        }
 
         UpdateDisplayText();
     }
