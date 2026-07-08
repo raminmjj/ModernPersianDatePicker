@@ -400,6 +400,7 @@ public class CalendarView : TemplatedControl
             _quickRangeView.QuickRangeApplied += OnQuickRangeView_Applied;
             _quickRangeView.LocalizationProvider = GetLocalization();
             _quickRangeView.CalendarType = GetEffectiveCalendarType();
+            _quickRangeView.WeeklyHolidays = WeeklyHolidays;
         }
 
         UpdateCalendar();
@@ -484,6 +485,7 @@ public class CalendarView : TemplatedControl
                 _quickRangeView.IsVisible = true;
                 _quickRangeView.CalendarType = GetEffectiveCalendarType();
                 _quickRangeView.LocalizationProvider = GetLocalization();
+                _quickRangeView.WeeklyHolidays = WeeklyHolidays;
                 _quickRangeView.ResetRow3();
                 _quickRangeView.RangeStart = RangeStart;
                 _quickRangeView.RangeEnd = RangeEnd;
@@ -1034,6 +1036,7 @@ public class CalendarView : TemplatedControl
         {
             _quickRangeView.LocalizationProvider = GetLocalization();
             _quickRangeView.CalendarType = GetEffectiveCalendarType();
+            _quickRangeView.WeeklyHolidays = WeeklyHolidays;
         }
     }
 

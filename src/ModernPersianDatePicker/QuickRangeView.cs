@@ -24,6 +24,10 @@ public class QuickRangeView : TemplatedControl
     public static readonly StyledProperty<CalendarType> CalendarTypeProperty =
         AvaloniaProperty.Register<QuickRangeView, CalendarType>(nameof(CalendarType));
 
+    public static readonly StyledProperty<IReadOnlyList<DayOfWeek>> WeeklyHolidaysProperty =
+        AvaloniaProperty.Register<QuickRangeView, IReadOnlyList<DayOfWeek>>(nameof(WeeklyHolidays),
+            new[] { DayOfWeek.Friday });
+
     public static readonly StyledProperty<PersianDate?> RangeStartProperty =
         AvaloniaProperty.Register<QuickRangeView, PersianDate?>(nameof(RangeStart));
 
@@ -55,6 +59,7 @@ public class QuickRangeView : TemplatedControl
     {
         LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => { x.UpdateLabels(); x.SyncPickersSettings(); });
         CalendarTypeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
+        WeeklyHolidaysProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
         RangeStartProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
         RangeEndProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
     }
@@ -87,6 +92,12 @@ public class QuickRangeView : TemplatedControl
     {
         get => GetValue(RangeEndProperty);
         set => SetValue(RangeEndProperty, value);
+    }
+
+    public IReadOnlyList<DayOfWeek> WeeklyHolidays
+    {
+        get => GetValue(WeeklyHolidaysProperty);
+        set => SetValue(WeeklyHolidaysProperty, value);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -232,11 +243,13 @@ public class QuickRangeView : TemplatedControl
         {
             _fromPicker.CalendarType = CalendarType;
             _fromPicker.LocalizationProvider = LocalizationProvider;
+            _fromPicker.WeeklyHolidays = WeeklyHolidays;
         }
         if (_toPicker != null)
         {
             _toPicker.CalendarType = CalendarType;
             _toPicker.LocalizationProvider = LocalizationProvider;
+            _toPicker.WeeklyHolidays = WeeklyHolidays;
         }
     }
 
