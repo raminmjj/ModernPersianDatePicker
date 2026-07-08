@@ -61,9 +61,21 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
         var isGregorian = calType == CalendarType.Gregorian ||
                           (calType == CalendarType.Auto &&
                            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
-        WeeklyHolidayDatePicker.WeeklyHolidays = isGregorian
+        var weekendHolidays = isGregorian
             ? new[] { DayOfWeek.Saturday, DayOfWeek.Sunday }
             : new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
+        BasicDatePicker.WeeklyHolidays = weekendHolidays;
+        EnglishDatePicker.WeeklyHolidays = weekendHolidays;
+        CustomDatePicker.WeeklyHolidays = weekendHolidays;
+        GreenAccentDatePicker.WeeklyHolidays = weekendHolidays;
+        PurpleAccentDatePicker.WeeklyHolidays = weekendHolidays;
+        EditableDatePicker.WeeklyHolidays = weekendHolidays;
+        ThemedDatePicker.WeeklyHolidays = weekendHolidays;
+        WeeklyHolidayDatePicker.WeeklyHolidays = weekendHolidays;
+        SpecificDatePicker.WeeklyHolidays = weekendHolidays;
+        CustomHolidayBrushDatePicker.WeeklyHolidays = weekendHolidays;
+        TimePickerDatePicker.WeeklyHolidays = weekendHolidays;
+        RangeDatePicker.WeeklyHolidays = weekendHolidays;
     }
 
     [RelayCommand]

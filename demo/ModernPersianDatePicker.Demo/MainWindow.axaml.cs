@@ -256,8 +256,20 @@ public partial class MainWindow : Window
         var isGregorian = type == CalendarType.Gregorian ||
                           (type == CalendarType.Auto &&
                            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
-        WeeklyHolidayDatePicker.WeeklyHolidays = isGregorian
+        var weekendHolidays = isGregorian
             ? new[] { System.DayOfWeek.Saturday, System.DayOfWeek.Sunday }
             : new[] { System.DayOfWeek.Friday, System.DayOfWeek.Saturday };
+        BasicDatePicker.WeeklyHolidays = weekendHolidays;
+        EnglishDatePicker.WeeklyHolidays = weekendHolidays;
+        CustomDatePicker.WeeklyHolidays = weekendHolidays;
+        GreenAccentDatePicker.WeeklyHolidays = weekendHolidays;
+        PurpleAccentDatePicker.WeeklyHolidays = weekendHolidays;
+        EditableDatePicker.WeeklyHolidays = weekendHolidays;
+        ThemedDatePicker.WeeklyHolidays = weekendHolidays;
+        WeeklyHolidayDatePicker.WeeklyHolidays = weekendHolidays;
+        SpecificHolidayDatePicker.WeeklyHolidays = weekendHolidays;
+        CustomHolidayBrushDatePicker.WeeklyHolidays = weekendHolidays;
+        TimePickerDatePicker.WeeklyHolidays = weekendHolidays;
+        RangeDatePicker.WeeklyHolidays = weekendHolidays;
     }
 }
