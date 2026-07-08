@@ -56,6 +56,14 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
             _ => CalendarType.Auto,
         };
         ApplyToAll(c => c.CalendarType = calType);
+
+        // Update weekend holidays to match calendar type
+        var isGregorian = calType == CalendarType.Gregorian ||
+                          (calType == CalendarType.Auto &&
+                           System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
+        WeeklyHolidayDatePicker.WeeklyHolidays = isGregorian
+            ? new[] { DayOfWeek.Saturday, DayOfWeek.Sunday }
+            : new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
     }
 
     [RelayCommand]

@@ -97,7 +97,9 @@ public class CalendarView : TemplatedControl
 
     // Derived caches for holiday checks (rebuilt when the source properties change)
     private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
+    private HashSet<int> _gregorianWeeklyHolidayIndices = new() { (int)DayOfWeek.Friday };
     private HashSet<PersianDate> _holidays = new();
+    private HashSet<(int Year, int Month, int Day)> _gregorianHolidays = new();
 
     static CalendarView()
     {
@@ -169,9 +171,23 @@ public class CalendarView : TemplatedControl
             .Select(ToPersianWeekdayIndex)
             .ToHashSet() ?? new HashSet<int>();
 
+        // Gregorian cache: store raw .NET DayOfWeek values
+        _gregorianWeeklyHolidayIndices = WeeklyHolidays?
+            .Select(d => (int)d)
+            .ToHashSet() ?? new HashSet<int>();
+
         _holidays = Holidays != null
             ? new HashSet<PersianDate>(Holidays)
             : new HashSet<PersianDate>();
+
+        // Gregorian specific-date holidays: convert PersianDate to Gregorian tuple
+        _gregorianHolidays = Holidays != null
+            ? Holidays.Select(pd =>
+            {
+                var dt = PersianCalendarHelper.ToGregorianDate(pd);
+                return (dt.Year, dt.Month, dt.Day);
+            }).ToHashSet()
+            : new HashSet<(int, int, int)>();
 
         UpdateCalendar();
     }
@@ -960,14 +976,23 @@ public class CalendarView : TemplatedControl
                         button.Classes.Add("today");
                     }
 
-                    if (GetEffectiveCalendarType() == CalendarType.Persian)
+                    bool isHoliday;
+                    if (GetEffectiveCalendarType() == CalendarType.Gregorian)
                     {
-                        bool isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
+                        // For Gregorian: calculate .NET DayOfWeek and check against caches
+                        int dayOfWeek = (firstDayOfWeek + day - 1) % 7;
+                        isHoliday = _gregorianWeeklyHolidayIndices.Contains(dayOfWeek)
+                            || _gregorianHolidays.Contains((DisplayYear, DisplayMonth, currentDay));
+                    }
+                    else
+                    {
+                        // For Persian: use column-based index check
+                        isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
                             || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn));
-                        if (isHoliday)
-                        {
-                            button.Classes.Add("holiday");
-                        }
+                    }
+                    if (isHoliday)
+                    {
+                        button.Classes.Add("holiday");
                     }
 
                     if (IsRangeMode)

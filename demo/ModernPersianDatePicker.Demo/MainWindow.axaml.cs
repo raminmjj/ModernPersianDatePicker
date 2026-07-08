@@ -251,5 +251,13 @@ public partial class MainWindow : Window
         CustomHolidayBrushDatePicker.CalendarType = type;
         TimePickerDatePicker.CalendarType = type;
         RangeDatePicker.CalendarType = type;
+
+        // Update weekend holidays to match calendar type
+        var isGregorian = type == CalendarType.Gregorian ||
+                          (type == CalendarType.Auto &&
+                           System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
+        WeeklyHolidayDatePicker.WeeklyHolidays = isGregorian
+            ? new[] { System.DayOfWeek.Saturday, System.DayOfWeek.Sunday }
+            : new[] { System.DayOfWeek.Friday, System.DayOfWeek.Saturday };
     }
 }
