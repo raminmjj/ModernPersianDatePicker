@@ -545,7 +545,7 @@ public class ModernPersianDatePicker : TemplatedControl
             // Handle 2-digit years
             if (year >= 0 && year < 100)
             {
-                year = 1400 + year;
+                year = GetEffectiveCalendarType() == CalendarType.Gregorian ? 2000 + year : 1400 + year;
             }
 
             // Parse month
@@ -557,7 +557,9 @@ public class ModernPersianDatePicker : TemplatedControl
                 return null;
 
             // Validate day for the specific month
-            int daysInMonth = PersianCalendarHelper.GetDaysInMonth(year, month);
+            int daysInMonth = GetEffectiveCalendarType() == CalendarType.Gregorian
+                ? DateTime.DaysInMonth(year, month)
+                : PersianCalendarHelper.GetDaysInMonth(year, month);
             if (day > daysInMonth)
                 return null;
 
@@ -580,7 +582,9 @@ public class ModernPersianDatePicker : TemplatedControl
             }
 
             // Calculate day of week
-            var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(year, month);
+            var firstDayOfWeek = GetEffectiveCalendarType() == CalendarType.Gregorian
+                ? PersianCalendarHelper.GetGregorianFirstDayOfWeek(year, month)
+                : PersianCalendarHelper.GetFirstDayOfWeek(year, month);
             var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
 
             return new PersianDate(year, month, day, dayOfWeek);
