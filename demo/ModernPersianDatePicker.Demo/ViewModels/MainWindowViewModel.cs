@@ -161,7 +161,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
                            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
         var weekendHolidays = isGregorian
             ? new[] { DayOfWeek.Saturday, DayOfWeek.Sunday }
-            : new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
+            : new[] { DayOfWeek.Friday };
         BasicDatePicker.WeeklyHolidays = weekendHolidays;
         EnglishDatePicker.WeeklyHolidays = weekendHolidays;
         CustomDatePicker.WeeklyHolidays = weekendHolidays;

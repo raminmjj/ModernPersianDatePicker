@@ -28,9 +28,6 @@ public partial class MainWindow : Window
         // Set default date for basic picker
         BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
 
-        // Configure weekly holidays: Friday + Saturday
-        WeeklyHolidayDatePicker.WeeklyHolidays = new[] { System.DayOfWeek.Friday, System.DayOfWeek.Saturday };
-
         // Configure specific date holidays
         SpecificHolidayDatePicker.Holidays = new[]
         {
@@ -258,7 +255,7 @@ public partial class MainWindow : Window
                            System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
         var weekendHolidays = isGregorian
             ? new[] { System.DayOfWeek.Saturday, System.DayOfWeek.Sunday }
-            : new[] { System.DayOfWeek.Friday, System.DayOfWeek.Saturday };
+            : new[] { System.DayOfWeek.Friday };
         BasicDatePicker.WeeklyHolidays = weekendHolidays;
         EnglishDatePicker.WeeklyHolidays = weekendHolidays;
         CustomDatePicker.WeeklyHolidays = weekendHolidays;
