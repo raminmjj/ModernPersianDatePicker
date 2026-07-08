@@ -1321,6 +1321,9 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _calendarView.LocalizationProvider = GetLocalization();
             _calendarView.CalendarType = CalendarType;
+            _calendarView.WeeklyHolidays = WeeklyHolidays;
+            _calendarView.Holidays = Holidays;
+            _calendarView.HolidayBrush = HolidayBrush;
         }
 
         UpdateDisplayText();
