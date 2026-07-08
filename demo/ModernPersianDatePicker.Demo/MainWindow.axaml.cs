@@ -249,24 +249,7 @@ public partial class MainWindow : Window
         TimePickerDatePicker.CalendarType = type;
         RangeDatePicker.CalendarType = type;
 
-        // Update weekend holidays to match calendar type
-        var isGregorian = type == CalendarType.Gregorian ||
-                          (type == CalendarType.Auto &&
-                           System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
-        var weekendHolidays = isGregorian
-            ? new[] { System.DayOfWeek.Saturday, System.DayOfWeek.Sunday }
-            : new[] { System.DayOfWeek.Friday };
-        BasicDatePicker.WeeklyHolidays = weekendHolidays;
-        EnglishDatePicker.WeeklyHolidays = weekendHolidays;
-        CustomDatePicker.WeeklyHolidays = weekendHolidays;
-        GreenAccentDatePicker.WeeklyHolidays = weekendHolidays;
-        PurpleAccentDatePicker.WeeklyHolidays = weekendHolidays;
-        EditableDatePicker.WeeklyHolidays = weekendHolidays;
-        ThemedDatePicker.WeeklyHolidays = weekendHolidays;
-        WeeklyHolidayDatePicker.WeeklyHolidays = weekendHolidays;
-        SpecificHolidayDatePicker.WeeklyHolidays = weekendHolidays;
-        CustomHolidayBrushDatePicker.WeeklyHolidays = weekendHolidays;
-        TimePickerDatePicker.WeeklyHolidays = weekendHolidays;
-        RangeDatePicker.WeeklyHolidays = weekendHolidays;
+        // Holiday settings are now automatically managed by the control
+        // based on CalendarType (Persian=Friday, Gregorian=Saturday+Sunday)
     }
 }

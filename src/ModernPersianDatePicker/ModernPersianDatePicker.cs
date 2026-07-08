@@ -1005,12 +1005,18 @@ public class ModernPersianDatePicker : TemplatedControl
                 var today = DateTime.Today;
                 _calendarView.DisplayYear = today.Year;
                 _calendarView.DisplayMonth = today.Month;
+
+                // Auto-set weekend holidays for Gregorian: Saturday + Sunday
+                _calendarView.WeeklyHolidays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday };
             }
             else
             {
                 var today = PersianCalendarHelper.Today();
                 _calendarView.DisplayYear = today.Year;
                 _calendarView.DisplayMonth = today.Month;
+
+                // Restore Persian weekend: Friday only
+                _calendarView.WeeklyHolidays = new[] { DayOfWeek.Friday };
             }
         }
 

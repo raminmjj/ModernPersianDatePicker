@@ -57,25 +57,8 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
         };
         ApplyToAll(c => c.CalendarType = calType);
 
-        // Update weekend holidays to match calendar type
-        var isGregorian = calType == CalendarType.Gregorian ||
-                          (calType == CalendarType.Auto &&
-                           System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName is not "fa" and not "ps");
-        var weekendHolidays = isGregorian
-            ? new[] { DayOfWeek.Saturday, DayOfWeek.Sunday }
-            : new[] { DayOfWeek.Friday };
-        BasicDatePicker.WeeklyHolidays = weekendHolidays;
-        EnglishDatePicker.WeeklyHolidays = weekendHolidays;
-        CustomDatePicker.WeeklyHolidays = weekendHolidays;
-        GreenAccentDatePicker.WeeklyHolidays = weekendHolidays;
-        PurpleAccentDatePicker.WeeklyHolidays = weekendHolidays;
-        EditableDatePicker.WeeklyHolidays = weekendHolidays;
-        ThemedDatePicker.WeeklyHolidays = weekendHolidays;
-        WeeklyHolidayDatePicker.WeeklyHolidays = weekendHolidays;
-        SpecificDatePicker.WeeklyHolidays = weekendHolidays;
-        CustomHolidayBrushDatePicker.WeeklyHolidays = weekendHolidays;
-        TimePickerDatePicker.WeeklyHolidays = weekendHolidays;
-        RangeDatePicker.WeeklyHolidays = weekendHolidays;
+        // Holiday settings are now automatically managed by the control
+        // based on CalendarType (Persian=Friday, Gregorian=Saturday+Sunday)
     }
 
     [RelayCommand]
