@@ -109,14 +109,27 @@ public partial class MainWindow : Window
 
     private void OnEditableDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        if (e.NewDate.HasValue)
+        EditableDateText.Text = FormatDateForDisplay(e.NewDate, EditableDatePicker.CalendarType);
+    }
+
+    private string FormatDateForDisplay(PersianDate? date, CalendarType calendarType)
+    {
+        if (!date.HasValue) return "Selected: (none)";
+
+        var effectiveType = calendarType;
+        if (effectiveType == CalendarType.Auto)
         {
-            EditableDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")}";
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            effectiveType = culture.TwoLetterISOLanguageName is "fa" or "ps"
+                ? CalendarType.Persian : CalendarType.Gregorian;
         }
-        else
+
+        if (effectiveType == CalendarType.Gregorian)
         {
-            EditableDateText.Text = "Selected: (none)";
+            var d = date.Value.ToDateTime();
+            return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
         }
+        return $"Selected: {date.Value.ToString("long")}";
     }
 
     private void OnInvalidActionChanged(object? sender, RoutedEventArgs e)

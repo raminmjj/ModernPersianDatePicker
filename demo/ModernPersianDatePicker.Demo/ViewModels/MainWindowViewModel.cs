@@ -105,7 +105,27 @@ public class MainWindowViewModel : INotifyPropertyChanged
     public void OnCustomDateChanged(PersianDate? date) => CustomDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
     public void OnAccentDateChanged(PersianDate? date) => AccentDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
 
-    public void OnEditableDateChanged(PersianDate? date) => EditableDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
+    public void OnEditableDateChanged(PersianDate? date) => EditableDateText = FormatDateForDisplay(date, EditableDatePicker.CalendarType);
+
+    private string FormatDateForDisplay(PersianDate? date, CalendarType calendarType)
+    {
+        if (!date.HasValue) return "Selected: (none)";
+
+        var effectiveType = calendarType;
+        if (effectiveType == CalendarType.Auto)
+        {
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            effectiveType = culture.TwoLetterISOLanguageName is "fa" or "ps"
+                ? CalendarType.Persian : CalendarType.Gregorian;
+        }
+
+        if (effectiveType == CalendarType.Gregorian)
+        {
+            var d = date.Value.ToDateTime();
+            return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
+        }
+        return $"Selected: {date.Value.ToString("long")}";
+    }
 
     public void OnThemedDateChanged(PersianDate? date) => ThemedDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
 
