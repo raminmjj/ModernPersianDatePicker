@@ -411,7 +411,13 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.LocalizationProvider = GetLocalization();
             _calendarView.CalendarType = CalendarType;
             _calendarView.HolidayBrush = HolidayBrush;
-            _calendarView.WeeklyHolidays = WeeklyHolidays;
+
+            // Set holidays based on effective calendar type
+            if (GetEffectiveCalendarType() == CalendarType.Gregorian)
+                _calendarView.WeeklyHolidays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday };
+            else
+                _calendarView.WeeklyHolidays = WeeklyHolidays;
+
             _calendarView.Holidays = Holidays;
             _calendarView.IsRangeMode = IsRangeMode;
             _calendarView.RangeStart = RangeStart;
