@@ -1,3 +1,4 @@
+using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -126,7 +127,8 @@ public partial class MainWindow : Window
 
         if (effectiveType == CalendarType.Gregorian)
         {
-            var d = date.Value.ToDateTime();
+            // Create DateTime directly from stored values (they are Gregorian, not Persian)
+            var d = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
             return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
         }
         return $"Selected: {date.Value.ToString("long")}";

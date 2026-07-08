@@ -152,7 +152,7 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
 
         if (effectiveType == CalendarType.Gregorian)
         {
-            var d = date.Value.ToDateTime();
+            var d = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
             return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
         }
         return $"Selected: {date.Value.ToString("long")}";
