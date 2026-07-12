@@ -344,7 +344,7 @@
                            Foreground="{DynamicResource ThemeForegroundBrush}"/>
 
                 <!-- Specific holidays demo -->
-                <TextBlock Text="Specific Date Holidays (1 &amp; 13 Farvardin):"
+                <TextBlock Text="Specific Date Holidays:"
                            FontWeight="SemiBold"
                            Margin="0,16,0,8"/>
                 <persian:ModernPersianDatePicker x:Name="SpecificDatePicker"
@@ -429,6 +429,7 @@
                                                  IsRangeMode="{Binding RangeDatePicker.IsRangeMode}"
                                                  Language="{Binding RangeDatePicker.Language}"
                                                  CalendarType="{Binding RangeDatePicker.CalendarType}"
+                                                 IsTimePickerEnabled="True"
                                                  HorizontalAlignment="Left"
                                                  MinWidth="280"/>
 
