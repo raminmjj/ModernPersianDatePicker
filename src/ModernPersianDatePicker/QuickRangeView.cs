@@ -34,6 +34,32 @@ public class QuickRangeView : TemplatedControl
     public static readonly StyledProperty<PersianDate?> RangeEndProperty =
         AvaloniaProperty.Register<QuickRangeView, PersianDate?>(nameof(RangeEnd));
 
+    /// <summary>
+    /// When true, the embedded From/To date pickers will display their built-in
+    /// Hour/Minute/Second spinners inside their popups, and the Apply button will
+    /// forward the user-selected times through <see cref="QuickRangeSelectedEventArgs"/>.
+    /// Defaults to false so QuickRangeView stays date-only unless the host explicitly
+    /// opts in (typically by mirroring the parent picker's IsRangeMode &amp;&amp; IsTimePickerEnabled).
+    /// </summary>
+    public static readonly StyledProperty<bool> IsTimePickerEnabledProperty =
+        AvaloniaProperty.Register<QuickRangeView, bool>(nameof(IsTimePickerEnabled));
+
+    /// <summary>
+    /// Time-of-day component exposed to the embedded From picker when
+    /// <see cref="IsTimePickerEnabled"/> is true. Updated from outside (typically by
+    /// the host) so the From picker re-opens with the previously selected start time.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> StartTimeProperty =
+        AvaloniaProperty.Register<QuickRangeView, TimeSpan>(nameof(StartTime), TimeSpan.Zero);
+
+    /// <summary>
+    /// Time-of-day component exposed to the embedded To picker when
+    /// <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> EndTimeProperty =
+        AvaloniaProperty.Register<QuickRangeView, TimeSpan>(nameof(EndTime),
+            new TimeSpan(23, 59, 59));
+
     // Events
     public event EventHandler<QuickRangeSelectedEventArgs>? QuickRangeApplied;
 
@@ -62,6 +88,9 @@ public class QuickRangeView : TemplatedControl
         WeeklyHolidaysProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
         RangeStartProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
         RangeEndProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
+        IsTimePickerEnabledProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
+        StartTimeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
+        EndTimeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
     }
 
     public QuickRangeView()
@@ -92,6 +121,37 @@ public class QuickRangeView : TemplatedControl
     {
         get => GetValue(RangeEndProperty);
         set => SetValue(RangeEndProperty, value);
+    }
+
+    /// <summary>
+    /// When true, the embedded From/To pickers expose Hour/Minute/Second spinners
+    /// inside their popups, and the Apply button propagates the user-selected times
+    /// through <see cref="QuickRangeSelectedEventArgs"/>.
+    /// </summary>
+    public bool IsTimePickerEnabled
+    {
+        get => GetValue(IsTimePickerEnabledProperty);
+        set => SetValue(IsTimePickerEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range start (From picker). Reflects/initialises the
+    /// From picker's Hour/Minute/Second when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public TimeSpan StartTime
+    {
+        get => GetValue(StartTimeProperty);
+        set => SetValue(StartTimeProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range end (To picker). Reflects/initialises the
+    /// To picker's Hour/Minute/Second when <see cref="IsTimePickerEnabled"/> is true.
+    /// </summary>
+    public TimeSpan EndTime
+    {
+        get => GetValue(EndTimeProperty);
+        set => SetValue(EndTimeProperty, value);
     }
 
     public IReadOnlyList<DayOfWeek> WeeklyHolidays
@@ -151,6 +211,13 @@ public class QuickRangeView : TemplatedControl
             _fromPicker.IsEditable = true;
             _fromPicker.CalendarType = CalendarType;
             _fromPicker.LocalizationProvider = LocalizationProvider;
+            _fromPicker.IsTimePickerEnabled = IsTimePickerEnabled;
+            if (IsTimePickerEnabled)
+            {
+                _fromPicker.Hour = StartTime.Hours;
+                _fromPicker.Minute = StartTime.Minutes;
+                _fromPicker.Second = StartTime.Seconds;
+            }
             if (RangeStart.HasValue)
                 _fromPicker.SelectedDate = RangeStart;
         }
@@ -161,6 +228,13 @@ public class QuickRangeView : TemplatedControl
             _toPicker.IsEditable = true;
             _toPicker.CalendarType = CalendarType;
             _toPicker.LocalizationProvider = LocalizationProvider;
+            _toPicker.IsTimePickerEnabled = IsTimePickerEnabled;
+            if (IsTimePickerEnabled)
+            {
+                _toPicker.Hour = EndTime.Hours;
+                _toPicker.Minute = EndTime.Minutes;
+                _toPicker.Second = EndTime.Seconds;
+            }
             if (RangeEnd.HasValue)
                 _toPicker.SelectedDate = RangeEnd;
         }
@@ -232,9 +306,25 @@ public class QuickRangeView : TemplatedControl
     private void SyncPickersFromRange()
     {
         if (_fromPicker != null)
+        {
             _fromPicker.SelectedDate = RangeStart;
+            if (IsTimePickerEnabled)
+            {
+                _fromPicker.Hour = StartTime.Hours;
+                _fromPicker.Minute = StartTime.Minutes;
+                _fromPicker.Second = StartTime.Seconds;
+            }
+        }
         if (_toPicker != null)
+        {
             _toPicker.SelectedDate = RangeEnd;
+            if (IsTimePickerEnabled)
+            {
+                _toPicker.Hour = EndTime.Hours;
+                _toPicker.Minute = EndTime.Minutes;
+                _toPicker.Second = EndTime.Seconds;
+            }
+        }
     }
 
     private void SyncPickersSettings()
@@ -244,12 +334,14 @@ public class QuickRangeView : TemplatedControl
             _fromPicker.CalendarType = CalendarType;
             _fromPicker.LocalizationProvider = LocalizationProvider;
             _fromPicker.WeeklyHolidays = WeeklyHolidays;
+            _fromPicker.IsTimePickerEnabled = IsTimePickerEnabled;
         }
         if (_toPicker != null)
         {
             _toPicker.CalendarType = CalendarType;
             _toPicker.LocalizationProvider = LocalizationProvider;
             _toPicker.WeeklyHolidays = WeeklyHolidays;
+            _toPicker.IsTimePickerEnabled = IsTimePickerEnabled;
         }
     }
 
@@ -322,9 +414,36 @@ public class QuickRangeView : TemplatedControl
 
         if (from.HasValue && to.HasValue)
         {
-            var start = from.Value <= to.Value ? from.Value : to.Value;
-            var end = from.Value <= to.Value ? to.Value : from.Value;
-            QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(start, end, "custom"));
+            bool swapped = to.Value < from.Value;
+            var start = swapped ? to.Value : from.Value;
+            var end = swapped ? from.Value : to.Value;
+
+            // Read the time-of-day from the picker that contributed the start/end date.
+            // When the user swapped the dates (typed the later date in From), keep the
+            // time-of-day attached to its original picker so the user's intent is preserved.
+            TimeSpan startTime;
+            TimeSpan endTime;
+            if (IsTimePickerEnabled)
+            {
+                var startPicker = swapped ? _toPicker : _fromPicker;
+                var endPicker = swapped ? _fromPicker : _toPicker;
+                startTime = new TimeSpan(
+                    startPicker?.Hour ?? 0,
+                    startPicker?.Minute ?? 0,
+                    startPicker?.Second ?? 0);
+                endTime = new TimeSpan(
+                    endPicker?.Hour ?? 23,
+                    endPicker?.Minute ?? 59,
+                    endPicker?.Second ?? 59);
+            }
+            else
+            {
+                startTime = DateRangeSelectedEventArgs.DefaultStartTime;
+                endTime = DateRangeSelectedEventArgs.DefaultEndTime;
+            }
+
+            QuickRangeApplied?.Invoke(this,
+                new QuickRangeSelectedEventArgs(start, end, "custom", startTime, endTime));
         }
     }
 

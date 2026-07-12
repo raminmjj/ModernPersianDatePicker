@@ -128,6 +128,26 @@ public class ModernPersianDatePicker : TemplatedControl
             validate: v => v >= 0 && v <= 59);
 
     /// <summary>
+    /// Time-of-day component for the range start. Only meaningful when
+    /// <see cref="IsRangeMode"/> &amp;&amp; <see cref="IsTimePickerEnabled"/> are both true.
+    /// Defaults to 00:00:00. Updated automatically when a quick range with explicit
+    /// start time is applied from the Quick Range panel.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeStartTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, TimeSpan>(nameof(RangeStartTime),
+            DateRangeSelectedEventArgs.DefaultStartTime);
+
+    /// <summary>
+    /// Time-of-day component for the range end. Only meaningful when
+    /// <see cref="IsRangeMode"/> &amp;&amp; <see cref="IsTimePickerEnabled"/> are both true.
+    /// Defaults to 23:59:59. Updated automatically when a quick range with explicit
+    /// end time is applied from the Quick Range panel.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeEndTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, TimeSpan>(nameof(RangeEndTime),
+            DateRangeSelectedEventArgs.DefaultEndTime);
+
+    /// <summary>
     /// Calendar system to display. Defaults to <see cref="CalendarType.Persian"/>.
     /// </summary>
     public static readonly StyledProperty<CalendarType> CalendarTypeProperty =
@@ -169,6 +189,8 @@ public class ModernPersianDatePicker : TemplatedControl
         MinuteProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
         SecondProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
         CalendarTypeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnCalendarTypeChanged(e));
+        RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
+        RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
     }
 
     public ModernPersianDatePicker()
@@ -344,6 +366,26 @@ public class ModernPersianDatePicker : TemplatedControl
     }
 
     /// <summary>
+    /// Time-of-day for the range start (00:00:00 by default). Only meaningful when
+    /// <see cref="IsRangeMode"/> &amp;&amp; <see cref="IsTimePickerEnabled"/> are both true.
+    /// </summary>
+    public TimeSpan RangeStartTime
+    {
+        get => GetValue(RangeStartTimeProperty);
+        set => SetValue(RangeStartTimeProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range end (23:59:59 by default). Only meaningful when
+    /// <see cref="IsRangeMode"/> &amp;&amp; <see cref="IsTimePickerEnabled"/> are both true.
+    /// </summary>
+    public TimeSpan RangeEndTime
+    {
+        get => GetValue(RangeEndTimeProperty);
+        set => SetValue(RangeEndTimeProperty, value);
+    }
+
+    /// <summary>
     /// Calendar system to display. Defaults to <see cref="CalendarType.Persian"/>.
     /// </summary>
     public CalendarType CalendarType
@@ -422,6 +464,12 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.IsRangeMode = IsRangeMode;
             _calendarView.RangeStart = RangeStart;
             _calendarView.RangeEnd = RangeEnd;
+            // Mirror the time-picker-enabled flag and current range times into the
+            // calendar view so the embedded Quick Range panel can show time spinners
+            // on its From/To pickers and pre-populate them with the current values.
+            _calendarView.IsTimePickerEnabled = IsRangeMode && IsTimePickerEnabled;
+            _calendarView.RangeStartTime = RangeStartTime;
+            _calendarView.RangeEndTime = RangeEndTime;
             _calendarView.DateSelected += OnCalendarView_DateSelected;
             _calendarView.DateRangeSelected += OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
@@ -435,7 +483,10 @@ public class ModernPersianDatePicker : TemplatedControl
             _timePickerView.Minute = Minute;
             _timePickerView.Second = Second;
             _timePickerView.TimeChanged += OnTimePickerView_TimeChanged;
-            _timePickerView.IsVisible = IsTimePickerEnabled;
+            // In range mode the parent picker's own TimePicker is intentionally
+            // hidden — the time-of-day for the range is instead captured inside
+            // the From/To pickers shown in the Quick Range panel.
+            _timePickerView.IsVisible = !IsRangeMode && IsTimePickerEnabled;
         }
 
         UpdateEditMode();
@@ -983,7 +1034,17 @@ public class ModernPersianDatePicker : TemplatedControl
             return;
 
         if (_calendarView != null)
+        {
             _calendarView.IsRangeMode = IsRangeMode;
+            // Re-evaluate whether the embedded Quick Range pickers should expose time spinners
+            _calendarView.IsTimePickerEnabled = IsRangeMode && IsTimePickerEnabled;
+        }
+
+        // In range mode the parent picker's own TimePicker is hidden; the time-of-day
+        // for the range is captured by the From/To pickers inside the Quick Range panel.
+        // In single-date mode the parent's TimePicker is shown when IsTimePickerEnabled.
+        if (_timePickerView != null)
+            _timePickerView.IsVisible = !IsRangeMode && IsTimePickerEnabled;
 
         UpdateDisplayText();
     }
@@ -1009,8 +1070,35 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_isDisposed)
             return;
 
+        // In range mode the parent picker's own TimePicker is intentionally hidden;
+        // time-of-day is captured by the From/To pickers inside the Quick Range panel.
         if (_timePickerView != null)
-            _timePickerView.IsVisible = IsTimePickerEnabled;
+            _timePickerView.IsVisible = !IsRangeMode && IsTimePickerEnabled;
+
+        // In range mode, IsTimePickerEnabled also toggles time spinners on the embedded
+        // From/To pickers inside the Quick Range panel.
+        if (_calendarView != null)
+            _calendarView.IsTimePickerEnabled = IsRangeMode && IsTimePickerEnabled;
+
+        UpdateDisplayText();
+    }
+
+    /// <summary>
+    /// Propagates RangeStartTime / RangeEndTime changes to the embedded CalendarView
+    /// so the Quick Range panel's From/To pickers stay in sync when reopened.
+    /// </summary>
+    private void OnRangeTimeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        if (_calendarView != null)
+        {
+            if (e.Property == RangeStartTimeProperty)
+                _calendarView.RangeStartTime = RangeStartTime;
+            else if (e.Property == RangeEndTimeProperty)
+                _calendarView.RangeEndTime = RangeEndTime;
+        }
 
         UpdateDisplayText();
     }
@@ -1124,7 +1212,10 @@ public class ModernPersianDatePicker : TemplatedControl
 
         RangeStart = e.RangeStart;
         RangeEnd = e.RangeEnd;
-        DateRangeSelected?.Invoke(this, e);
+        // Calendar-day clicks don't carry time info, so re-use whatever range times are
+        // currently cached (default to start-of-day / end-of-day when never set).
+        DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(
+            e.RangeStart, e.RangeEnd, RangeStartTime, RangeEndTime));
         ClosePopup();
     }
 
@@ -1145,7 +1236,12 @@ public class ModernPersianDatePicker : TemplatedControl
 
         RangeStart = e.RangeStart;
         RangeEnd = e.RangeEnd;
-        DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(e.RangeStart, e.RangeEnd));
+        // Cache the user-selected times so the parent's display text and the next
+        // opening of the Quick Range panel both reflect them.
+        RangeStartTime = e.StartTime;
+        RangeEndTime = e.EndTime;
+        DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(
+            e.RangeStart, e.RangeEnd, e.StartTime, e.EndTime));
         ClosePopup();
     }
 
@@ -1243,9 +1339,20 @@ public class ModernPersianDatePicker : TemplatedControl
             if (IsRangeMode)
             {
                 if (RangeStart.HasValue && RangeEnd.HasValue)
+                {
                     displayText = $"{RangeStart.Value.ToString("short")} ~ {RangeEnd.Value.ToString("short")}";
+                    if (IsTimePickerEnabled)
+                    {
+                        displayText += $" {RangeStartTime.Hours:D2}:{RangeStartTime.Minutes:D2}:{RangeStartTime.Seconds:D2}" +
+                            $" ~ {RangeEndTime.Hours:D2}:{RangeEndTime.Minutes:D2}:{RangeEndTime.Seconds:D2}";
+                    }
+                }
                 else if (RangeStart.HasValue)
+                {
                     displayText = $"{RangeStart.Value.ToString("short")} ~ ...";
+                    if (IsTimePickerEnabled)
+                        displayText += $" {RangeStartTime.Hours:D2}:{RangeStartTime.Minutes:D2}:{RangeStartTime.Seconds:D2}";
+                }
                 else
                 {
                     var loc = GetLocalization();
@@ -1299,7 +1406,14 @@ public class ModernPersianDatePicker : TemplatedControl
                 if (IsRangeMode)
                 {
                     if (RangeStart.HasValue && RangeEnd.HasValue)
+                    {
                         _editableTextBox.Text = $"{RangeStart.Value.ToString("short")} ~ {RangeEnd.Value.ToString("short")}";
+                        if (IsTimePickerEnabled)
+                        {
+                            _editableTextBox.Text += $" {RangeStartTime.Hours:D2}:{RangeStartTime.Minutes:D2}:{RangeStartTime.Seconds:D2}" +
+                                $" ~ {RangeEndTime.Hours:D2}:{RangeEndTime.Minutes:D2}:{RangeEndTime.Seconds:D2}";
+                        }
+                    }
                     else
                         _editableTextBox.Text = "";
                 }

@@ -67,6 +67,31 @@ public class CalendarView : TemplatedControl
     public static readonly StyledProperty<PersianDate?> RangeEndProperty =
         AvaloniaProperty.Register<CalendarView, PersianDate?>(nameof(RangeEnd));
 
+    /// <summary>
+    /// When true, the embedded From/To pickers inside the Quick Range view expose
+    /// Hour/Minute/Second spinners so the user can specify start/end times for the
+    /// selected date range. Typically mirrors the parent picker's
+    /// (IsRangeMode &amp;&amp; IsTimePickerEnabled) flag.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsTimePickerEnabledProperty =
+        AvaloniaProperty.Register<CalendarView, bool>(nameof(IsTimePickerEnabled));
+
+    /// <summary>
+    /// Time-of-day component for the range start. Propagated to the embedded From
+    /// picker inside the Quick Range view and updated when a quick range is applied.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeStartTimeProperty =
+        AvaloniaProperty.Register<CalendarView, TimeSpan>(nameof(RangeStartTime),
+            DateRangeSelectedEventArgs.DefaultStartTime);
+
+    /// <summary>
+    /// Time-of-day component for the range end. Propagated to the embedded To
+    /// picker inside the Quick Range view and updated when a quick range is applied.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeEndTimeProperty =
+        AvaloniaProperty.Register<CalendarView, TimeSpan>(nameof(RangeEndTime),
+            DateRangeSelectedEventArgs.DefaultEndTime);
+
     // Events
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
@@ -114,6 +139,9 @@ public class CalendarView : TemplatedControl
         HolidayBrushProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidayBrushChanged(e));
         RangeStartProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
         RangeEndProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
+        IsTimePickerEnabledProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
+        RangeStartTimeProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
+        RangeEndTimeProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
     }
 
     public CalendarView()
@@ -317,6 +345,37 @@ public class CalendarView : TemplatedControl
         set => SetValue(RangeEndProperty, value);
     }
 
+    /// <summary>
+    /// When true, the embedded From/To pickers inside the Quick Range view expose
+    /// Hour/Minute/Second spinners so the user can specify start/end times for the
+    /// selected date range.
+    /// </summary>
+    public bool IsTimePickerEnabled
+    {
+        get => GetValue(IsTimePickerEnabledProperty);
+        set => SetValue(IsTimePickerEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range start (00:00:00 by default). Propagated to the
+    /// embedded From picker inside the Quick Range view.
+    /// </summary>
+    public TimeSpan RangeStartTime
+    {
+        get => GetValue(RangeStartTimeProperty);
+        set => SetValue(RangeStartTimeProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range end (23:59:59 by default). Propagated to the
+    /// embedded To picker inside the Quick Range view.
+    /// </summary>
+    public TimeSpan RangeEndTime
+    {
+        get => GetValue(RangeEndTimeProperty);
+        set => SetValue(RangeEndTimeProperty, value);
+    }
+
     private ICalendarLocalization GetLocalization()
     {
         return LocalizationProvider ?? new Localizations.FarsiLocalization();
@@ -401,6 +460,9 @@ public class CalendarView : TemplatedControl
             _quickRangeView.LocalizationProvider = GetLocalization();
             _quickRangeView.CalendarType = GetEffectiveCalendarType();
             _quickRangeView.WeeklyHolidays = WeeklyHolidays;
+            _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+            _quickRangeView.StartTime = RangeStartTime;
+            _quickRangeView.EndTime = RangeEndTime;
         }
 
         UpdateCalendar();
@@ -434,11 +496,30 @@ public class CalendarView : TemplatedControl
         RangeStart = e.RangeStart;
         RangeEnd = e.RangeEnd;
 
+        // Cache the user-selected times so reopening the Quick Range view preserves them
+        RangeStartTime = e.StartTime;
+        RangeEndTime = e.EndTime;
+
         // Toggle back to calendar view
         ToggleQuickRangeView();
 
         // Fire the event to parent
         QuickRangeApplied?.Invoke(this, e);
+    }
+
+    /// <summary>
+    /// Pushes IsTimePickerEnabled / RangeStartTime / RangeEndTime into the embedded
+    /// QuickRangeView whenever any of them change. The QuickRangeView forwards them
+    /// to its own From/To pickers.
+    /// </summary>
+    private void OnQuickRangeTimeSettingsChanged()
+    {
+        if (_quickRangeView == null)
+            return;
+
+        _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+        _quickRangeView.StartTime = RangeStartTime;
+        _quickRangeView.EndTime = RangeEndTime;
     }
 
     /// <summary>
@@ -486,6 +567,9 @@ public class CalendarView : TemplatedControl
                 _quickRangeView.CalendarType = GetEffectiveCalendarType();
                 _quickRangeView.LocalizationProvider = GetLocalization();
                 _quickRangeView.WeeklyHolidays = WeeklyHolidays;
+                _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+                _quickRangeView.StartTime = RangeStartTime;
+                _quickRangeView.EndTime = RangeEndTime;
                 _quickRangeView.ResetRow3();
                 _quickRangeView.RangeStart = RangeStart;
                 _quickRangeView.RangeEnd = RangeEnd;
