@@ -52,6 +52,21 @@ public class SelectedDateChangedEventArgs : EventArgs
 }
 
 /// <summary>
+/// Event arguments for selected time-of-day changed
+/// </summary>
+public class SelectedTimeChangedEventArgs : EventArgs
+{
+    public TimeSpan OldTime { get; }
+    public TimeSpan NewTime { get; }
+
+    public SelectedTimeChangedEventArgs(TimeSpan oldTime, TimeSpan newTime)
+    {
+        OldTime = oldTime;
+        NewTime = newTime;
+    }
+}
+
+/// <summary>
 /// Event arguments for today button click
 /// </summary>
 public class TodayClickedEventArgs : EventArgs

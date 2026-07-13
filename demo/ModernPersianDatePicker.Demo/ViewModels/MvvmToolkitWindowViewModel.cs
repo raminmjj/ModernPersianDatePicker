@@ -11,13 +11,11 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
 {
     public MvvmToolkitWindowViewModel()
     {
-        BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
+        // Respect the active calendar type (Auto → Gregorian on non-fa/ps cultures).
+        BasicDatePicker.SelectedDate = PersianCalendarHelper.TodayForCalendarType(BasicDatePicker.CalendarType);
         WeeklyHolidayDatePicker.WeeklyHolidays = new[] { DayOfWeek.Friday, DayOfWeek.Saturday };
-        SpecificDatePicker.Holidays = new[]
-        {
-            new PersianDate(1405, 1, 1, 1), // 1 Farvardin (Nowruz)
-            new PersianDate(1405, 1, 13, 6),
-        };
+        // Two mid-week days (Tue & Wed) of the current month in the active calendar.
+        SpecificDatePicker.Holidays = PersianCalendarHelper.GetMidWeekDaysOfCurrentMonth(SpecificDatePicker.CalendarType);
     }
 
     public ToolkitDatePickerConfig BasicDatePicker { get; } = new();
@@ -31,7 +29,7 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     public ToolkitDatePickerConfig SpecificDatePicker { get; } = new();
     public ToolkitDatePickerConfig CustomHolidayBrushDatePicker { get; } = new() { HolidayBrush = "#FFFF8800" };
     public ToolkitDatePickerConfig TimePickerDatePicker { get; } = new() { IsTimePickerEnabled = true };
-    public ToolkitDatePickerConfig RangeDatePicker { get; } = new() { IsRangeMode = true };
+    public ToolkitDatePickerConfig RangeDatePicker { get; } = new() { IsRangeMode = true, IsTimePickerEnabled = true };
 
     [ObservableProperty] private string _basicDateText = "Selected: ";
     [ObservableProperty] private string _englishDateText = "Selected: ";
@@ -87,7 +85,7 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SetToToday() => CustomDatePicker.SelectedDate = PersianCalendarHelper.Today();
+    private void SetToToday() => CustomDatePicker.SelectedDate = PersianCalendarHelper.TodayForCalendarType(CustomDatePicker.CalendarType);
 
     [RelayCommand]
     private void Clear() => CustomDatePicker.SelectedDate = null;
@@ -97,7 +95,10 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
     {
         if (CustomDatePicker.SelectedDate.HasValue)
         {
-            var d = CustomDatePicker.SelectedDate.Value.ToDateTime();
+            var pd = CustomDatePicker.SelectedDate.Value;
+            var d = CustomDatePicker.CalendarType == CalendarType.Gregorian
+                ? pd.ToDateTimeAsGregorian()
+                : pd.ToDateTime();
             CustomDateText = $"Gregorian: {d:yyyy/MM/dd} ({d:MMMM dd, yyyy})";
         }
         else
@@ -132,50 +133,44 @@ public partial class MvvmToolkitWindowViewModel : ObservableObject
         action(RangeDatePicker);
     }
 
-    public void OnBasicDateChanged(PersianDate? date) => BasicDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnEnglishDateChanged(PersianDate? date) => EnglishDateText = date.HasValue ? $"Selected: {date.Value.ToString("short")}" : "Selected: (none)";
-    public void OnCustomDateChanged(PersianDate? date) => CustomDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnAccentDateChanged(PersianDate? date) => AccentDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnEditableDateChanged(PersianDate? date) => EditableDateText = FormatDateForDisplay(date, EditableDatePicker.CalendarType);
-
-    private string FormatDateForDisplay(PersianDate? date, CalendarType calendarType)
-    {
-        if (!date.HasValue) return "Selected: (none)";
-
-        var effectiveType = calendarType;
-        if (effectiveType == CalendarType.Auto)
-        {
-            var culture = System.Globalization.CultureInfo.CurrentUICulture;
-            effectiveType = culture.TwoLetterISOLanguageName is "fa" or "ps"
-                ? CalendarType.Persian : CalendarType.Gregorian;
-        }
-
-        if (effectiveType == CalendarType.Gregorian)
-        {
-            var d = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
-            return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
-        }
-        return $"Selected: {date.Value.ToString("long")}";
-    }
-    public void OnThemedDateChanged(PersianDate? date) => ThemedDateText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnWeeklyHolidayDateChanged(PersianDate? date) => WeeklyHolidayText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnSpecificHolidayDateChanged(PersianDate? date) => SpecificHolidayText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
-    public void OnCustomHolidayBrushDateChanged(PersianDate? date) => CustomHolidayBrushText = date.HasValue ? $"Selected: {date.Value.ToString("long")}" : "Selected: (none)";
+    public void OnBasicDateChanged(PersianDate? date) => BasicDateText = date.HasValue ? $"Selected: {BasicDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnEnglishDateChanged(PersianDate? date) => EnglishDateText = date.HasValue ? $"Selected: {EnglishDatePicker.FormatForDisplay(date.Value, "short")}" : "Selected: (none)";
+    public void OnCustomDateChanged(PersianDate? date) => CustomDateText = date.HasValue ? $"Selected: {CustomDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnAccentDateChanged(PersianDate? date) => AccentDateText = date.HasValue ? $"Selected: {GreenAccentDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnEditableDateChanged(PersianDate? date) => EditableDateText = date.HasValue ? $"Selected: {EditableDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnThemedDateChanged(PersianDate? date) => ThemedDateText = date.HasValue ? $"Selected: {ThemedDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnWeeklyHolidayDateChanged(PersianDate? date) => WeeklyHolidayText = date.HasValue ? $"Selected: {WeeklyHolidayDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnSpecificHolidayDateChanged(PersianDate? date) => SpecificHolidayText = date.HasValue ? $"Selected: {SpecificDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
+    public void OnCustomHolidayBrushDateChanged(PersianDate? date) => CustomHolidayBrushText = date.HasValue ? $"Selected: {CustomHolidayBrushDatePicker.FormatForDisplay(date.Value, "long")}" : "Selected: (none)";
 
     public void OnTimePickerDateChanged(PersianDate? date)
     {
         var dp = TimePickerDatePicker;
         TimePickerDateText = date.HasValue
-            ? $"Selected: {date.Value.ToString("long")} {dp.Hour:D2}:{dp.Minute:D2}:{dp.Second:D2}"
+            ? $"Selected: {dp.FormatForDisplay(date.Value, "long")} {dp.SelectedTime:hh\\:mm\\:ss}"
             : "Selected: (none)";
     }
 
-    public void OnRangeDateSelected(PersianDate? start, PersianDate? end)
+    public void OnRangeDateSelected(PersianDate? start, PersianDate? end,
+        TimeSpan startTime, TimeSpan endTime)
     {
         if (start.HasValue && end.HasValue)
-            RangeDateText = $"Range: {start.Value.ToString("short")} ~ {end.Value.ToString("short")}";
+        {
+            var dp = RangeDatePicker;
+            string s = dp.FormatForDisplay(start.Value, "short");
+            string e = dp.FormatForDisplay(end.Value, "short");
+            if (dp.IsTimePickerEnabled)
+            {
+                RangeDateText = $"Range: {s} {startTime.Hours:D2}:{startTime.Minutes:D2}:{startTime.Seconds:D2}" +
+                    $" ~ {e} {endTime.Hours:D2}:{endTime.Minutes:D2}:{endTime.Seconds:D2}";
+            }
+            else
+            {
+                RangeDateText = $"Range: {s} ~ {e}";
+            }
+        }
         else if (start.HasValue)
-            RangeDateText = $"Start: {start.Value.ToString("short")} (click end date)";
+            RangeDateText = $"Start: {RangeDatePicker.FormatForDisplay(start.Value, "short")} (click end date)";
         else
             RangeDateText = "Selected: (none)";
     }
@@ -198,16 +193,64 @@ public partial class ToolkitDatePickerConfig : ObservableObject
     [ObservableProperty] private bool _isTimePickerEnabled;
     [ObservableProperty] private PersianDate? _rangeStart;
     [ObservableProperty] private PersianDate? _rangeEnd;
-    [ObservableProperty] private int _hour;
-    [ObservableProperty] private int _minute;
-    [ObservableProperty] private int _second;
+    [ObservableProperty] private TimeSpan _selectedTime = TimeSpan.Zero;
+    [ObservableProperty] private TimeSpan _rangeStartTime = TimeSpan.Zero;
+    [ObservableProperty] private TimeSpan _rangeEndTime = new(23, 59, 59);
     [ObservableProperty] private CalendarType _calendarType = CalendarType.Auto;
     [ObservableProperty] private string? _flowDirection;
 
+    /// <summary>
+    /// Formats a date using the active calendar's day/month names and the picker's
+    /// resolved localization. Mirrors ModernPersianDatePicker.FormatSelectedDate for the
+    /// MVVM-toolkit code path where the view-model only has the config object, not the
+    /// live control instance.
+    /// </summary>
+    public string FormatForDisplay(PersianDate date, string format = "long")
+    {
+        CalendarType effectiveType = CalendarType;
+        if (effectiveType == CalendarType.Auto)
+        {
+            var culture = System.Globalization.CultureInfo.CurrentUICulture;
+            effectiveType = culture.TwoLetterISOLanguageName is "fa" or "ps"
+                ? CalendarType.Persian : CalendarType.Gregorian;
+        }
+
+        ICalendarLocalization loc = Language switch
+        {
+            CalendarLanguage.English => new Localizations.EnglishLocalization(),
+            CalendarLanguage.Arabic => new Localizations.ArabicLocalization(),
+            CalendarLanguage.Kurdish => new Localizations.KurdishLocalization(),
+            _ => new Localizations.FarsiLocalization()
+        };
+
+        return PersianCalendarHelper.FormatPersianDate(date, format, loc, effectiveType);
+    }
+
     public event Action<ToolkitDatePickerConfig, PersianDate?>? SelectedDateChanged;
+    public event Action<ToolkitDatePickerConfig, TimeSpan>? SelectedTimeChanged;
+    public event Action<ToolkitDatePickerConfig, PersianDate?, PersianDate?>? DateRangeSelected;
+    public event Action<ToolkitDatePickerConfig>? RangeTimeChanged;
 
     partial void OnSelectedDateChanged(PersianDate? value)
     {
         SelectedDateChanged?.Invoke(this, value);
     }
+
+    partial void OnSelectedTimeChanged(TimeSpan value)
+    {
+        SelectedTimeChanged?.Invoke(this, value);
+    }
+
+    partial void OnRangeStartChanged(PersianDate? value)
+    {
+        DateRangeSelected?.Invoke(this, value, RangeEnd);
+    }
+
+    partial void OnRangeEndChanged(PersianDate? value)
+    {
+        DateRangeSelected?.Invoke(this, RangeStart, value);
+    }
+
+    partial void OnRangeStartTimeChanged(TimeSpan value) => RangeTimeChanged?.Invoke(this);
+    partial void OnRangeEndTimeChanged(TimeSpan value) => RangeTimeChanged?.Invoke(this);
 }

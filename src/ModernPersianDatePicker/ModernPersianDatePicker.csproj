@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Info -->
     <PackageId>ModernPersianDatePicker</PackageId>
-    <Version>1.2.0</Version>
+    <Version>2.0.0</Version>
     <Authors>Ramin Alirezaee</Authors>
     <!--<Company>Your Company</Company>-->
     <Product>ModernPersianDatePicker</Product>
@@ -21,18 +21,17 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Initial release with full Persian calendar support, keyboard navigation, editable mode, and modern UI.</PackageReleaseNotes>
+    <PackageReleaseNotes>2.0.0 - Breaking change: replaced Hour/Minute/Second properties on ModernPersianDatePicker (and Hour/Minute/Second on TimePickerView) with a single SelectedTime / Time property of type TimeSpan. Adds range-mode time support via RangeStartTime/RangeEndTime and a Quick Range panel that exposes time spinners on its From/To pickers.</PackageReleaseNotes>
     
     <!-- Generate XML documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.11" />
-    <PackageReference Include="Avalonia.Desktop" Version="11.3.11" />
   </ItemGroup>
 
   <ItemGroup>

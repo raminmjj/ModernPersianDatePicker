@@ -20,14 +20,13 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
 - ✅ **Mouse Scroll Navigation** - Scroll through months with mouse wheel when calendar is open
-- ✅ **Editable Mode** - Type dates manually with validation (Persian & Gregorian)
+- ✅ **Editable Mode** - Type dates manually with validation
 - ✅ **Month/Year Selection** - Quick dropdown selectors for month and year
 - ✅ **Today Button** - Quick access to current date
-- ✅ **Time Picker** - Optional Hour/Minute/Second spinners
-- ✅ **Date Range Picker** - Select start and end dates with time support
-- ✅ **Quick Range Panel** - Fast date range selection with presets (Today, Week, Month, Year, Season, Half-Year)
-- ✅ **Time in Quick Range** - Add time-of-day to From/To datepickers in Quick Range panel
-- ✅ **Weekly Holidays** - Configurable `DayOfWeek` recurring holidays (auto-adjusts for calendar type)
+- ✅ **Time Picker** - Optional Hour/Minute/Second spinners exposed as a single `SelectedTime` (`TimeSpan`)
+- ✅ **Date Range Picker** - Select start and end dates, with optional `RangeStartTime` / `RangeEndTime` time-of-day components
+- ✅ **Quick Range Panel** - Custom-designed preset picker (Today / Week / Month / Year + grouped Month/Season/Half-Year) with optional From/To time spinners
+- ✅ **Weekly Holidays** - Configurable `DayOfWeek` recurring holidays
 - ✅ **Specific Date Holidays** - Mark individual dates as holidays with custom brush
 - ✅ **Custom Accent Brush** - Override the theme accent for selected day, today border, etc.
 - ✅ **Light/Dark Theme** - Per-instance theme mode (System/Light/Dark) or app-wide
@@ -117,7 +116,10 @@ dotnet add package ModernPersianDatePicker
             Width="250"
             Margin="0,10"/>
 
-        <!-- Date Range with Time Picker -->
+        <!-- Date Range Picker with Time
+             The parent's own TimePicker is hidden in range mode; time-of-day
+             for the range is captured inside the From/To pickers shown in the
+             Quick Range panel (open via the 'Quick Range' button). -->
         <persian:ModernPersianDatePicker 
             IsRangeMode="True"
             IsTimePickerEnabled="True"
@@ -153,15 +155,13 @@ dotnet add package ModernPersianDatePicker
 | `HolidayBrush` | `IBrush?` | `null` | Override color for holiday day numbers |
 | `WeeklyHolidays` | `IReadOnlyList<DayOfWeek>` | `[Friday]` | Days of week treated as holidays |
 | `Holidays` | `IReadOnlyList<PersianDate>` | `[]` | Specific dates to mark as holidays |
-| `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar |
-| `Hour` | `int` | `0` | Selected hour (0-23) |
-| `Minute` | `int` | `0` | Selected minute (0-59) |
-| `Second` | `int` | `0` | Selected second (0-59) |
+| `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar (single-date mode) or inside the Quick Range From/To pickers (range mode) |
+| `SelectedTime` | `TimeSpan` | `00:00:00` | Selected time-of-day `[00:00:00, 23:59:59]` (single-date mode) |
 | `IsRangeMode` | `bool` | `false` | Enable date range selection |
 | `RangeStart` | `PersianDate?` | `null` | Start of selected range |
 | `RangeEnd` | `PersianDate?` | `null` | End of selected range |
-| `RangeStartTime` | `TimeSpan` | `00:00:00` | Time component for range start |
-| `RangeEndTime` | `TimeSpan` | `23:59:59` | Time component for range end |
+| `RangeStartTime` | `TimeSpan` | `00:00:00` | Time-of-day for range start (active when `IsRangeMode && IsTimePickerEnabled`) |
+| `RangeEndTime` | `TimeSpan` | `23:59:59` | Time-of-day for range end (active when `IsRangeMode && IsTimePickerEnabled`) |
 | `LocalizationProvider` | `ICalendarLocalization?` | `null` | Custom localization provider |
 
 ## Events
@@ -180,13 +180,39 @@ datePicker.SelectedDateChanged += (sender, e) =>
 ```
 
 ### `DateRangeSelected`
-Fired when a date range is fully selected (in `IsRangeMode`). Includes time components when `IsTimePickerEnabled` is true.
+Fired when a date range is fully selected (in `IsRangeMode`). The event args also carry the
+current `StartTime` / `EndTime` (`TimeSpan`) — defaults are `00:00:00` and `23:59:59`.
 
 ```csharp
 datePicker.DateRangeSelected += (sender, e) =>
 {
-    Console.WriteLine($"Range: {e.RangeStart} ~ {e.RangeEnd}");
-    Console.WriteLine($"Time: {e.StartTime:hh\\:mm\\:ss} ~ {e.EndTime:hh\\:mm\\:ss}");
+    if (e.RangeStart is { } start && e.RangeEnd is { } end)
+    {
+        Console.WriteLine($"Range: {start:short} {e.StartTime:hh\:mm\:ss}" +
+            $" ~ {end:short} {e.EndTime:hh\:mm\:ss}");
+    }
+};
+```
+
+### `SelectedTimeChanged`
+Fired when the single-date `SelectedTime` changes (e.g. user spins the Hour/Minute/Second control).
+
+```csharp
+datePicker.SelectedTimeChanged += (sender, e) =>
+{
+    Console.WriteLine($"Time: {e.OldTime:hh\:mm\:ss} -> {e.NewTime:hh\:mm\:ss}");
+};
+```
+
+### `RangeTimeChanged`
+Fired when `RangeStartTime` or `RangeEndTime` changes — e.g. when the user adjusts the From/To
+time spinners inside the Quick Range panel.
+
+```csharp
+datePicker.RangeTimeChanged += (sender, e) =>
+{
+    Console.WriteLine($"Range time: {datePicker.RangeStartTime:hh\:mm\:ss}" +
+        $" ~ {datePicker.RangeEndTime:hh\:mm\:ss}");
 };
 ```
 
@@ -272,10 +298,6 @@ datePicker.LocalizationProvider = new MyLocalization();
 
 ## Holidays
 
-Weekend holidays auto-adjust based on calendar type:
-- **Persian**: Friday (configurable, defaults to `[Friday]`)
-- **Gregorian**: Saturday + Sunday (auto-set when `CalendarType` changes)
-
 ### Weekly Holidays
 ```csharp
 // Friday + Saturday (Persian weekend)
@@ -296,33 +318,66 @@ datePicker.Holidays = new[]
 <persian:ModernPersianDatePicker HolidayBrush="#FFFF8800" />
 ```
 
+## Time & Range Time
+
+### Single-date mode
+Set `IsTimePickerEnabled="True"` to display Hour/Minute/Second spinners below the calendar.
+The selected time-of-day is exposed as `SelectedTime` (`TimeSpan`, range `[00:00:00, 23:59:59]`).
+
+```xml
+<persian:ModernPersianDatePicker IsTimePickerEnabled="True" />
+```
+
+```csharp
+TimeOnly time = TimeOnly.FromTimeSpan(datePicker.SelectedTime);
+// Use ToDateTimeAsGregorian() when the picker is in Gregorian mode
+var d = datePicker.SelectedDate!.Value;
+DateTime full = (datePicker.CalendarType == CalendarType.Gregorian
+    ? d.ToDateTimeAsGregorian() : d.ToDateTime()) + datePicker.SelectedTime;
+```
+
+### Range mode
+When both `IsRangeMode` and `IsTimePickerEnabled` are `True`, the parent picker's own TimePicker
+is **hidden** — the time-of-day for the range is instead captured inside the From/To pickers
+shown in the Quick Range panel (open via the "Quick Range" button at the bottom of the dropdown).
+
+The two times are surfaced on the parent picker as `RangeStartTime` (default `00:00:00`) and
+`RangeEndTime` (default `23:59:59`).
+
+```xml
+<persian:ModernPersianDatePicker
+    IsRangeMode="True"
+    IsTimePickerEnabled="True" />
+```
+
+```csharp
+datePicker.DateRangeSelected += (_, e) =>
+{
+    DateTime start = e.RangeStart!.Value.ToDateTime() + e.StartTime;
+    DateTime end   = e.RangeEnd  !.Value.ToDateTime() + e.EndTime;
+    Console.WriteLine($"[{start:yyyy-MM-dd HH:mm:ss} .. {end:yyyy-MM-dd HH:mm:ss}]");
+};
+```
+
+> When the picker is in Gregorian mode, use `e.RangeStart.Value.ToDateTimeAsGregorian()`
+> instead of `ToDateTime()` to avoid routing through `PersianCalendar` (which would reject
+> days > 30 for Persian month 7 / Mehr).
+
+### Visibility matrix
+
+| Mode | Parent's TimePicker | Quick Range From/To TimePickers |
+|------|---------------------|---------------------------------|
+| Single-date, no time | hidden | hidden |
+| Single-date, with time | **visible** | hidden |
+| Range mode, no time | hidden | hidden |
+| **Range mode + time** | **hidden** | **visible** |
+
 ## Gregorian Calendar Mode
 
-Full support for Gregorian calendar with English month/day names, LTR layout, and proper holiday handling.
-
 ```xml
 <persian:ModernPersianDatePicker 
     CalendarType="Gregorian"
     Language="English"
-    FlowDirection="LeftToRight" />
-```
-
-### Editable mode in Gregorian
-```xml
-<persian:ModernPersianDatePicker 
-    CalendarType="Gregorian"
-    Language="English"
-    IsEditable="True"
-    FlowDirection="LeftToRight" />
-```
-
-### Date Range with Time in Gregorian
-```xml
-<persian:ModernPersianDatePicker 
-    CalendarType="Gregorian"
-    Language="English"
-    IsRangeMode="True"
-    IsTimePickerEnabled="True"
     FlowDirection="LeftToRight" />
 ```
 
@@ -335,8 +390,15 @@ Utility class for Persian date operations:
 // Convert Gregorian to Persian
 var persianDate = PersianCalendarHelper.ToPersianDate(DateTime.Today);
 
-// Convert Persian to Gregorian
+// Convert Persian to Gregorian (assumes the struct holds Persian values)
 var gregorianDate = persianDate.ToDateTime();
+
+// Construct a DateTime directly from a PersianDate struct whose
+// Year/Month/Day are ALREADY Gregorian (i.e. the picker is in Gregorian mode).
+// Use this when CalendarType == Gregorian — ToDateTime() would otherwise route
+// through PersianCalendar and throw for e.g. July 31st (Persian month 7 / Mehr
+// only has 30 days).
+var dt = pickedDate.ToDateTimeAsGregorian();
 
 // Get today's Persian date
 var today = PersianCalendarHelper.Today();
@@ -350,13 +412,22 @@ int days = PersianCalendarHelper.GetDaysInMonth(1404, 12);
 // Get month/day names
 string monthName = PersianCalendarHelper.GetMonthName(1, useEnglish: false); // "فروردین"
 string dayName = PersianCalendarHelper.GetDayName(0, useEnglish: false);    // "شنبه"
+
+// Get today's date in the active calendar system (resolves Auto via culture)
+var today = PersianCalendarHelper.TodayForCalendarType(datePicker.CalendarType);
+
+// Get two mid-week days (Tue & Wed) of the current month in the active calendar
+PersianDate[] midWeek = PersianCalendarHelper.GetMidWeekDaysOfCurrentMonth(datePicker.CalendarType);
+
+// Format a date with calendar-aware day/month names
+string formatted = PersianCalendarHelper.FormatPersianDate(date, "long", loc, CalendarType.Gregorian);
 ```
 
 ### `PersianDate`
 Structure representing a Persian date:
 
 ```csharp
-var date = new PersianDate(year: 1403, month: 10, day: 19, dayOfWeek: 7);
+var date = new PersianDate(year: 1403, month: 10, day: 19, dayOfWeek: 6); // dayOfWeek: 0=Sat..6=Fri
 
 // ToString formats
 date.ToString();        // "1404/10/19"
@@ -368,9 +439,31 @@ date.ToString("month"); // "دی ۱۴۰۴"
 if (date1 > date2) { ... }
 if (date1.CompareTo(date2) > 0) { ... }
 
-// Convert to Gregorian
+// Convert to Gregorian (when the struct holds a Persian date)
 DateTime gregorian = date.ToDateTime();
+
+// Construct directly from the struct's values (when the struct holds a Gregorian date)
+// Use this in Gregorian calendar mode to avoid PersianCalendar conversion errors.
+DateTime asGregorian = date.ToDateTimeAsGregorian();
+
+// Calendar-aware ToString — produces correct day/month names for both calendars
+string farsi = date.ToString("long", loc, CalendarType.Persian);   // "شنبه 1 فروردین 1404"
+string english = date.ToString("long", loc, CalendarType.Gregorian); // "Thursday 31 July 2025"
 ```
+
+### `ModernPersianDatePicker` formatting helpers
+The picker exposes three convenience methods that produce calendar-aware formatted
+strings using the active localization and calendar type:
+
+```csharp
+string selected = datePicker.FormatSelectedDate("long");  // "شنبه 1 فروردین 1404"
+string rangeStart = datePicker.FormatRangeStart("short");  // "1404/01/01"
+string rangeEnd = datePicker.FormatRangeEnd("short");     // "1404/01/31"
+```
+
+These are especially useful in MVVM scenarios where the view-model needs to produce
+display strings that respect the active calendar — without manually passing the
+localization and calendar type to `PersianCalendarHelper.FormatPersianDate`.
 
 ## Demo Application
 
@@ -422,14 +515,18 @@ dotnet test
 
 ## Roadmap
 
-- [x] Time picker component
-- [x] Date range picker
-- [x] Quick Range panel (Today, Week, Month, Year, Season, Half-Year presets)
-- [x] Time support in Quick Range From/To datepickers
+- [x] Time picker component (`SelectedTime` as `TimeSpan`)
+- [x] Date range picker with optional time-of-day (`RangeStartTime` / `RangeEndTime`)
+- [x] Quick Range panel with grouped Month/Season/Half-Year presets
+- [x] `SelectedTimeChanged` / `RangeTimeChanged` events
+- [x] Gregorian-mode safe conversion (`ToGregorianDateTime` / `ToDateTimeAsGregorian`)
+- [x] Calendar-aware date formatting (`FormatPersianDate` / `FormatSelectedDate` / `ToString(format, loc, calendarType)`)
+- [x] Automatic date conversion when switching `CalendarType` (Persian ↔ Gregorian)
+- [x] Calendar-aware "Today" button and initialization (`TodayForCalendarType`)
 - [x] Custom themes
 - [x] More localization options (Arabic, Kurdish + custom provider)
-- [x] Gregorian calendar mode (full support)
-- [x] Weekly & specific date holidays (auto-adjusts for calendar type)
+- [x] Gregorian calendar mode
+- [x] Weekly & specific date holidays
 - [x] Custom accent brush
 - [x] Per-instance theme mode
 - [x] MVVM demo windows
@@ -452,7 +549,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Inspired by [HEskandari/FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms
 - Built with [Avalonia UI](https://avaloniaui.net/)
-- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io) & [MiMo](https://github.com/XiaomiMiMo/MiMo-Code) & [Z.ai](https://chat.z.ai)
+- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io) & [MiMo](https://github.com/XiaomiMiMo/MiMo-Code) & [Super Z](https://chat.z.ai)
 - Persian calendar algorithms based on standard Jalali calendar calculations
 
 ## Support

@@ -229,7 +229,7 @@
                            FontWeight="SemiBold"
                            Margin="0,0,0,12"/>
 
-                <TextBlock Text="You can type dates directly using /, -, or . separators (e.g. 1404/03/04)."
+                <TextBlock Text="You can type dates directly using /, -, or . separators (e.g. 1404/10/18)."
                            FontSize="12"
                            Foreground="{DynamicResource ThemeForegroundBrush}"
                            Margin="0,0,0,12"/>
@@ -308,7 +308,7 @@
                            Foreground="{DynamicResource ThemeForegroundBrush}"/>
 
                 <!-- Weekly holidays demo -->
-                <TextBlock Text="Weekly Holidays (Friday + Saturday):"
+                <TextBlock Text="Weekly Holiday:"
                            FontWeight="SemiBold"
                            Margin="0,16,0,8"/>
                 <persian:ModernPersianDatePicker x:Name="WeeklyHolidayDatePicker"

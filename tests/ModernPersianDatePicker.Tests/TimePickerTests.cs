@@ -1,3 +1,4 @@
+using System;
 using Xunit;
 
 namespace ModernPersianDatePicker.Tests;
@@ -9,12 +10,10 @@ public class TimePickerTests
     // ──────────────────────────────────────────────────────
 
     [Fact]
-    public void TimePickerView_DefaultValues_AreZero()
+    public void TimePickerView_DefaultTime_IsZero()
     {
         var picker = new TimePickerView();
-        Assert.Equal(0, picker.Hour);
-        Assert.Equal(0, picker.Minute);
-        Assert.Equal(0, picker.Second);
+        Assert.Equal(TimeSpan.Zero, picker.Time);
     }
 
     [Fact]
@@ -25,83 +24,29 @@ public class TimePickerTests
     }
 
     [Fact]
-    public void ModernPersianDatePicker_TimeProperties_DefaultAreZero()
+    public void ModernPersianDatePicker_SelectedTime_DefaultIsZero()
     {
         var picker = new ModernPersianDatePicker();
-        Assert.Equal(0, picker.Hour);
-        Assert.Equal(0, picker.Minute);
-        Assert.Equal(0, picker.Second);
+        Assert.Equal(TimeSpan.Zero, picker.SelectedTime);
     }
 
     // ──────────────────────────────────────────────────────
-    // 2. Property validation
+    // 2. TimePickerView property validation
     // ──────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(12)]
-    [InlineData(23)]
-    public void HourProperty_ValidValues_Accepted(int hour)
+    [InlineData(0, 0, 0)]
+    [InlineData(12, 30, 45)]
+    [InlineData(23, 59, 59)]
+    public void TimePickerView_Time_Accepted(int h, int m, int s)
     {
-        var picker = new ModernPersianDatePicker { Hour = hour };
-        Assert.Equal(hour, picker.Hour);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(30)]
-    [InlineData(59)]
-    public void MinuteProperty_ValidValues_Accepted(int minute)
-    {
-        var picker = new ModernPersianDatePicker { Minute = minute };
-        Assert.Equal(minute, picker.Minute);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(45)]
-    [InlineData(59)]
-    public void SecondProperty_ValidValues_Accepted(int second)
-    {
-        var picker = new ModernPersianDatePicker { Second = second };
-        Assert.Equal(second, picker.Second);
+        var value = new TimeSpan(h, m, s);
+        var picker = new TimePickerView { Time = value };
+        Assert.Equal(value, picker.Time);
     }
 
     // ──────────────────────────────────────────────────────
-    // 3. TimePickerView property validation
-    // ──────────────────────────────────────────────────────
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(15)]
-    [InlineData(23)]
-    public void TimePickerView_Hour_Accepted(int hour)
-    {
-        var picker = new TimePickerView { Hour = hour };
-        Assert.Equal(hour, picker.Hour);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(30)]
-    [InlineData(59)]
-    public void TimePickerView_Minute_Accepted(int minute)
-    {
-        var picker = new TimePickerView { Minute = minute };
-        Assert.Equal(minute, picker.Minute);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(59)]
-    public void TimePickerView_Second_Accepted(int second)
-    {
-        var picker = new TimePickerView { Second = second };
-        Assert.Equal(second, picker.Second);
-    }
-
-    // ──────────────────────────────────────────────────────
-    // 4. TimeChanged event
+    // 3. TimeChanged event
     // ──────────────────────────────────────────────────────
 
     [Fact]
@@ -111,36 +56,46 @@ public class TimePickerTests
         bool fired = false;
         picker.TimeChanged += (_, _) => fired = true;
 
-        picker.Hour = 10;
-        Assert.True(fired);
-
-        fired = false;
-        picker.Minute = 30;
-        Assert.True(fired);
-
-        fired = false;
-        picker.Second = 45;
+        picker.Time = new TimeSpan(10, 30, 45);
         Assert.True(fired);
     }
 
     // ──────────────────────────────────────────────────────
-    // 5. Integration: time properties forward to TimePickerView
+    // 4. ModernPersianDatePicker SelectedTime
     // ──────────────────────────────────────────────────────
 
-    [Fact]
-    public void TimeProperties_CanBeSetTogether()
+    [Theory]
+    [InlineData(0, 0, 0)]
+    [InlineData(14, 30, 15)]
+    [InlineData(23, 59, 59)]
+    public void ModernPersianDatePicker_SelectedTime_Accepted(int h, int m, int s)
     {
+        var value = new TimeSpan(h, m, s);
         var picker = new ModernPersianDatePicker
         {
             IsTimePickerEnabled = true,
-            Hour = 14,
-            Minute = 30,
-            Second = 15
+            SelectedTime = value
         };
 
         Assert.True(picker.IsTimePickerEnabled);
-        Assert.Equal(14, picker.Hour);
-        Assert.Equal(30, picker.Minute);
-        Assert.Equal(15, picker.Second);
+        Assert.Equal(value, picker.SelectedTime);
+    }
+
+    // ──────────────────────────────────────────────────────
+    // 5. Range time properties (kept from previous behaviour)
+    // ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void ModernPersianDatePicker_RangeStartTime_DefaultIsZero()
+    {
+        var picker = new ModernPersianDatePicker();
+        Assert.Equal(TimeSpan.Zero, picker.RangeStartTime);
+    }
+
+    [Fact]
+    public void ModernPersianDatePicker_RangeEndTime_DefaultIsEndOfDay()
+    {
+        var picker = new ModernPersianDatePicker();
+        Assert.Equal(new TimeSpan(23, 59, 59), picker.RangeEndTime);
     }
 }

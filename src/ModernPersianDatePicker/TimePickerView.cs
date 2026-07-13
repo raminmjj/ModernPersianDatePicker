@@ -11,20 +11,17 @@ namespace ModernPersianDatePicker;
 /// <summary>
 /// Time picker view with +/- buttons and editable TextBoxes for Hour, Minute, and Second.
 /// Displayed inside the DatePicker popup when <see cref="ModernPersianDatePicker.IsTimePickerEnabled"/> is true.
+/// The selected time-of-day is exposed as a single <see cref="Time"/> property of type <see cref="TimeSpan"/>.
 /// </summary>
 public class TimePickerView : TemplatedControl
 {
-    public static readonly StyledProperty<int> HourProperty =
-        AvaloniaProperty.Register<TimePickerView, int>(nameof(Hour),
-            validate: v => v >= 0 && v <= 23);
-
-    public static readonly StyledProperty<int> MinuteProperty =
-        AvaloniaProperty.Register<TimePickerView, int>(nameof(Minute),
-            validate: v => v >= 0 && v <= 59);
-
-    public static readonly StyledProperty<int> SecondProperty =
-        AvaloniaProperty.Register<TimePickerView, int>(nameof(Second),
-            validate: v => v >= 0 && v <= 59);
+    /// <summary>
+    /// Selected time-of-day. Defaults to 00:00:00. Values are clamped to the
+    /// range [00:00:00, 23:59:59]; the days component of the input TimeSpan is ignored.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> TimeProperty =
+        AvaloniaProperty.Register<TimePickerView, TimeSpan>(nameof(Time), TimeSpan.Zero,
+            validate: t => t >= TimeSpan.Zero && t < TimeSpan.FromDays(1));
 
     public event EventHandler? TimeChanged;
 
@@ -41,27 +38,16 @@ public class TimePickerView : TemplatedControl
 
     static TimePickerView()
     {
-        HourProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
-        MinuteProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
-        SecondProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
+        TimeProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
     }
 
-    public int Hour
+    /// <summary>
+    /// Selected time-of-day. Always in the range [00:00:00, 23:59:59].
+    /// </summary>
+    public TimeSpan Time
     {
-        get => GetValue(HourProperty);
-        set => SetValue(HourProperty, value);
-    }
-
-    public int Minute
-    {
-        get => GetValue(MinuteProperty);
-        set => SetValue(MinuteProperty, value);
-    }
-
-    public int Second
-    {
-        get => GetValue(SecondProperty);
-        set => SetValue(SecondProperty, value);
+        get => GetValue(TimeProperty);
+        set => SetValue(TimeProperty, value);
     }
 
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
@@ -147,11 +133,11 @@ public class TimePickerView : TemplatedControl
         int delta = e.Delta.Y > 0 ? 1 : -1;
 
         if (sender == _hourBox)
-            Hour = (Hour + delta % 24 + 24) % 24;
+            Time = WrapComponent(Time, hoursDelta: delta, hoursMod: 24);
         else if (sender == _minuteBox)
-            Minute = (Minute + delta % 60 + 60) % 60;
+            Time = WrapComponent(Time, minutesDelta: delta, minutesMod: 60);
         else if (sender == _secondBox)
-            Second = (Second + delta % 60 + 60) % 60;
+            Time = WrapComponent(Time, secondsDelta: delta, secondsMod: 60);
 
         e.Handled = true;
     }
@@ -161,23 +147,23 @@ public class TimePickerView : TemplatedControl
         e.Handled = true;
     }
 
-    private void OnHourUp_Click(object? sender, RoutedEventArgs e) => Hour = (Hour + 1) % 24;
-    private void OnHourDown_Click(object? sender, RoutedEventArgs e) => Hour = (Hour + 23) % 24;
-    private void OnMinuteUp_Click(object? sender, RoutedEventArgs e) => Minute = (Minute + 1) % 60;
-    private void OnMinuteDown_Click(object? sender, RoutedEventArgs e) => Minute = (Minute + 59) % 60;
-    private void OnSecondUp_Click(object? sender, RoutedEventArgs e) => Second = (Second + 1) % 60;
-    private void OnSecondDown_Click(object? sender, RoutedEventArgs e) => Second = (Second + 59) % 60;
+    private void OnHourUp_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, hoursDelta: 1, hoursMod: 24);
+    private void OnHourDown_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, hoursDelta: -1, hoursMod: 24);
+    private void OnMinuteUp_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, minutesDelta: 1, minutesMod: 60);
+    private void OnMinuteDown_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, minutesDelta: -1, minutesMod: 60);
+    private void OnSecondUp_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, secondsDelta: 1, secondsMod: 60);
+    private void OnSecondDown_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, secondsDelta: -1, secondsMod: 60);
 
     private void OnBoxLostFocus(object? sender, RoutedEventArgs e)
     {
         if (_isUpdatingText) return;
 
         if (sender == _hourBox && _hourBox != null)
-            Hour = ClampParsed(_hourBox.Text, 0, 23);
+            Time = ReplaceHour(Time, ClampParsed(_hourBox.Text, 0, 23));
         else if (sender == _minuteBox && _minuteBox != null)
-            Minute = ClampParsed(_minuteBox.Text, 0, 59);
+            Time = ReplaceMinute(Time, ClampParsed(_minuteBox.Text, 0, 59));
         else if (sender == _secondBox && _secondBox != null)
-            Second = ClampParsed(_secondBox.Text, 0, 59);
+            Time = ReplaceSecond(Time, ClampParsed(_secondBox.Text, 0, 59));
     }
 
     private static int ClampParsed(string? text, int min, int max)
@@ -187,12 +173,41 @@ public class TimePickerView : TemplatedControl
         return min;
     }
 
+    /// <summary>
+    /// Wraps a single time component (hour/minute/second) by the given delta,
+    /// keeping it inside its natural modulus (24h, 60m, 60s) without ever
+    /// leaving the [00:00:00, 23:59:59] range.
+    /// </summary>
+    private static TimeSpan WrapComponent(TimeSpan t,
+        int hoursDelta = 0, int hoursMod = 0,
+        int minutesDelta = 0, int minutesMod = 0,
+        int secondsDelta = 0, int secondsMod = 0)
+    {
+        int h = t.Hours;
+        int m = t.Minutes;
+        int s = t.Seconds;
+
+        if (hoursMod != 0)
+            h = ((h + hoursDelta) % hoursMod + hoursMod) % hoursMod;
+        if (minutesMod != 0)
+            m = ((m + minutesDelta) % minutesMod + minutesMod) % minutesMod;
+        if (secondsMod != 0)
+            s = ((s + secondsDelta) % secondsMod + secondsMod) % secondsMod;
+
+        return new TimeSpan(h, m, s);
+    }
+
+    private static TimeSpan ReplaceHour(TimeSpan t, int hour) => new TimeSpan(hour, t.Minutes, t.Seconds);
+    private static TimeSpan ReplaceMinute(TimeSpan t, int minute) => new TimeSpan(t.Hours, minute, t.Seconds);
+    private static TimeSpan ReplaceSecond(TimeSpan t, int second) => new TimeSpan(t.Hours, t.Minutes, second);
+
     private void SyncFromValue()
     {
         _isUpdatingText = true;
-        if (_hourBox != null) _hourBox.Text = Hour.ToString("D2");
-        if (_minuteBox != null) _minuteBox.Text = Minute.ToString("D2");
-        if (_secondBox != null) _secondBox.Text = Second.ToString("D2");
+        var t = Time;
+        if (_hourBox != null) _hourBox.Text = t.Hours.ToString("D2");
+        if (_minuteBox != null) _minuteBox.Text = t.Minutes.ToString("D2");
+        if (_secondBox != null) _secondBox.Text = t.Seconds.ToString("D2");
         _isUpdatingText = false;
 
         TimeChanged?.Invoke(this, EventArgs.Empty);

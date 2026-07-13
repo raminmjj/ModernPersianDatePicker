@@ -213,11 +213,7 @@ public class QuickRangeView : TemplatedControl
             _fromPicker.LocalizationProvider = LocalizationProvider;
             _fromPicker.IsTimePickerEnabled = IsTimePickerEnabled;
             if (IsTimePickerEnabled)
-            {
-                _fromPicker.Hour = StartTime.Hours;
-                _fromPicker.Minute = StartTime.Minutes;
-                _fromPicker.Second = StartTime.Seconds;
-            }
+                _fromPicker.SelectedTime = StartTime;
             if (RangeStart.HasValue)
                 _fromPicker.SelectedDate = RangeStart;
         }
@@ -230,11 +226,7 @@ public class QuickRangeView : TemplatedControl
             _toPicker.LocalizationProvider = LocalizationProvider;
             _toPicker.IsTimePickerEnabled = IsTimePickerEnabled;
             if (IsTimePickerEnabled)
-            {
-                _toPicker.Hour = EndTime.Hours;
-                _toPicker.Minute = EndTime.Minutes;
-                _toPicker.Second = EndTime.Seconds;
-            }
+                _toPicker.SelectedTime = EndTime;
             if (RangeEnd.HasValue)
                 _toPicker.SelectedDate = RangeEnd;
         }
@@ -309,21 +301,13 @@ public class QuickRangeView : TemplatedControl
         {
             _fromPicker.SelectedDate = RangeStart;
             if (IsTimePickerEnabled)
-            {
-                _fromPicker.Hour = StartTime.Hours;
-                _fromPicker.Minute = StartTime.Minutes;
-                _fromPicker.Second = StartTime.Seconds;
-            }
+                _fromPicker.SelectedTime = StartTime;
         }
         if (_toPicker != null)
         {
             _toPicker.SelectedDate = RangeEnd;
             if (IsTimePickerEnabled)
-            {
-                _toPicker.Hour = EndTime.Hours;
-                _toPicker.Minute = EndTime.Minutes;
-                _toPicker.Second = EndTime.Seconds;
-            }
+                _toPicker.SelectedTime = EndTime;
         }
     }
 
@@ -427,14 +411,8 @@ public class QuickRangeView : TemplatedControl
             {
                 var startPicker = swapped ? _toPicker : _fromPicker;
                 var endPicker = swapped ? _fromPicker : _toPicker;
-                startTime = new TimeSpan(
-                    startPicker?.Hour ?? 0,
-                    startPicker?.Minute ?? 0,
-                    startPicker?.Second ?? 0);
-                endTime = new TimeSpan(
-                    endPicker?.Hour ?? 23,
-                    endPicker?.Minute ?? 59,
-                    endPicker?.Second ?? 59);
+                startTime = startPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultStartTime;
+                endTime = endPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultEndTime;
             }
             else
             {

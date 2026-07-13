@@ -124,7 +124,6 @@ public class CalendarView : TemplatedControl
     private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
     private HashSet<int> _gregorianWeeklyHolidayIndices = new() { (int)DayOfWeek.Friday };
     private HashSet<PersianDate> _holidays = new();
-    private HashSet<(int Year, int Month, int Day)> _gregorianHolidays = new();
 
     static CalendarView()
     {
@@ -208,14 +207,13 @@ public class CalendarView : TemplatedControl
             ? new HashSet<PersianDate>(Holidays)
             : new HashSet<PersianDate>();
 
-        // Gregorian specific-date holidays: convert PersianDate to Gregorian tuple
-        _gregorianHolidays = Holidays != null
-            ? Holidays.Select(pd =>
-            {
-                var dt = PersianCalendarHelper.ToGregorianDate(pd);
-                return (dt.Year, dt.Month, dt.Day);
-            }).ToHashSet()
-            : new HashSet<(int, int, int)>();
+        // Note: we deliberately do NOT pre-convert the holidays to Gregorian here.
+        // PersianDate equality only compares Year/Month/Day, so the same HashSet works
+        // for both Persian and Gregorian modes — the user supplies the appropriate kind
+        // of date for the active calendar, and we check membership directly at render time.
+        // This also avoids the crash where a Gregorian July 31st (day=31, month=7) would be
+        // routed through PersianCalendar (which rejects it because Persian month 7 / Mehr
+        // only has 30 days).
 
         UpdateCalendar();
     }
@@ -480,8 +478,11 @@ public class CalendarView : TemplatedControl
 
     private void OnTodayButton_Click(object? sender, RoutedEventArgs e)
     {
-        // Fire event to parent to select today and close popup
-        var today = PersianCalendarHelper.Today();
+        // Fire event to parent to select today and close popup.
+        // Respect the active calendar type: in Gregorian mode, return a
+        // PersianDate struct holding Gregorian values; in Persian mode,
+        // return Persian values.
+        var today = PersianCalendarHelper.TodayForCalendarType(GetEffectiveCalendarType());
         TodayClicked?.Invoke(this, new TodayClickedEventArgs(today));
     }
 
@@ -1067,8 +1068,11 @@ public class CalendarView : TemplatedControl
                     {
                         // For Gregorian: calculate .NET DayOfWeek and check against caches
                         int dayOfWeek = (firstDayOfWeek + day - 1) % 7;
+                        // Use _holidays directly: PersianDate equality is Year/Month/Day-only,
+                        // so a Gregorian date wrapped in PersianDate compares correctly here.
+                        // DayOfWeek (0) is a placeholder — it doesn't affect equality.
                         isHoliday = _gregorianWeeklyHolidayIndices.Contains(dayOfWeek)
-                            || _gregorianHolidays.Contains((DisplayYear, DisplayMonth, currentDay));
+                            || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, 0));
                     }
                     else
                     {
@@ -1126,7 +1130,13 @@ public class CalendarView : TemplatedControl
 
     private void OnDayClicked(int day)
     {
-        var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
+        // Compute DayOfWeek using the active calendar's first-day-of-week.
+        // Persian mode stores the Persian week index (Sat=0..Fri=6);
+        // Gregorian mode stores the .NET DayOfWeek (Sun=0..Sat=6) for consistency
+        // with the rest of the Gregorian rendering path.
+        int firstDayOfWeek = GetEffectiveCalendarType() == CalendarType.Gregorian
+            ? PersianCalendarHelper.GetGregorianFirstDayOfWeek(DisplayYear, DisplayMonth)
+            : PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
         var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
         var clickedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
 

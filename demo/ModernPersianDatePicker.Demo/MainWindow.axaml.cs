@@ -24,65 +24,48 @@ public partial class MainWindow : Window
         SpecificHolidayDatePicker.SelectedDateChanged += OnSpecificHolidayDateChanged;
         CustomHolidayBrushDatePicker.SelectedDateChanged += OnCustomHolidayBrushDateChanged;
         TimePickerDatePicker.SelectedDateChanged += OnTimePickerDateChanged;
+        TimePickerDatePicker.SelectedTimeChanged += OnTimePickerTimeChanged;
         RangeDatePicker.DateRangeSelected += OnRangeDateSelected;
+        RangeDatePicker.RangeTimeChanged += OnRangeTimeChanged;
 
-        // Set default date for basic picker
-        BasicDatePicker.SelectedDate = PersianCalendarHelper.Today();
+        // Set default date for basic picker — respect the active calendar type
+        // (Auto resolves to Gregorian on non-fa/ps system cultures).
+        BasicDatePicker.SelectedDate = PersianCalendarHelper.TodayForCalendarType(BasicDatePicker.CalendarType);
 
-        // Configure specific date holidays
-        SpecificHolidayDatePicker.Holidays = new[]
-        {
-            new PersianDate(1405, 1, 1, 1),  // 1 Farvardin (Nowruz)
-            new PersianDate(1405, 1, 13, 6), // 13 Farvardin
-        };
+        // Configure specific date holidays — two mid-week days (Tue & Wed) of the
+        // current month in the active calendar, so the example always highlights
+        // something visible regardless of the system culture.
+        SpecificHolidayDatePicker.Holidays = PersianCalendarHelper.GetMidWeekDaysOfCurrentMonth(
+            SpecificHolidayDatePicker.CalendarType);
     }
 
     private void OnBasicDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        if (e.NewDate.HasValue)
-        {
-            BasicDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")}";
-        }
-        else
-        {
-            BasicDateText.Text = "Selected: (none)";
-        }
+        BasicDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {BasicDatePicker.FormatSelectedDate("long")}"
+            : "Selected: (none)";
     }
 
     private void OnEnglishDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        if (e.NewDate.HasValue)
-        {
-            EnglishDateText.Text = $"Selected: {e.NewDate.Value.ToString("short")}";
-        }
-        else
-        {
-            EnglishDateText.Text = "Selected: (none)";
-        }
+        EnglishDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {EnglishDatePicker.FormatSelectedDate("short")}"
+            : "Selected: (none)";
     }
 
     private void OnCustomDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        if (e.NewDate.HasValue)
-        {
-            CustomDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")}";
-        }
-        else
-        {
-            CustomDateText.Text = "Selected: (none)";
-        }
+        CustomDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {CustomDatePicker.FormatSelectedDate("long")}"
+            : "Selected: (none)";
     }
 
     private void OnAccentDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        if (e.NewDate.HasValue)
-        {
-            AccentDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")}";
-        }
-        else
-        {
-            AccentDateText.Text = "Selected: (none)";
-        }
+        var dp = (ModernPersianDatePicker)sender!;
+        AccentDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {dp.FormatSelectedDate("long")}"
+            : "Selected: (none)";
     }
 
     private void OnSetToTodayClick(object? sender, RoutedEventArgs e)
@@ -99,7 +82,12 @@ public partial class MainWindow : Window
     {
         if (CustomDatePicker.SelectedDate.HasValue)
         {
-            var gregorianDate = CustomDatePicker.SelectedDate.Value.ToDateTime();
+            // Use ToDateTimeAsGregorian when the picker is in Gregorian mode
+            // (avoids PersianCalendar rejecting e.g. July 31st).
+            var d = CustomDatePicker.SelectedDate.Value;
+            var gregorianDate = CustomDatePicker.CalendarType == CalendarType.Gregorian
+                ? d.ToDateTimeAsGregorian()
+                : d.ToDateTime();
             GregorianDateText.Text = $"Gregorian: {gregorianDate:yyyy/MM/dd} ({gregorianDate:MMMM dd, yyyy})";
         }
         else
@@ -110,28 +98,9 @@ public partial class MainWindow : Window
 
     private void OnEditableDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
-        EditableDateText.Text = FormatDateForDisplay(e.NewDate, EditableDatePicker.CalendarType);
-    }
-
-    private string FormatDateForDisplay(PersianDate? date, CalendarType calendarType)
-    {
-        if (!date.HasValue) return "Selected: (none)";
-
-        var effectiveType = calendarType;
-        if (effectiveType == CalendarType.Auto)
-        {
-            var culture = System.Globalization.CultureInfo.CurrentUICulture;
-            effectiveType = culture.TwoLetterISOLanguageName is "fa" or "ps"
-                ? CalendarType.Persian : CalendarType.Gregorian;
-        }
-
-        if (effectiveType == CalendarType.Gregorian)
-        {
-            // Create DateTime directly from stored values (they are Gregorian, not Persian)
-            var d = new DateTime(date.Value.Year, date.Value.Month, date.Value.Day);
-            return $"Selected: {d:yyyy/MM/dd} ({d:dddd, MMMM dd, yyyy})";
-        }
-        return $"Selected: {date.Value.ToString("long")}";
+        EditableDateText.Text = e.NewDate.HasValue
+            ? $"Selected: {EditableDatePicker.FormatSelectedDate("long")}"
+            : "Selected: (none)";
     }
 
     private void OnInvalidActionChanged(object? sender, RoutedEventArgs e)
@@ -159,53 +128,74 @@ public partial class MainWindow : Window
     private void OnThemedDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
         ThemedDateText.Text = e.NewDate.HasValue
-            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            ? $"Selected: {ThemedDatePicker.FormatSelectedDate("long")}"
             : "Selected: (none)";
     }
 
     private void OnWeeklyHolidayDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
         WeeklyHolidayText.Text = e.NewDate.HasValue
-            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            ? $"Selected: {WeeklyHolidayDatePicker.FormatSelectedDate("long")}"
             : "Selected: (none)";
     }
 
     private void OnSpecificHolidayDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
         SpecificHolidayText.Text = e.NewDate.HasValue
-            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            ? $"Selected: {SpecificHolidayDatePicker.FormatSelectedDate("long")}"
             : "Selected: (none)";
     }
 
     private void OnCustomHolidayBrushDateChanged(object? sender, SelectedDateChangedEventArgs e)
     {
         CustomHolidayBrushText.Text = e.NewDate.HasValue
-            ? $"Selected: {e.NewDate.Value.ToString("long")}"
+            ? $"Selected: {CustomHolidayBrushDatePicker.FormatSelectedDate("long")}"
             : "Selected: (none)";
     }
 
     private void OnTimePickerDateChanged(object? sender, SelectedDateChangedEventArgs e)
+        => RefreshTimePickerText();
+
+    private void OnTimePickerTimeChanged(object? sender, SelectedTimeChangedEventArgs e)
+        => RefreshTimePickerText();
+
+    private void RefreshTimePickerText()
     {
-        if (e.NewDate.HasValue)
-        {
-            var dp = TimePickerDatePicker;
-            TimePickerDateText.Text = $"Selected: {e.NewDate.Value.ToString("long")} {dp.Hour:D2}:{dp.Minute:D2}:{dp.Second:D2}";
-        }
+        var dp = TimePickerDatePicker;
+        if (dp.SelectedDate.HasValue)
+            TimePickerDateText.Text = $"Selected: {dp.FormatSelectedDate("long")} {dp.SelectedTime:hh\\:mm\\:ss}";
         else
-        {
             TimePickerDateText.Text = "Selected: (none)";
-        }
     }
 
     private void OnRangeDateSelected(object? sender, DateRangeSelectedEventArgs e)
+        => RefreshRangeText();
+
+    private void OnRangeTimeChanged(object? sender, EventArgs e)
+        => RefreshRangeText();
+
+    private void RefreshRangeText()
     {
-        if (e.RangeStart.HasValue && e.RangeEnd.HasValue)
+        var dp = RangeDatePicker;
+        if (dp.RangeStart.HasValue && dp.RangeEnd.HasValue)
         {
-            RangeDateText.Text = $"Range: {e.RangeStart.Value.ToString("short")} ~ {e.RangeEnd.Value.ToString("short")}";
+            var start = dp.FormatRangeStart("short");
+            var end = dp.FormatRangeEnd("short");
+            if (dp.IsTimePickerEnabled)
+            {
+                var st = dp.RangeStartTime;
+                var et = dp.RangeEndTime;
+                RangeDateText.Text = $"Range: {start} {st.Hours:D2}:{st.Minutes:D2}:{st.Seconds:D2}" +
+                    $" ~ {end} {et.Hours:D2}:{et.Minutes:D2}:{et.Seconds:D2}";
+            }
+            else
+            {
+                RangeDateText.Text = $"Range: {start} ~ {end}";
+            }
         }
-        else if (e.RangeStart.HasValue)
+        else if (dp.RangeStart.HasValue)
         {
-            RangeDateText.Text = $"Start: {e.RangeStart.Value.ToString("short")} (click end date)";
+            RangeDateText.Text = $"Start: {dp.FormatRangeStart("short")} (click end date)";
         }
         else
         {

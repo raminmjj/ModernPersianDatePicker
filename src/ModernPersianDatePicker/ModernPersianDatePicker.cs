@@ -107,25 +107,16 @@ public class ModernPersianDatePicker : TemplatedControl
         AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(IsTimePickerEnabled));
 
     /// <summary>
-    /// Selected hour (0-23). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// Selected time-of-day. Only meaningful when <see cref="IsTimePickerEnabled"/> is true
+    /// (single-date mode) or when <see cref="IsRangeMode"/> &amp;&amp; <see cref="IsTimePickerEnabled"/>
+    /// are both true (range mode captures time inside the From/To pickers of the Quick Range
+    /// panel, surfaced back as <see cref="RangeStartTime"/>/<see cref="RangeEndTime"/>).
+    /// Defaults to 00:00:00.
     /// </summary>
-    public static readonly StyledProperty<int> HourProperty =
-        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Hour),
-            validate: v => v >= 0 && v <= 23);
-
-    /// <summary>
-    /// Selected minute (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
-    public static readonly StyledProperty<int> MinuteProperty =
-        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Minute),
-            validate: v => v >= 0 && v <= 59);
-
-    /// <summary>
-    /// Selected second (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
-    public static readonly StyledProperty<int> SecondProperty =
-        AvaloniaProperty.Register<ModernPersianDatePicker, int>(nameof(Second),
-            validate: v => v >= 0 && v <= 59);
+    public static readonly StyledProperty<TimeSpan> SelectedTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, TimeSpan>(nameof(SelectedTime),
+            TimeSpan.Zero,
+            validate: t => t >= TimeSpan.Zero && t < TimeSpan.FromDays(1));
 
     /// <summary>
     /// Time-of-day component for the range start. Only meaningful when
@@ -156,6 +147,10 @@ public class ModernPersianDatePicker : TemplatedControl
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
+    /// <summary>Raised when <see cref="SelectedTime"/> changes (single-date time-of-day).</summary>
+    public event EventHandler<SelectedTimeChangedEventArgs>? SelectedTimeChanged;
+    /// <summary>Raised when <see cref="RangeStartTime"/> or <see cref="RangeEndTime"/> change.</summary>
+    public event EventHandler? RangeTimeChanged;
 
     // Private fields
     private Popup? _popup;
@@ -185,9 +180,7 @@ public class ModernPersianDatePicker : TemplatedControl
         RangeStartProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeChanged(e));
         RangeEndProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeChanged(e));
         IsTimePickerEnabledProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimePickerEnabledChanged(e));
-        HourProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
-        MinuteProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
-        SecondProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimeComponentChanged(e));
+        SelectedTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedTimeChanged(e));
         CalendarTypeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnCalendarTypeChanged(e));
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
@@ -339,30 +332,13 @@ public class ModernPersianDatePicker : TemplatedControl
     }
 
     /// <summary>
-    /// Selected hour (0-23). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
+    /// Selected time-of-day in the range [00:00:00, 23:59:59]. Only meaningful when
+    /// <see cref="IsTimePickerEnabled"/> is true.
     /// </summary>
-    public int Hour
+    public TimeSpan SelectedTime
     {
-        get => GetValue(HourProperty);
-        set => SetValue(HourProperty, value);
-    }
-
-    /// <summary>
-    /// Selected minute (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
-    public int Minute
-    {
-        get => GetValue(MinuteProperty);
-        set => SetValue(MinuteProperty, value);
-    }
-
-    /// <summary>
-    /// Selected second (0-59). Only meaningful when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
-    public int Second
-    {
-        get => GetValue(SecondProperty);
-        set => SetValue(SecondProperty, value);
+        get => GetValue(SelectedTimeProperty);
+        set => SetValue(SelectedTimeProperty, value);
     }
 
     /// <summary>
@@ -479,9 +455,7 @@ public class ModernPersianDatePicker : TemplatedControl
 
         if (_timePickerView != null)
         {
-            _timePickerView.Hour = Hour;
-            _timePickerView.Minute = Minute;
-            _timePickerView.Second = Second;
+            _timePickerView.Time = SelectedTime;
             _timePickerView.TimeChanged += OnTimePickerView_TimeChanged;
             // In range mode the parent picker's own TimePicker is intentionally
             // hidden — the time-of-day for the range is instead captured inside
@@ -533,7 +507,7 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             if (InvalidValueAction == InvalidValueAction.SetToToday)
             {
-                SelectedDate = PersianCalendarHelper.Today();
+                SelectedDate = PersianCalendarHelper.TodayForCalendarType(CalendarType);
             }
             else if (InvalidValueAction == InvalidValueAction.SetToNull)
             {
@@ -571,7 +545,7 @@ public class ModernPersianDatePicker : TemplatedControl
         switch (InvalidValueAction)
         {
             case InvalidValueAction.SetToToday:
-                SelectedDate = PersianCalendarHelper.Today();
+                SelectedDate = PersianCalendarHelper.TodayForCalendarType(CalendarType);
                 break;
             case InvalidValueAction.SetToNull:
                 SelectedDate = null;
@@ -626,18 +600,20 @@ public class ModernPersianDatePicker : TemplatedControl
             if (IsTimePickerEnabled && dateTimeParts.Length > 1)
             {
                 var timeParts = dateTimeParts[1].Split(':');
+                int h = 0, m = 0, s = 0;
                 if (timeParts.Length >= 2)
                 {
-                    if (int.TryParse(timeParts[0], out int h) && h >= 0 && h <= 23)
-                        Hour = h;
-                    if (int.TryParse(timeParts[1], out int m) && m >= 0 && m <= 59)
-                        Minute = m;
+                    if (int.TryParse(timeParts[0], out int parsedH) && parsedH is >= 0 and <= 23)
+                        h = parsedH;
+                    if (int.TryParse(timeParts[1], out int parsedM) && parsedM is >= 0 and <= 59)
+                        m = parsedM;
                 }
                 if (timeParts.Length >= 3)
                 {
-                    if (int.TryParse(timeParts[2], out int s) && s >= 0 && s <= 59)
-                        Second = s;
+                    if (int.TryParse(timeParts[2], out int parsedS) && parsedS is >= 0 and <= 59)
+                        s = parsedS;
                 }
+                SelectedTime = new TimeSpan(h, m, s);
             }
 
             // Calculate day of week
@@ -1101,6 +1077,8 @@ public class ModernPersianDatePicker : TemplatedControl
         }
 
         UpdateDisplayText();
+
+        RangeTimeChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnCalendarTypeChanged(AvaloniaPropertyChangedEventArgs e)
@@ -1108,50 +1086,160 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_isDisposed)
             return;
 
+        // Resolve old and new calendar types to concrete Persian/Gregorian.
+        // 'Auto' is treated as whatever GetEffectiveCalendarType() resolves to NOW
+        // (i.e. the new value) — for the old value, we approximate Auto the same way
+        // since we don't have a per-instance snapshot of the previous culture.
+        CalendarType newType = GetEffectiveCalendarType();
+        CalendarType oldType = ResolveOldCalendarType(e.OldValue);
+
+        // Convert existing selected date(s) so the values stay semantically correct
+        // after the calendar swap. Without this, picking 2026/07/31 Gregorian and
+        // then switching to Persian would leave SelectedDate=(2026,7,31) — which is
+        // then misinterpreted as Persian year 2026 (≈ 2646 Gregorian).
+        if (oldType != newType)
+        {
+            if (SelectedDate.HasValue)
+                SelectedDate = ConvertDate(SelectedDate.Value, oldType, newType);
+
+            if (RangeStart.HasValue)
+                RangeStart = ConvertDate(RangeStart.Value, oldType, newType);
+            if (RangeEnd.HasValue)
+                RangeEnd = ConvertDate(RangeEnd.Value, oldType, newType);
+
+            // DisplayYear/DisplayMonth also need to be in the new calendar so the grid
+            // opens on a sensible month rather than reusing the old calendar's numbers.
+            // NOTE: SelectedDate and RangeStart have already been converted above, so use
+            // them directly — do NOT call ConvertDate again (that would treat the new
+            // values as if they were still in the old calendar and produce wrong results).
+            var pivotDate = SelectedDate ?? RangeStart;
+            if (pivotDate.HasValue && _calendarView != null)
+            {
+                _calendarView.DisplayYear = pivotDate.Value.Year;
+                _calendarView.DisplayMonth = pivotDate.Value.Month;
+            }
+        }
+
         if (_calendarView != null)
         {
             _calendarView.CalendarType = CalendarType;
 
-            // Reset DisplayYear/Month to the correct calendar's today
-            if (GetEffectiveCalendarType() == CalendarType.Gregorian)
+            // If we did NOT have a pivot date (no selection yet), fall back to today
+            // in the new calendar so the grid opens on the current month.
+            if (oldType == newType || !(SelectedDate.HasValue || RangeStart.HasValue))
             {
-                var today = DateTime.Today;
-                _calendarView.DisplayYear = today.Year;
-                _calendarView.DisplayMonth = today.Month;
-
-                // Auto-set weekend holidays for Gregorian: Saturday + Sunday
-                _calendarView.WeeklyHolidays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday };
+                if (newType == CalendarType.Gregorian)
+                {
+                    var today = DateTime.Today;
+                    _calendarView.DisplayYear = today.Year;
+                    _calendarView.DisplayMonth = today.Month;
+                }
+                else
+                {
+                    var today = PersianCalendarHelper.Today();
+                    _calendarView.DisplayYear = today.Year;
+                    _calendarView.DisplayMonth = today.Month;
+                }
             }
-            else
-            {
-                var today = PersianCalendarHelper.Today();
-                _calendarView.DisplayYear = today.Year;
-                _calendarView.DisplayMonth = today.Month;
 
-                // Restore Persian weekend: Friday only
-                _calendarView.WeeklyHolidays = new[] { DayOfWeek.Friday };
-            }
+            // Auto-set weekend holidays based on the new calendar.
+            _calendarView.WeeklyHolidays = newType == CalendarType.Gregorian
+                ? new[] { DayOfWeek.Saturday, DayOfWeek.Sunday }
+                : new[] { DayOfWeek.Friday };
         }
 
         UpdateDisplayText();
     }
 
-    private void OnTimeComponentChanged(AvaloniaPropertyChangedEventArgs e)
+    /// <summary>
+    /// Resolves the previous CalendarType value to a concrete Persian/Gregorian.
+    /// Used by <see cref="OnCalendarTypeChanged"/> to know which calendar the
+    /// previously-stored SelectedDate values were in.
+    /// </summary>
+    private CalendarType ResolveOldCalendarType(object? oldValue)
+    {
+        if (oldValue is CalendarType ot && ot != CalendarType.Auto)
+            return ot;
+
+        // Auto or unknown: fall back to whatever the current culture resolves to.
+        // This is an approximation but matches the previous behaviour for Auto.
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        return culture.TwoLetterISOLanguageName is "fa" or "ps"
+            ? CalendarType.Persian
+            : CalendarType.Gregorian;
+    }
+
+    /// <summary>
+    /// Converts a PersianDate struct from one calendar system to the other.
+    /// The struct's DayOfWeek field is recomputed in the target calendar's convention
+    /// (Persian week index Sat=0..Fri=6 for Persian; .NET DayOfWeek Sun=0..Sat=6 for Gregorian).
+    /// </summary>
+    /// <remarks>
+    /// This method is defensive: if the source values are not actually valid in the
+    /// <paramref name="from"/> calendar (which can happen when 'Auto' calendar type
+    /// resolves incorrectly, or when prior state was loaded from a different calendar),
+    /// it falls back to treating them as already being in the target calendar and
+    /// merely recomputes the DayOfWeek. This prevents ArgumentOutOfRangeException
+    /// crashes when e.g. switching Persian→Gregorian with a date like (2026, 7, 31)
+    /// (Persian month 7 / Mehr only has 30 days, so PersianCalendar.ToDateTime would
+    /// reject day=31).
+    /// </remarks>
+    private static PersianDate ConvertDate(PersianDate date, CalendarType from, CalendarType to)
+    {
+        if (from == to)
+            return date;
+
+        if (from == CalendarType.Persian && to == CalendarType.Gregorian)
+        {
+            // Validate the source date is actually a valid Persian date before
+            // asking PersianCalendar to convert it. If not (e.g. day=31 in Mehr,
+            // or month outside [1,12]), the values are likely already Gregorian —
+            // fall back to identity (just recompute the DayOfWeek in .NET convention).
+            bool invalidPersian = date.Month < 1 || date.Month > 12;
+            if (!invalidPersian)
+            {
+                int persianDaysInMonth = PersianCalendarHelper.GetDaysInMonth(date.Year, date.Month);
+                invalidPersian = date.Day < 1 || date.Day > persianDaysInMonth;
+            }
+            if (invalidPersian)
+            {
+                var fallback = PersianCalendarHelper.ToGregorianDateTime(date);
+                return new PersianDate(date.Year, date.Month, date.Day, (int)fallback.DayOfWeek);
+            }
+
+            var dt = PersianCalendarHelper.ToGregorianDate(date);
+            int dow = (int)dt.DayOfWeek; // .NET: Sun=0..Sat=6
+            return new PersianDate(dt.Year, dt.Month, dt.Day, dow);
+        }
+
+        // from == Gregorian, to == Persian
+        // The struct currently holds Gregorian values; build a DateTime and convert.
+        // Validate the source date is a valid Gregorian date first.
+        try
+        {
+            var gdt = PersianCalendarHelper.ToGregorianDateTime(date);
+            return PersianCalendarHelper.ToPersianDate(gdt);
+        }
+        catch
+        {
+            // Values aren't valid Gregorian — return as-is.
+            return date;
+        }
+    }
+
+    private void OnSelectedTimeChanged(AvaloniaPropertyChangedEventArgs e)
     {
         if (_isDisposed)
             return;
 
         if (_timePickerView != null)
-        {
-            if (e.Property == HourProperty)
-                _timePickerView.Hour = Hour;
-            else if (e.Property == MinuteProperty)
-                _timePickerView.Minute = Minute;
-            else if (e.Property == SecondProperty)
-                _timePickerView.Second = Second;
-        }
+            _timePickerView.Time = SelectedTime;
 
         UpdateDisplayText();
+
+        var oldTime = (e.OldValue is TimeSpan ot) ? ot : TimeSpan.Zero;
+        var newTime = (e.NewValue is TimeSpan nt) ? nt : TimeSpan.Zero;
+        SelectedTimeChanged?.Invoke(this, new SelectedTimeChangedEventArgs(oldTime, newTime));
     }
 
     private void OnTimePickerView_TimeChanged(object? sender, EventArgs e)
@@ -1160,9 +1248,7 @@ public class ModernPersianDatePicker : TemplatedControl
             return;
 
         _isUpdatingText = true;
-        Hour = _timePickerView.Hour;
-        Minute = _timePickerView.Minute;
-        Second = _timePickerView.Second;
+        SelectedTime = _timePickerView.Time;
         _isUpdatingText = false;
 
         UpdateDisplayText();
@@ -1363,23 +1449,17 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else if (SelectedDate.HasValue)
             {
-                if (GetEffectiveCalendarType() == CalendarType.Gregorian)
-                {
-                    var loc = GetLocalization();
-                    var d = SelectedDate.Value.ToDateTime();
-                    displayText = DisplayFormat.ToLower() switch
-                    {
-                        "long" => $"{PersianCalendarHelper.GetGregorianDayName((int)d.DayOfWeek, loc)} {d.Day} {PersianCalendarHelper.GetGregorianMonthName(d.Month, loc)} {d.Year}",
-                        "month" => $"{PersianCalendarHelper.GetGregorianMonthName(d.Month, loc)} {d.Year}",
-                        _ => $"{d.Year}/{d.Month:D2}/{d.Day:D2}"
-                    };
-                }
-                else
-                {
-                    displayText = SelectedDate.Value.ToString(DisplayFormat, GetLocalization());
-                }
+                // FormatPersianDate handles both Persian and Gregorian modes and uses
+                // the localization's day/month names. In Gregorian mode it builds a
+                // DateTime directly from the struct's values (avoiding PersianCalendar,
+                // which would reject e.g. July 31st as Persian month 7 only has 30 days).
+                displayText = PersianCalendarHelper.FormatPersianDate(
+                    SelectedDate.Value, DisplayFormat, GetLocalization(), GetEffectiveCalendarType());
                 if (IsTimePickerEnabled)
-                    displayText += $" {Hour:D2}:{Minute:D2}:{Second:D2}";
+                {
+                    var st = SelectedTime;
+                    displayText += $" {st.Hours:D2}:{st.Minutes:D2}:{st.Seconds:D2}";
+                }
             }
             else
             {
@@ -1420,9 +1500,15 @@ public class ModernPersianDatePicker : TemplatedControl
                 else if (SelectedDate.HasValue)
                 {
                     var dateStr = SelectedDate.Value.ToString("short");
-                    _editableTextBox.Text = IsTimePickerEnabled
-                        ? $"{dateStr} {Hour:D2}:{Minute:D2}:{Second:D2}"
-                        : dateStr;
+                    if (IsTimePickerEnabled)
+                    {
+                        var st = SelectedTime;
+                        _editableTextBox.Text = $"{dateStr} {st.Hours:D2}:{st.Minutes:D2}:{st.Seconds:D2}";
+                    }
+                    else
+                    {
+                        _editableTextBox.Text = dateStr;
+                    }
                 }
                 else
                 {
@@ -1437,6 +1523,42 @@ public class ModernPersianDatePicker : TemplatedControl
     }
 
     // Public Methods
+
+    /// <summary>
+    /// Formats the current <see cref="SelectedDate"/> using the active calendar's
+    /// day/month names and the picker's localization. Returns an empty string when
+    /// no date is selected.
+    /// </summary>
+    /// <param name="format">"long", "short", or "month".</param>
+    public string FormatSelectedDate(string format = "long")
+    {
+        if (!SelectedDate.HasValue) return string.Empty;
+        return PersianCalendarHelper.FormatPersianDate(
+            SelectedDate.Value, format, GetLocalization(), GetEffectiveCalendarType());
+    }
+
+    /// <summary>
+    /// Formats the current <see cref="RangeStart"/> using the active calendar's
+    /// day/month names and the picker's localization.
+    /// </summary>
+    public string FormatRangeStart(string format = "short")
+    {
+        if (!RangeStart.HasValue) return string.Empty;
+        return PersianCalendarHelper.FormatPersianDate(
+            RangeStart.Value, format, GetLocalization(), GetEffectiveCalendarType());
+    }
+
+    /// <summary>
+    /// Formats the current <see cref="RangeEnd"/> using the active calendar's
+    /// day/month names and the picker's localization.
+    /// </summary>
+    public string FormatRangeEnd(string format = "short")
+    {
+        if (!RangeEnd.HasValue) return string.Empty;
+        return PersianCalendarHelper.FormatPersianDate(
+            RangeEnd.Value, format, GetLocalization(), GetEffectiveCalendarType());
+    }
+
     public void Clear()
     {
         if (_isDisposed)
@@ -1450,7 +1572,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_isDisposed)
             return;
 
-        SelectedDate = PersianCalendarHelper.Today();
+        SelectedDate = PersianCalendarHelper.TodayForCalendarType(CalendarType);
     }
 
     /// <summary>
