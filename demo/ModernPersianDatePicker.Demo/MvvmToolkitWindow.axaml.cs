@@ -30,9 +30,6 @@ public partial class MvvmToolkitWindow : Window
             RangeDatePicker.RangeStart, RangeDatePicker.RangeEnd,
             RangeDatePicker.RangeStartTime, RangeDatePicker.RangeEndTime);
 
-        RbSetToNull.Click += OnInvalidActionChanged;
-        RbSetToToday.Click += OnInvalidActionChanged;
-        RbKeep.Click += OnInvalidActionChanged;
     }
 
     private void OnInvalidActionChanged(object? sender, RoutedEventArgs e)

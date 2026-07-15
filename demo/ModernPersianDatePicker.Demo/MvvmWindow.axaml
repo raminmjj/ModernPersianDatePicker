@@ -272,15 +272,17 @@
                                  GroupName="InvalidAction"
                                  Content="Set to Null"
                                  IsChecked="True"
-                                 Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).InvalidAction}"
+                                 Click="OnInvalidActionChanged"
                                  Tag="SetToNull"/>
                     <RadioButton x:Name="RbSetToToday"
                                  GroupName="InvalidAction"
                                  Content="Set to Today"
+                                 Click="OnInvalidActionChanged"
                                  Tag="SetToToday"/>
                     <RadioButton x:Name="RbKeep"
                                  GroupName="InvalidAction"
                                  Content="Keep"
+                                 Click="OnInvalidActionChanged"
                                  Tag="Keep"/>
                 </StackPanel>
             </StackPanel>
