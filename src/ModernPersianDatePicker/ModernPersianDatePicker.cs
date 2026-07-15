@@ -154,6 +154,7 @@ public class ModernPersianDatePicker : TemplatedControl
 
     // Private fields
     private Popup? _popup;
+    private Control? _popupContent;
     private ToggleButton? _toggleButton;
     private TextBlock? _displayTextBlock;
     private TextBox? _editableTextBox;
@@ -380,6 +381,8 @@ public class ModernPersianDatePicker : TemplatedControl
             _toggleButton.Click -= OnToggleButton_Click;
         if (_popup != null)
             _popup.Closed -= OnPopup_Closed;
+        if (_popupContent != null)
+            _popupContent.PointerWheelChanged -= OnPopupContentPointerWheelChanged;
 
         if (_calendarView != null)
         {
@@ -409,6 +412,16 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_popup != null)
         {
             _popup.Closed += OnPopup_Closed;
+
+            // Attach a wheel-event handler to the popup's content root (the Border).
+            // This catches ALL wheel events within the popup — from CalendarView (month
+            // navigation), from TimePickerView TextBoxes (time adjustment), and from
+            // empty space. CalendarView and TimePickerView handlers run FIRST (as
+            // children, during bubbling), so this only prevents unhandled events from
+            // reaching the main window's ScrollViewer.
+            _popupContent = _popup.Child;
+            if (_popupContent != null)
+                _popupContent.PointerWheelChanged += OnPopupContentPointerWheelChanged;
         }
 
         // Add preview click handler to display text
@@ -1264,6 +1277,18 @@ public class ModernPersianDatePicker : TemplatedControl
         else
             OpenPopup();
 
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Handles wheel events at the popup content root level. Marks the event as
+    /// handled so it doesn't propagate to the main window (which would scroll its
+    /// ScrollViewer). CalendarView and TimePickerView handle their own wheel events
+    /// first (their handlers run before this one during child→parent bubbling), so
+    /// this only catches events from empty space / padding areas.
+    /// </summary>
+    private void OnPopupContentPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    {
         e.Handled = true;
     }
 
