@@ -432,7 +432,7 @@
         </Border>
 
         <!-- Information -->
-        <Border Grid.Row="12"
+        <Border Grid.Row="11"
                 Background="{DynamicResource CardBackgroundBrush}"
                 CornerRadius="8"
                 Padding="16"

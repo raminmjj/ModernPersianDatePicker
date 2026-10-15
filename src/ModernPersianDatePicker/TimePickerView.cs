@@ -154,7 +154,7 @@ public class TimePickerView : TemplatedControl
     private void OnSecondUp_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, secondsDelta: 1, secondsMod: 60);
     private void OnSecondDown_Click(object? sender, RoutedEventArgs e) => Time = WrapComponent(Time, secondsDelta: -1, secondsMod: 60);
 
-    private void OnBoxLostFocus(object? sender, RoutedEventArgs e)
+    private void OnBoxLostFocus(object? sender, FocusChangedEventArgs e)
     {
         if (_isUpdatingText) return;
 

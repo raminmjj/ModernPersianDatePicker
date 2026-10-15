@@ -482,7 +482,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_editableTextBox != null)
         {
             var loc = GetLocalization();
-            _editableTextBox.Watermark = loc.SelectDateLabel;
+            _editableTextBox.PlaceholderText = loc.SelectDateLabel;
         }
 
         UpdateDisplayText();
@@ -506,7 +506,7 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
-    private void OnEditableText_LostFocus(object? sender, RoutedEventArgs e)
+    private void OnEditableText_LostFocus(object? sender, FocusChangedEventArgs e)
     {
         if (_editableTextBox != null)
         {
@@ -781,7 +781,7 @@ public class ModernPersianDatePicker : TemplatedControl
         if (_editableTextBox != null)
         {
             var loc = GetLocalization();
-            _editableTextBox.Watermark = loc.SelectDateLabel;
+            _editableTextBox.PlaceholderText = loc.SelectDateLabel;
         }
 
         UpdateDisplayText();
