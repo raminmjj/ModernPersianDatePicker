@@ -8,6 +8,7 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
+![NuGet](https://img.shields.io/badge/NuGet-2.1.12-blue)
 ![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -53,8 +54,24 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker
+dotnet add package ModernPersianDatePicker --version 2.1.12
 ```
+
+## What's New in 2.1.12
+
+- **`HasInvalidInput`** - with `InvalidValueAction="Keep"`, an invalid or out-of-range typed date
+  keeps the text and the previous date **and reports it**, so the application never saves the old
+  date as what the user typed. `CommitText()` parses the box on demand.
+- **An empty box means "no date"** under `Keep` and `SetToNull`. *Behaviour change:* `Keep` used to
+  keep the previous date, so a cleared box could not clear the value. `SetToToday` is unchanged.
+- **Persian and Arabic-Indic digits** (`۱۴۰۴/۰۱/۱۵`, `١٤٠٤/٠١/١٥`) are accepted when typing.
+- **`SelectedDateTime`** (`DateTime?`, two-way) - the selected date independent of the calendar.
+- **Runtime language switch** - `ModernPersianDatePicker.NotifyCultureChanged()` /
+  `RefreshCalendar()` convert the held dates when an `Auto` picker's culture changes, and switching
+  `CalendarType` now converts from the calendar the values are actually in.
+
+See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
+[Editable Mode](#editable-mode).
 
 ## Quick Start
 
@@ -573,6 +590,9 @@ dotnet test
 - [x] Calendar-aware date formatting (`FormatPersianDate` / `FormatSelectedDate` / `ToString(format, loc, calendarType)`)
 - [x] Automatic date conversion when switching `CalendarType` (Persian ↔ Gregorian)
 - [x] Calendar-aware "Today" button and initialization (`TodayForCalendarType`)
+- [x] Invalid typed dates reported, never silently replaced (`HasInvalidInput`, `CommitText`)
+- [x] Persian / Arabic-Indic digits in typed dates
+- [x] Calendar-neutral `SelectedDateTime` and runtime culture switching (`NotifyCultureChanged`)
 - [x] Custom themes
 - [x] More localization options (Arabic, Kurdish + custom provider)
 - [x] Gregorian calendar mode
