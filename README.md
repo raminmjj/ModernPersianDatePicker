@@ -17,10 +17,11 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **Full Persian Calendar Support** - Accurate Jalali/Shamsi date calculations with leap year support
 - ✅ **RTL & LTR Layouts** - Right-to-left for Persian, Left-to-right for English
 - ✅ **Multi-Language Support** - Farsi, English, Arabic, Kurdish + custom via `ICalendarLocalization`
-- ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture
+- ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture (follows a runtime language switch via `NotifyCultureChanged()`)
+- ✅ **Calendar-Neutral Binding** - `SelectedDateTime` (`DateTime?`) keeps the same day whatever the calendar
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
 - ✅ **Mouse Scroll Navigation** - Scroll through months with mouse wheel when calendar is open
-- ✅ **Editable Mode** - Type dates manually with validation
+- ✅ **Editable Mode** - Type dates manually with validation, in ASCII, Persian (۰-۹) or Arabic-Indic (٠-٩) digits; an invalid entry can be kept and reported (`HasInvalidInput`) instead of silently replaced
 - ✅ **Month/Year Selection** - Quick dropdown selectors for month and year
 - ✅ **Today Button** - Quick access to current date
 - ✅ **Time Picker** - Optional Hour/Minute/Second spinners exposed as a single `SelectedTime` (`TimeSpan`)
@@ -141,7 +142,9 @@ dotnet add package ModernPersianDatePicker
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `SelectedDate` | `PersianDate?` | `null` | The selected Persian date |
+| `SelectedDate` | `PersianDate?` | `null` | The selected date, as Year/Month/Day in the active calendar |
+| `SelectedDateTime` | `DateTime?` | `null` | The selected date, calendar-neutral (two-way by default) - bind this to store real dates |
+| `HasInvalidInput` | `bool` (read-only) | `false` | The typed text is not a valid date and `InvalidValueAction` is `Keep` |
 | `DisplayFormat` | `string` | `"long"` | Date display format (`"long"`, `"short"`, `"month"`) |
 | `Language` | `CalendarLanguage` | `Farsi` | Calendar language (Farsi, English, Arabic, Kurdish) |
 | `CalendarType` | `CalendarType` | `Auto` | Calendar system (Auto, Persian, Gregorian) |
@@ -216,6 +219,15 @@ datePicker.RangeTimeChanged += (sender, e) =>
 };
 ```
 
+## Methods
+
+| Method | Description |
+|--------|-------------|
+| `CommitText()` | Parses the editable box's current text now, as Enter or losing focus would. Call it before a save that does not move focus (e.g. a keyboard shortcut). |
+| `RefreshCalendar()` | In `Auto` mode, re-reads the culture's calendar and, if it changed, converts the held dates into it (the same day, new numbers). |
+| `ModernPersianDatePicker.NotifyCultureChanged()` | *Static.* Tells every loaded picker that `CultureInfo.CurrentUICulture` changed - call it on the UI thread right after switching the language. |
+| `FormatSelectedDate(format)` / `FormatRangeStart(format)` / `FormatRangeEnd(format)` | Calendar-aware formatted strings (see [formatting helpers](#modernpersiandatepicker-formatting-helpers)). |
+
 ## Keyboard & Mouse Navigation
 
 When the calendar is open, use these keys and mouse actions:
@@ -245,7 +257,10 @@ When `IsEditable="True"`, users can type dates manually:
 1404-10-19    ✓ Dash separator
 1404_10_20    ✓ Underscore separator
 04/10/21      ✓ 2-digit year (→ 1404)
+۱۴۰۴/۱۰/۲۲    ✓ Persian digits (and Arabic-Indic ٠-٩)
 ```
+
+An **empty** box means "no date" (`SelectedDate = null`), except under `SetToToday`.
 
 ### Invalid Value Actions
 
@@ -256,9 +271,23 @@ InvalidValueAction="SetToNull"
 // Set to today if invalid
 InvalidValueAction="SetToToday"
 
-// Keep current value if invalid
+// Keep the typed text and the current value, and report it
 InvalidValueAction="Keep"
 ```
+
+With `Keep`, an invalid entry leaves `SelectedDate` unchanged and sets
+`HasInvalidInput` to `true` until the next valid or empty entry. An application that
+must never save a date the user did not enter binds `HasInvalidInput` and refuses to
+save while it is set - otherwise the OLD date would be saved under the mistyped text:
+
+```xml
+<persian:ModernPersianDatePicker IsEditable="True" InvalidValueAction="Keep"
+                                 SelectedDateTime="{Binding DueDate}"
+                                 HasInvalidInput="{Binding DueDateIsInvalid, Mode=OneWayToSource}" />
+```
+
+Typed text is parsed on Enter and when the box loses focus. When a save can happen
+without either (a keyboard shortcut), call `picker.CommitText()` first.
 
 ## Localization
 
@@ -381,10 +410,31 @@ datePicker.DateRangeSelected += (_, e) =>
     FlowDirection="LeftToRight" />
 ```
 
+## Real Dates and Culture Switches
+
+`SelectedDate` holds Year/Month/Day **in the active calendar**: the same struct means a
+different day in Persian and in Gregorian mode. Applications that store dates should bind
+`SelectedDateTime` (`DateTime?`, the date part) - it never changes meaning, and switching
+`CalendarType` converts `SelectedDate` while `SelectedDateTime` stays the same day.
+
+In `CalendarType="Auto"` mode the calendar follows `CultureInfo.CurrentUICulture`.
+.NET raises no event when that changes, so an application that switches language at
+runtime tells the pickers right after setting the culture:
+
+```csharp
+CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+ModernPersianDatePicker.NotifyCultureChanged();   // every loaded picker converts its date
+```
+
+A picker that was not loaded at the time catches up when it loads; `picker.RefreshCalendar()`
+does the same for one picker.
+
 ## Helper Classes
 
 ### `PersianCalendarHelper`
-Utility class for Persian date operations:
+Utility class for Persian date operations. (To read the picker's value as a real date,
+bind `SelectedDateTime` instead of converting `SelectedDate` yourself - see
+[Real Dates and Culture Switches](#real-dates-and-culture-switches).)
 
 ```csharp
 // Convert Gregorian to Persian

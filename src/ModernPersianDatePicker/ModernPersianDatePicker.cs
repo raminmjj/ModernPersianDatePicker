@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
@@ -144,6 +145,31 @@ public class ModernPersianDatePicker : TemplatedControl
     public static readonly StyledProperty<CalendarType> CalendarTypeProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, CalendarType>(nameof(CalendarType));
 
+    /// <summary>
+    /// The selected date as a calendar-neutral <see cref="DateTime"/> (the date part;
+    /// <see cref="DateTimeKind.Unspecified"/>), kept in sync with <see cref="SelectedDate"/>.
+    /// Bind this instead of <see cref="SelectedDate"/> when the application stores real
+    /// dates: <see cref="SelectedDate"/> holds Year/Month/Day in whichever calendar is
+    /// active, so its numbers change meaning when the calendar (or, in
+    /// <see cref="CalendarType.Auto"/> mode, the culture) changes. The time of day of a
+    /// value set from outside is not interpreted; use <see cref="SelectedTime"/> for it.
+    /// </summary>
+    public static readonly StyledProperty<DateTime?> SelectedDateTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, DateTime?>(
+            nameof(SelectedDateTime), defaultBindingMode: BindingMode.TwoWay);
+
+    /// <summary>
+    /// True while the editable text box holds text that is not a valid date (or is
+    /// outside <see cref="MinDate"/>/<see cref="MaxDate"/>) and
+    /// <see cref="InvalidValueAction"/> is <see cref="InvalidValueAction.Keep"/>:
+    /// the text stays as typed and <see cref="SelectedDate"/> is NOT changed, so the
+    /// application must not treat the old date as what the user entered. Reset by the
+    /// next valid or empty entry, or when <see cref="SelectedDate"/> changes.
+    /// </summary>
+    public static readonly DirectProperty<ModernPersianDatePicker, bool> HasInvalidInputProperty =
+        AvaloniaProperty.RegisterDirect<ModernPersianDatePicker, bool>(
+            nameof(HasInvalidInput), o => o.HasInvalidInput);
+
     // Events
     public event EventHandler<SelectedDateChangedEventArgs>? SelectedDateChanged;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
@@ -164,6 +190,16 @@ public class ModernPersianDatePicker : TemplatedControl
     private bool _isDisposed;
     private bool _isUpdatingText;
     private bool _hasThemeOverrides;
+    private bool _hasInvalidInput;
+    private bool _syncingDateTime;
+
+    // The concrete calendar (Persian or Gregorian) that SelectedDate / RangeStart /
+    // RangeEnd are currently expressed in. In Auto mode it is the culture's calendar at
+    // the moment the values were last converted, so a later culture switch can convert
+    // them (see RefreshCalendar).
+    private CalendarType _valuesCalendar;
+
+    private static event EventHandler? CultureChangedRequested;
 
     // Constructors
     static ModernPersianDatePicker()
@@ -183,12 +219,15 @@ public class ModernPersianDatePicker : TemplatedControl
         IsTimePickerEnabledProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnTimePickerEnabledChanged(e));
         SelectedTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedTimeChanged(e));
         CalendarTypeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnCalendarTypeChanged(e));
+        SelectedDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateTimeChanged(e));
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
     }
 
     public ModernPersianDatePicker()
     {
+        _valuesCalendar = GetEffectiveCalendarType();
+
         // Resolve the initial theme (system or explicit) for this instance.
         ApplyTheme();
         UpdateDisplayText();
@@ -200,6 +239,59 @@ public class ModernPersianDatePicker : TemplatedControl
         get => GetValue(SelectedDateProperty);
         set => SetValue(SelectedDateProperty, value);
     }
+
+    /// <inheritdoc cref="SelectedDateTimeProperty"/>
+    public DateTime? SelectedDateTime
+    {
+        get => GetValue(SelectedDateTimeProperty);
+        set => SetValue(SelectedDateTimeProperty, value);
+    }
+
+    /// <inheritdoc cref="HasInvalidInputProperty"/>
+    public bool HasInvalidInput
+    {
+        get => _hasInvalidInput;
+        private set => SetAndRaise(HasInvalidInputProperty, ref _hasInvalidInput, value);
+    }
+
+    /// <summary>
+    /// Parses the editable text box's current text now, exactly as Enter or losing focus
+    /// would. Call it before saving when the save can be triggered without moving focus
+    /// (e.g. a keyboard shortcut), so a just-typed date is not missed.
+    /// </summary>
+    public void CommitText()
+    {
+        if (_editableTextBox != null)
+            ValidateAndParseInput(_editableTextBox.Text);
+    }
+
+    /// <summary>Parses <paramref name="text"/> as if it had been typed and committed.</summary>
+    internal void CommitText(string? text) => ValidateAndParseInput(text);
+
+    /// <summary>
+    /// Re-resolves the effective calendar (relevant in <see cref="CalendarType.Auto"/>
+    /// mode, which follows <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>)
+    /// and, when it changed, converts <see cref="SelectedDate"/>, <see cref="RangeStart"/>
+    /// and <see cref="RangeEnd"/> into it - the same day, new numbers - and re-renders.
+    /// <see cref="SelectedDateTime"/> does not change. Every loaded picker does this when
+    /// <see cref="NotifyCultureChanged"/> is called, and a picker does it when it loads.
+    /// </summary>
+    public void RefreshCalendar()
+    {
+        if (GetEffectiveCalendarType() != _valuesCalendar)
+            ApplyEffectiveCalendar();
+    }
+
+    /// <summary>
+    /// Tells every loaded picker that the application changed
+    /// <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>. .NET raises no event
+    /// for that, so an application that switches language at runtime calls this right after
+    /// setting the culture; pickers in <see cref="CalendarType.Auto"/> mode then switch
+    /// calendar without changing the dates they hold. Call it on the UI thread.
+    /// </summary>
+    public static void NotifyCultureChanged() => CultureChangedRequested?.Invoke(null, EventArgs.Empty);
+
+    private void OnCultureChangedRequested(object? sender, EventArgs e) => RefreshCalendar();
 
     public string DisplayFormat
     {
@@ -518,14 +610,13 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         if (string.IsNullOrWhiteSpace(input))
         {
-            if (InvalidValueAction == InvalidValueAction.SetToToday)
-            {
-                SelectedDate = PersianCalendarHelper.TodayForCalendarType(CalendarType);
-            }
-            else if (InvalidValueAction == InvalidValueAction.SetToNull)
-            {
-                SelectedDate = null;
-            }
+            // An empty box is not an invalid value: it means "no date" - except under
+            // SetToToday, whose contract is "never empty". (Keep used to keep the old
+            // date here, so a cleared box could not clear the value.)
+            SelectedDate = InvalidValueAction == InvalidValueAction.SetToToday
+                ? PersianCalendarHelper.TodayForCalendarType(CalendarType)
+                : null;
+            HasInvalidInput = false;
             return;
         }
 
@@ -546,6 +637,9 @@ public class ModernPersianDatePicker : TemplatedControl
             }
 
             SelectedDate = parsedDate;
+            // Also when the date did not change (re-typing the same date after an
+            // invalid entry raises no SelectedDate change).
+            HasInvalidInput = false;
         }
         else
         {
@@ -564,7 +658,9 @@ public class ModernPersianDatePicker : TemplatedControl
                 SelectedDate = null;
                 break;
             case InvalidValueAction.Keep:
-                // Keep the current selected date (don't change)
+                // Keep the typed text and the current selected date - and say so: the
+                // application must not take the old date as what the user entered.
+                HasInvalidInput = true;
                 break;
         }
     }
@@ -574,7 +670,7 @@ public class ModernPersianDatePicker : TemplatedControl
         try
         {
             // Split date and time parts (time is optional)
-            var dateTimeParts = input.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var dateTimeParts = NormalizeDigits(input).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var datePart = dateTimeParts[0];
 
             // Normalize separators
@@ -697,6 +793,7 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         base.OnUnloaded(e);
         _isDisposed = true;
+        CultureChangedRequested -= OnCultureChangedRequested;
 
         // Clean up event handlers
         if (_toggleButton != null)
@@ -725,6 +822,11 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         base.OnLoaded(e);
         _isDisposed = false;
+
+        CultureChangedRequested -= OnCultureChangedRequested;
+        CultureChangedRequested += OnCultureChangedRequested;
+        // The culture may have changed while this picker was not loaded.
+        RefreshCalendar();
 
         // Re-attach event handlers that were detached in OnUnloaded.
         // Detach first to avoid double-attachment if OnApplyTemplate also runs.
@@ -758,6 +860,11 @@ public class ModernPersianDatePicker : TemplatedControl
     // Private Methods
     private void OnSelectedDateChanged(AvaloniaPropertyChangedEventArgs e)
     {
+        // Property state, not visuals: kept in step even while unloaded (a view model
+        // may set the date while its page is hidden).
+        HasInvalidInput = false;
+        SyncDateTimeFromSelectedDate();
+
         if (_isDisposed)
             return;
 
@@ -1094,17 +1201,23 @@ public class ModernPersianDatePicker : TemplatedControl
         RangeTimeChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnCalendarTypeChanged(AvaloniaPropertyChangedEventArgs e)
-    {
-        if (_isDisposed)
-            return;
+    private void OnCalendarTypeChanged(AvaloniaPropertyChangedEventArgs e) => ApplyEffectiveCalendar();
 
-        // Resolve old and new calendar types to concrete Persian/Gregorian.
-        // 'Auto' is treated as whatever GetEffectiveCalendarType() resolves to NOW
-        // (i.e. the new value) — for the old value, we approximate Auto the same way
-        // since we don't have a per-instance snapshot of the previous culture.
+    /// <summary>
+    /// Converts the held values from the calendar they are expressed in
+    /// (<see cref="_valuesCalendar"/>) to the current effective calendar and re-lays out.
+    /// Used by a <see cref="CalendarType"/> change and by <see cref="RefreshCalendar"/>.
+    /// Runs while unloaded too: the values must stay true even when nothing is shown.
+    /// </summary>
+    private void ApplyEffectiveCalendar()
+    {
+        // Resolve old and new calendar types to concrete Persian/Gregorian. The old one
+        // is the calendar the values were last expressed in (tracked per instance), so an
+        // Auto picker whose culture changed converts correctly.
         CalendarType newType = GetEffectiveCalendarType();
-        CalendarType oldType = ResolveOldCalendarType(e.OldValue);
+        CalendarType oldType = _valuesCalendar;
+        // Set first: the conversions below re-sync SelectedDateTime in the NEW calendar.
+        _valuesCalendar = newType;
 
         // Convert existing selected date(s) so the values stay semantically correct
         // after the calendar swap. Without this, picking 2026/07/31 Gregorian and
@@ -1164,22 +1277,80 @@ public class ModernPersianDatePicker : TemplatedControl
         UpdateDisplayText();
     }
 
-    /// <summary>
-    /// Resolves the previous CalendarType value to a concrete Persian/Gregorian.
-    /// Used by <see cref="OnCalendarTypeChanged"/> to know which calendar the
-    /// previously-stored SelectedDate values were in.
-    /// </summary>
-    private CalendarType ResolveOldCalendarType(object? oldValue)
-    {
-        if (oldValue is CalendarType ot && ot != CalendarType.Auto)
-            return ot;
 
-        // Auto or unknown: fall back to whatever the current culture resolves to.
-        // This is an approximation but matches the previous behaviour for Auto.
-        var culture = System.Globalization.CultureInfo.CurrentUICulture;
-        return culture.TwoLetterISOLanguageName is "fa" or "ps"
-            ? CalendarType.Persian
-            : CalendarType.Gregorian;
+    private void OnSelectedDateTimeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_syncingDateTime)
+            return;
+
+        _syncingDateTime = true;
+        try
+        {
+            SelectedDate = SelectedDateTime is DateTime value ? FromDateTime(value, _valuesCalendar) : null;
+        }
+        finally
+        {
+            _syncingDateTime = false;
+        }
+    }
+
+    private void SyncDateTimeFromSelectedDate()
+    {
+        if (_syncingDateTime)
+            return;
+
+        _syncingDateTime = true;
+        try
+        {
+            SelectedDateTime = SelectedDate is PersianDate date ? ToDateTime(date, _valuesCalendar) : null;
+        }
+        finally
+        {
+            _syncingDateTime = false;
+        }
+    }
+
+    /// <summary>The date a struct expressed in <paramref name="calendar"/> stands for; null when its values are not a valid date.</summary>
+    internal static DateTime? ToDateTime(PersianDate date, CalendarType calendar)
+    {
+        try
+        {
+            return calendar == CalendarType.Gregorian
+                ? PersianCalendarHelper.ToGregorianDateTime(date)
+                : PersianCalendarHelper.ToGregorianDate(date);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>The struct for <paramref name="value"/>'s date in <paramref name="calendar"/> (Persian: Sat=0 week index; Gregorian: .NET DayOfWeek).</summary>
+    internal static PersianDate FromDateTime(DateTime value, CalendarType calendar)
+    {
+        var day = value.Date;
+        return calendar == CalendarType.Gregorian
+            ? new PersianDate(day.Year, day.Month, day.Day, (int)day.DayOfWeek)
+            : PersianCalendarHelper.ToPersianDate(day);
+    }
+
+    /// <summary>
+    /// Replaces Persian (U+06F0..U+06F9) and Arabic-Indic (U+0660..U+0669) digits with
+    /// ASCII digits: a Persian keyboard types them, and <see cref="int.TryParse(string?, out int)"/>
+    /// does not accept them.
+    /// </summary>
+    internal static string NormalizeDigits(string input)
+    {
+        var chars = input.ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+        {
+            var c = chars[i];
+            if (c is >= '۰' and <= '۹')
+                chars[i] = (char)('0' + (c - '۰'));
+            else if (c is >= '٠' and <= '٩')
+                chars[i] = (char)('0' + (c - '٠'));
+        }
+        return new string(chars);
     }
 
     /// <summary>
