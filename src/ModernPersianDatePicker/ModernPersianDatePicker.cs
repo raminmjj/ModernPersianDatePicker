@@ -19,6 +19,13 @@ namespace ModernPersianDatePicker;
 /// </summary>
 public class ModernPersianDatePicker : TemplatedControl
 {
+    /// <summary>
+    /// The picker's look is found by THIS type, so a subclass (an application's own
+    /// date field) gets the picker's ControlTheme - and the picker's type selectors -
+    /// without overriding anything itself.
+    /// </summary>
+    protected override Type StyleKeyOverride => typeof(ModernPersianDatePicker);
+
     // Styled Properties
     public static readonly StyledProperty<PersianDate?> SelectedDateProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(SelectedDate));
@@ -166,6 +173,25 @@ public class ModernPersianDatePicker : TemplatedControl
     /// application must not treat the old date as what the user entered. Reset by the
     /// next valid or empty entry, or when <see cref="SelectedDate"/> changes.
     /// </summary>
+    /// <summary>
+    /// The calendar <see cref="SelectedDate"/>, <see cref="RangeStart"/> and
+    /// <see cref="RangeEnd"/> are expressed in right now (Persian or Gregorian -
+    /// never <see cref="CalendarType.Auto"/>): the same struct means a different day in
+    /// each. Changes when <see cref="CalendarType"/> changes, or - in Auto mode - with
+    /// the culture (<see cref="RefreshCalendar"/>). To store a date, prefer
+    /// <see cref="SelectedDateTime"/>.
+    /// </summary>
+    /// <summary>
+    /// Vertical alignment of the text in the box (the template binds it). Defaults to
+    /// <see cref="Avalonia.Layout.VerticalAlignment.Center"/> in the theme.
+    /// </summary>
+    public static readonly StyledProperty<Avalonia.Layout.VerticalAlignment> VerticalContentAlignmentProperty =
+        ContentControl.VerticalContentAlignmentProperty.AddOwner<ModernPersianDatePicker>();
+
+    public static readonly DirectProperty<ModernPersianDatePicker, CalendarType> SelectedDateCalendarProperty =
+        AvaloniaProperty.RegisterDirect<ModernPersianDatePicker, CalendarType>(
+            nameof(SelectedDateCalendar), o => o.SelectedDateCalendar);
+
     public static readonly DirectProperty<ModernPersianDatePicker, bool> HasInvalidInputProperty =
         AvaloniaProperty.RegisterDirect<ModernPersianDatePicker, bool>(
             nameof(HasInvalidInput), o => o.HasInvalidInput);
@@ -189,7 +215,7 @@ public class ModernPersianDatePicker : TemplatedControl
     private bool _isPopupOpen;
     private bool _isDisposed;
     private bool _isUpdatingText;
-    private bool _hasThemeOverrides;
+    private const double MinimumPopupWidth = 280;
     private bool _hasInvalidInput;
     private bool _syncingDateTime;
 
@@ -198,6 +224,20 @@ public class ModernPersianDatePicker : TemplatedControl
     // the moment the values were last converted, so a later culture switch can convert
     // them (see RefreshCalendar).
     private CalendarType _valuesCalendar;
+
+    /// <inheritdoc cref="VerticalContentAlignmentProperty"/>
+    public Avalonia.Layout.VerticalAlignment VerticalContentAlignment
+    {
+        get => GetValue(VerticalContentAlignmentProperty);
+        set => SetValue(VerticalContentAlignmentProperty, value);
+    }
+
+    /// <inheritdoc cref="SelectedDateCalendarProperty"/>
+    public CalendarType SelectedDateCalendar
+    {
+        get => _valuesCalendar;
+        private set => SetAndRaise(SelectedDateCalendarProperty, ref _valuesCalendar, value);
+    }
 
     private static event EventHandler? CultureChangedRequested;
 
@@ -222,11 +262,20 @@ public class ModernPersianDatePicker : TemplatedControl
         SelectedDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateTimeChanged(e));
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
+
+        // ONE focus stop: an editable picker's text box takes the focus, so the control
+        // itself is not focusable then - it used to be, NEXT to its text box (Tab and
+        // Enter stopped twice per field, and Focus() landed where typing went nowhere).
+        // Use FocusEditableText() to put the caret in the box.
+        FocusableProperty.OverrideMetadata<ModernPersianDatePicker>(
+            new StyledPropertyMetadata<bool>(
+                coerce: (o, value) => value && !((ModernPersianDatePicker)o).IsEditable));
+        IsEditableProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.CoerceValue(FocusableProperty));
     }
 
     public ModernPersianDatePicker()
     {
-        _valuesCalendar = GetEffectiveCalendarType();
+        SelectedDateCalendar = GetEffectiveCalendarType();
 
         // Resolve the initial theme (system or explicit) for this instance.
         ApplyTheme();
@@ -253,6 +302,13 @@ public class ModernPersianDatePicker : TemplatedControl
         get => _hasInvalidInput;
         private set => SetAndRaise(HasInvalidInputProperty, ref _hasInvalidInput, value);
     }
+
+    /// <summary>
+    /// Puts the caret in the editable text box (an editable picker's only focus stop);
+    /// for a picker that is not editable, focuses the picker itself.
+    /// </summary>
+    public bool FocusEditableText()
+        => IsEditable && _editableTextBox is { IsVisible: true } box ? box.Focus() : Focus();
 
     /// <summary>
     /// Parses the editable text box's current text now, exactly as Enter or losing focus
@@ -818,6 +874,15 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    protected override void OnAttachedToLogicalTree(Avalonia.LogicalTree.LogicalTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToLogicalTree(e);
+        // A forced Light / Dark resolves its colours from the tree it joined (it may
+        // re-define a key); System has nothing to resolve.
+        if (Theme != ThemeMode.System)
+            ApplyTheme();
+    }
+
     protected override void OnLoaded(RoutedEventArgs e)
     {
         base.OnLoaded(e);
@@ -1003,99 +1068,65 @@ public class ModernPersianDatePicker : TemplatedControl
         ApplyTheme();
     }
 
+    /// <summary>The colour keys of PersianDatePickerColors.xaml (every one the theme uses).</summary>
+    internal static readonly string[] ColorKeys =
+    {
+        "PersianDatePickerBackgroundBrush",
+        "PersianDatePickerBorderBrush",
+        "PersianDatePickerTextForegroundBrush",
+        "PersianDatePickerWatermarkForegroundBrush",
+        "PersianDatePickerIconForegroundBrush",
+        "PersianDatePickerAccentBrush",
+        "PersianDatePickerAccentHoverBrush",
+        "PersianDatePickerFocusBorderBrush",
+        "PersianDatePickerPopupBackgroundBrush",
+        "PersianDatePickerPopupBorderBrush",
+        "PersianDatePickerHeaderForegroundBrush",
+        "PersianDatePickerDayForegroundBrush",
+        "PersianDatePickerHolidayForegroundBrush",
+        "PersianDatePickerDayHoverBackgroundBrush",
+        "PersianDatePickerSelectedForegroundBrush",
+        "PersianDatePickerMonthYearHoverBackgroundBrush",
+        "PersianDatePickerDayFocusBackgroundBrush",
+        "PersianDatePickerSelectedFocusBorderBrush",
+        "PersianDatePickerSelectedFocusBackgroundBrush",
+    };
+
     /// <summary>
-    /// Resolves <see cref="Theme"/> into a concrete Light/Dark flag and applies colour
-    /// resource overrides on this control so that <c>DynamicResource</c> lookups
-    /// (inside the template) pick the right palette.
-    ///
-    /// For <see cref="ThemeMode.System"/> no overrides are applied — the template's
-    /// <c>DynamicResource</c> bindings resolve automatically via the active
-    /// <c>ThemeDictionaries</c> in PersianDatePickerColors.xaml.
+    /// Resolves <see cref="Theme"/>. System: no local colours - the picker follows the
+    /// application's theme variant (and its popup with it). Light / Dark: each colour key
+    /// is resolved for THAT variant - from PersianDatePickerColors.xaml, or from an
+    /// application that re-defines the key - and pinned on this picker, so its template
+    /// and its popup use it whatever the application's variant is.
     /// </summary>
+    /// <remarks>
+    /// It used to copy the Dark palette into C# hex values (a second palette to keep in
+    /// step with the XAML), and "Light" only removed them - so a Light picker in a Dark
+    /// application stayed dark. (A plain control cannot request a theme variant itself -
+    /// only Application, TopLevel and ThemeVariantScope can.)
+    /// </remarks>
     private void ApplyTheme()
     {
-        if (Theme == ThemeMode.System)
-        {
-            // Inherit the app/system theme via DynamicResource — no overrides needed.
-            ClearThemeOverrides();
-        }
-        else
-        {
-            bool isDark = Theme == ThemeMode.Dark;
-            ApplyThemeColors(isDark);
-        }
-    }
-
-    /// <summary>
-    /// Overrides the control-level resources so that all
-    /// <c>DynamicResource</c> bindings inside the template resolve to the correct
-    /// Light or Dark palette.  When <paramref name="isDark"/> is false, overrides are
-    /// removed so the default (Light) theme colours from <c>PersianDatePickerColors.xaml</c> apply.
-    /// </summary>
-    private void ApplyThemeColors(bool isDark)
-    {
-        if (isDark)
-        {
-            Resources["PersianDatePickerBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2D2D2D"));
-            Resources["PersianDatePickerBorderBrush"] = new SolidColorBrush(Color.Parse("#FF555555"));
-            Resources["PersianDatePickerTextForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFCCCCCC"));
-            Resources["PersianDatePickerWatermarkForegroundBrush"] = new SolidColorBrush(Color.Parse("#FF888888"));
-            Resources["PersianDatePickerAccentBrush"] = new SolidColorBrush(Color.Parse("#FF64B5F6"));
-            Resources["PersianDatePickerAccentHoverBrush"] = new SolidColorBrush(Color.Parse("#FF2196F3"));
-            Resources["PersianDatePickerFocusBorderBrush"] = new SolidColorBrush(Color.Parse("#FF64B5F6"));
-            Resources["PersianDatePickerPopupBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2D2D2D"));
-            Resources["PersianDatePickerPopupBorderBrush"] = new SolidColorBrush(Color.Parse("#FF555555"));
-            Resources["PersianDatePickerHeaderForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFAAAAAA"));
-            Resources["PersianDatePickerDayForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFDDDDDD"));
-            Resources["PersianDatePickerHolidayForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFEF5350"));
-            Resources["PersianDatePickerDayHoverBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
-            Resources["PersianDatePickerSelectedForegroundBrush"] = new SolidColorBrush(Color.Parse("#FFFFFFFF"));
-            Resources["PersianDatePickerMonthYearHoverBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
-            Resources["PersianDatePickerDayFocusBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF404040"));
-            Resources["PersianDatePickerSelectedFocusBorderBrush"] = new SolidColorBrush(Color.Parse("#FFFFFFFF"));
-            Resources["PersianDatePickerSelectedFocusBackgroundBrush"] = new SolidColorBrush(Color.Parse("#FF2196F3"));
-            _hasThemeOverrides = true;
-        }
-        else
-        {
-            ClearThemeOverrides();
-        }
-
-        // Reapply accent brush overrides (if set) so they aren't shadowed by the theme swap.
-        if (_hasThemeOverrides)
-            UpdateAccentResources(AccentBrush);
-    }
-
-    private void ClearThemeOverrides()
-    {
-        if (!_hasThemeOverrides)
-            return;
-
-        var keys = new[]
-        {
-            "PersianDatePickerBackgroundBrush",
-            "PersianDatePickerBorderBrush",
-            "PersianDatePickerTextForegroundBrush",
-            "PersianDatePickerWatermarkForegroundBrush",
-            "PersianDatePickerAccentBrush",
-            "PersianDatePickerAccentHoverBrush",
-            "PersianDatePickerFocusBorderBrush",
-            "PersianDatePickerPopupBackgroundBrush",
-            "PersianDatePickerPopupBorderBrush",
-            "PersianDatePickerHeaderForegroundBrush",
-            "PersianDatePickerDayForegroundBrush",
-            "PersianDatePickerHolidayForegroundBrush",
-            "PersianDatePickerDayHoverBackgroundBrush",
-            "PersianDatePickerSelectedForegroundBrush",
-            "PersianDatePickerMonthYearHoverBackgroundBrush",
-            "PersianDatePickerDayFocusBackgroundBrush",
-            "PersianDatePickerSelectedFocusBorderBrush",
-            "PersianDatePickerSelectedFocusBackgroundBrush",
-        };
-        foreach (var key in keys)
+        foreach (var key in ColorKeys)
             Resources.Remove(key);
 
-        _hasThemeOverrides = false;
+        if (Theme != ThemeMode.System)
+        {
+            var variant = Theme == ThemeMode.Dark ? ThemeVariant.Dark : ThemeVariant.Light;
+            foreach (var key in ColorKeys)
+            {
+                // From the tree (a window or an application may re-define a key); a
+                // picker not yet in a tree reaches the application directly.
+                if (this.TryFindResource(key, variant, out var value)
+                    || (Application.Current?.TryGetResource(key, variant, out value) ?? false))
+                {
+                    Resources[key] = value;
+                }
+            }
+        }
+
+        // The accent overrides the theme's accent keys (removed above).
+        UpdateAccentResources(AccentBrush);
     }
 
     // ---------- Holidays ----------
@@ -1217,7 +1248,7 @@ public class ModernPersianDatePicker : TemplatedControl
         CalendarType newType = GetEffectiveCalendarType();
         CalendarType oldType = _valuesCalendar;
         // Set first: the conversions below re-sync SelectedDateTime in the NEW calendar.
-        _valuesCalendar = newType;
+        SelectedDateCalendar = newType;
 
         // Convert existing selected date(s) so the values stay semantically correct
         // after the calendar swap. Without this, picking 2026/07/31 Gregorian and
@@ -1561,6 +1592,10 @@ public class ModernPersianDatePicker : TemplatedControl
                 _calendarView.DisplayMonth = today.Month;
             }
             _calendarView.SelectedDate = SelectedDate;
+
+            // At least as wide as the field (it used to hang off a wide field's corner).
+            if (_popup.Child is Control popupContent)
+                popupContent.MinWidth = Math.Max(MinimumPopupWidth, Bounds.Width);
 
             _popup.PlacementTarget = this;
             _popup.Placement = Avalonia.Controls.PlacementMode.Bottom;

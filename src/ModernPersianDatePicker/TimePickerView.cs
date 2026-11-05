@@ -39,6 +39,24 @@ public class TimePickerView : TemplatedControl
     static TimePickerView()
     {
         TimeProperty.Changed.AddClassHandler<TimePickerView>((x, _) => x.SyncFromValue());
+
+        // A time reads hour : minute : second, left to right, in every language. The
+        // direction is INHERITED from the container - an RTL form (Persian, Arabic)
+        // mirrored the spinners into second : minute : hour. Two locks: the instance
+        // sets it as a LOCAL value (inheritance never overrides a local value, so the
+        // parent's direction - now or later - cannot reach it; a coercion alone does not
+        // help, Avalonia does not coerce inherited values), and the coercion turns any
+        // later local value or style setter back to left-to-right.
+        FlowDirectionProperty.OverrideMetadata<TimePickerView>(
+            new StyledPropertyMetadata<Avalonia.Media.FlowDirection>(
+                Avalonia.Media.FlowDirection.LeftToRight,
+                coerce: (_, _) => Avalonia.Media.FlowDirection.LeftToRight));
+    }
+
+    public TimePickerView()
+    {
+        // Local: beats the inherited direction (see the static constructor).
+        FlowDirection = Avalonia.Media.FlowDirection.LeftToRight;
     }
 
     /// <summary>

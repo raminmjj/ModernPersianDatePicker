@@ -57,6 +57,27 @@ cd ModernPersianDatePicker
 dotnet add package ModernPersianDatePicker --version 2.1.12
 ```
 
+## Unreleased
+
+- **The time section is always left-to-right** - it used to inherit an RTL container's
+  direction and read second : minute : hour.
+- **ControlThemes**: the picker, the calendar, the time and the quick-range views are
+  ControlThemes keyed by type - an ordinary style overrides any setter, a ControlTheme
+  can be `BasedOn` them, and a subclass gets the look with nothing overridden.
+- **The layout is yours**: the text box's padding and vertical alignment are bound to the
+  picker's `Padding` / `VerticalContentAlignment` (they were fixed in the template, so
+  no style could change them, and `Padding` did nothing). The default `MinWidth="200"`
+  is gone. Focus changes the border colour only (the 2 px border made the box jump).
+- **One focus stop**: an editable picker is no longer focusable itself next to its text
+  box; `FocusEditableText()` puts the caret in the box.
+- **`Theme="Light"` in a Dark application is Light** (it stayed dark), the box and the
+  popup; the Dark palette is no longer copied into C# - every colour comes from
+  `PersianDatePickerColors.xaml` (or the application's re-definition).
+- **The calendar button** has its own theme: no grey box, an `IconForeground` icon that
+  takes the accent colour when hovered or open (Fluent drew it white - invisible on Light).
+- **The popup is at least as wide as the field.**
+- **`SelectedDateCalendar`** (read-only): the calendar `SelectedDate`'s numbers are in.
+
 ## What's New in 2.1.12
 
 - **`HasInvalidInput`** - with `InvalidValueAction="Keep"`, an invalid or out-of-range typed date
@@ -162,6 +183,9 @@ See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
 | `SelectedDate` | `PersianDate?` | `null` | The selected date, as Year/Month/Day in the active calendar |
 | `SelectedDateTime` | `DateTime?` | `null` | The selected date, calendar-neutral (two-way by default) - bind this to store real dates |
 | `HasInvalidInput` | `bool` (read-only) | `false` | The typed text is not a valid date and `InvalidValueAction` is `Keep` |
+| `SelectedDateCalendar` | `CalendarType` (read-only) | the effective calendar | The calendar `SelectedDate` / `RangeStart` / `RangeEnd` are expressed in (Persian or Gregorian, never Auto) |
+| `Padding` | `Thickness` | `12,4` | The text's padding inside the box (template-bound - a style can change it) |
+| `VerticalContentAlignment` | `VerticalAlignment` | `Center` | The text's vertical alignment inside the box |
 | `DisplayFormat` | `string` | `"long"` | Date display format (`"long"`, `"short"`, `"month"`) |
 | `Language` | `CalendarLanguage` | `Farsi` | Calendar language (Farsi, English, Arabic, Kurdish) |
 | `CalendarType` | `CalendarType` | `Auto` | Calendar system (Auto, Persian, Gregorian) |
@@ -241,6 +265,7 @@ datePicker.RangeTimeChanged += (sender, e) =>
 | Method | Description |
 |--------|-------------|
 | `CommitText()` | Parses the editable box's current text now, as Enter or losing focus would. Call it before a save that does not move focus (e.g. a keyboard shortcut). |
+| `FocusEditableText()` | Puts the caret in the editable text box - an editable picker's only focus stop (a picker that is not editable focuses itself). |
 | `RefreshCalendar()` | In `Auto` mode, re-reads the culture's calendar and, if it changed, converts the held dates into it (the same day, new numbers). |
 | `ModernPersianDatePicker.NotifyCultureChanged()` | *Static.* Tells every loaded picker that `CultureInfo.CurrentUICulture` changed - call it on the UI thread right after switching the language. |
 | `FormatSelectedDate(format)` / `FormatRangeStart(format)` / `FormatRangeEnd(format)` | Calendar-aware formatted strings (see [formatting helpers](#modernpersiandatepicker-formatting-helpers)). |
@@ -337,9 +362,66 @@ datePicker.LocalizationProvider = new MyLocalization();
 <persian:ModernPersianDatePicker Theme="Dark" />
 ```
 
+`Theme="Light"` / `"Dark"` win over the application's variant - the box AND its popup.
+`System` (the default) follows the application.
+
 ### Custom Accent
 ```xml
 <persian:ModernPersianDatePicker AccentBrush="#FF4CAF50" />
+```
+
+### Your Own Colours
+Every colour is a named resource (`PersianDatePicker...Brush`, see
+`Themes/PersianDatePickerColors.xaml`) looked up with `DynamicResource`. Define the
+same key in your application's resources and yours wins:
+
+```xml
+<Application.Resources>
+    <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF6366F1"/>
+</Application.Resources>
+```
+
+The keys: `Background`, `Border`, `TextForeground`, `WatermarkForeground`,
+`IconForeground` (the calendar button), `Accent`, `AccentHover`, `FocusBorder`,
+`PopupBackground`, `PopupBorder`, `HeaderForeground`, `DayForeground`,
+`HolidayForeground`, `DayHoverBackground`, `SelectedForeground`,
+`MonthYearHoverBackground`, `DayFocusBackground`, `SelectedFocusBorder`,
+`SelectedFocusBackground` - each `PersianDatePicker<name>Brush`.
+
+### Your Own Size and Shape
+The controls' looks are **ControlThemes** keyed by type, so an ordinary style
+overrides any of their setters - no template copy needed:
+
+```xml
+<Style Selector="persian|ModernPersianDatePicker">
+    <Setter Property="Padding" Value="14,12"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="MinHeight" Value="0"/>
+</Style>
+```
+
+The text box's layout is template-bound to the picker (`Padding`,
+`VerticalContentAlignment`), focus changes the border colour only (1 px, no jump),
+and the calendar button has its own theme (`PersianDatePickerToggleButtonTheme`).
+
+### Your Own Date Field (a Subclass)
+A subclass gets the picker's theme and its type selectors with nothing overridden
+(the picker's style key is `ModernPersianDatePicker`):
+
+```csharp
+public class AppDateField : ModernPersianDatePicker
+{
+    public AppDateField() { IsEditable = true; InvalidValueAction = InvalidValueAction.Keep; }
+}
+```
+
+To build on the look instead, base a ControlTheme on it:
+
+```xml
+<ControlTheme x:Key="MyPicker" TargetType="persian:ModernPersianDatePicker"
+              BasedOn="{StaticResource {x:Type persian:ModernPersianDatePicker}}">
+    <Setter Property="CornerRadius" Value="10"/>
+</ControlTheme>
 ```
 
 ## Holidays
@@ -369,6 +451,10 @@ datePicker.Holidays = new[]
 ### Single-date mode
 Set `IsTimePickerEnabled="True"` to display Hour/Minute/Second spinners below the calendar.
 The selected time-of-day is exposed as `SelectedTime` (`TimeSpan`, range `[00:00:00, 23:59:59]`).
+
+The time section is **always left-to-right** (hour : minute : second), in every language:
+it does not inherit the direction of an RTL container, and a later change of that
+direction (or a value set on it) does not flip it.
 
 ```xml
 <persian:ModernPersianDatePicker IsTimePickerEnabled="True" />

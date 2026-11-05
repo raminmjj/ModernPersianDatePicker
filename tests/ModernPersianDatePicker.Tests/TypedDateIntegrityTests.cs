@@ -301,6 +301,23 @@ public class TypedDateIntegrityTests
     }
 
     [Fact]
+    public void SelectedDateCalendar_SaysWhichCalendarTheNumbersAreIn()
+    {
+        var picker = new ModernPersianDatePicker { CalendarType = CalendarType.Persian };
+        Assert.Equal(CalendarType.Persian, picker.SelectedDateCalendar);
+
+        picker.CalendarType = CalendarType.Gregorian;
+        Assert.Equal(CalendarType.Gregorian, picker.SelectedDateCalendar);
+
+        WithCulture("fa-IR", () =>
+        {
+            var auto = new ModernPersianDatePicker { CalendarType = CalendarType.Auto };
+            Assert.Equal(CalendarType.Persian, auto.SelectedDateCalendar);   // never Auto
+            return 0;
+        });
+    }
+
+    [Fact]
     public void NotifyCultureChanged_WithNoLoadedPicker_DoesNothing()
         => ModernPersianDatePicker.NotifyCultureChanged();
 }
