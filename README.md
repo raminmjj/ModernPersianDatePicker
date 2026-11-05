@@ -8,7 +8,7 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
-![NuGet](https://img.shields.io/badge/NuGet-2.1.12-blue)
+![NuGet](https://img.shields.io/badge/NuGet-2.2.12-blue)
 ![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -54,10 +54,10 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker --version 2.1.12
+dotnet add package ModernPersianDatePicker --version 2.2.12
 ```
 
-## Unreleased
+## What's New in 2.2.12
 
 - **The time section is always left-to-right** - it used to inherit an RTL container's
   direction and read second : minute : hour.
@@ -77,6 +77,17 @@ dotnet add package ModernPersianDatePicker --version 2.1.12
   takes the accent colour when hovered or open (Fluent drew it white - invisible on Light).
 - **The popup is at least as wide as the field.**
 - **`SelectedDateCalendar`** (read-only): the calendar `SelectedDate`'s numbers are in.
+
+### Upgrading from 2.1.x
+- A picker no longer has a **minimum width of 200**: give it a `Width` / `MinWidth` (or a
+  stretching container) where it relied on that.
+- **Focus no longer thickens the border** to 2 px (only its colour changes).
+- An **editable** picker is no longer focusable itself: call `FocusEditableText()`
+  instead of `Focus()` to put the caret in it.
+- A **re-templated** picker: the looks are now ControlThemes. Your own `Style` setters still
+  win; a full replacement is a ControlTheme keyed by the type (or `BasedOn` it).
+- An application that re-defines the colour keys should add the new
+  `PersianDatePickerIconForegroundBrush` (the calendar button's icon).
 
 ## What's New in 2.1.12
 
@@ -679,6 +690,9 @@ dotnet test
 - [x] Invalid typed dates reported, never silently replaced (`HasInvalidInput`, `CommitText`)
 - [x] Persian / Arabic-Indic digits in typed dates
 - [x] Calendar-neutral `SelectedDateTime` and runtime culture switching (`NotifyCultureChanged`)
+- [x] Always left-to-right time section, in every language
+- [x] ControlThemes with template-bound layout (`Padding`, `VerticalContentAlignment`)
+- [x] Forced Light / Dark from the XAML palette, one focus stop, popup as wide as the field
 - [x] Custom themes
 - [x] More localization options (Arabic, Kurdish + custom provider)
 - [x] Gregorian calendar mode
