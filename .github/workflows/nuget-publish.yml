@@ -36,8 +36,14 @@ jobs:
             echo "VERSION=$TAG" >> $GITHUB_OUTPUT
           fi
 
+      - name: Clean
+        run: dotnet clean
+        
       - name: Restore
-        run: dotnet restore src/ModernPersianDatePicker
+        run: |
+          rm -rf src/ModernPersianDatePicker/obj
+          rm -rf tests/ModernPersianDatePicker.Tests/obj
+          dotnet restore
 
       - name: Build
         run: dotnet build src/ModernPersianDatePicker -c Release --no-restore
