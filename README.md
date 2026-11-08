@@ -57,6 +57,17 @@ cd ModernPersianDatePicker
 dotnet add package ModernPersianDatePicker --version 2.2.12
 ```
 
+## Unreleased
+
+- **An editable picker shows your `Watermark`.** It always showed the localized
+  "select a date" label instead, so a custom hint (e.g. `yyyy/MM/dd`) worked only
+  in display mode. Left at its default, the watermark is still the localized label,
+  and a later `Watermark` change or a language switch keeps your text.
+- **`Clear()` empties a field holding invalid text.** When the date was already
+  empty (text that is not a date typed into an empty field), `Clear()` changed
+  nothing: the text and `HasInvalidInput` stayed. It now empties the text box and
+  resets the flag too.
+
 ## What's New in 2.2.12
 
 - **The time section is always left-to-right** - it used to inherit an RTL container's
@@ -204,7 +215,7 @@ See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
 | `InvalidValueAction` | `InvalidValueAction` | `SetToNull` | Action for invalid input |
 | `MinDate` | `PersianDate?` | `null` | Minimum selectable date |
 | `MaxDate` | `PersianDate?` | `null` | Maximum selectable date |
-| `Watermark` | `string` | `"Select date..."` | Placeholder text |
+| `Watermark` | `string` | `"Select date..."` | Placeholder text - in display AND editable mode. Left at the default, the field shows the localized "select a date" label of its language |
 | `Theme` | `ThemeMode` | `System` | Per-instance theme (System, Light, Dark) |
 | `AccentBrush` | `IBrush?` | `null` | Override accent color for selection and focus |
 | `HolidayBrush` | `IBrush?` | `null` | Override color for holiday day numbers |
@@ -275,6 +286,7 @@ datePicker.RangeTimeChanged += (sender, e) =>
 
 | Method | Description |
 |--------|-------------|
+| `Clear()` | Empties the field: no date, no typed text, no `HasInvalidInput` - also when the date was already empty and only invalid text was typed (a "Clear filters" button). |
 | `CommitText()` | Parses the editable box's current text now, as Enter or losing focus would. Call it before a save that does not move focus (e.g. a keyboard shortcut). |
 | `FocusEditableText()` | Puts the caret in the editable text box - an editable picker's only focus stop (a picker that is not editable focuses itself). |
 | `RefreshCalendar()` | In `Auto` mode, re-reads the culture's calendar and, if it changed, converts the held dates into it (the same day, new numbers). |

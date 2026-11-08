@@ -52,7 +52,13 @@ public class ModernPersianDatePicker : TemplatedControl
         AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(MaxDate));
 
     public static readonly StyledProperty<string> WatermarkProperty =
-        AvaloniaProperty.Register<ModernPersianDatePicker, string>(nameof(Watermark), "Select date...");
+        AvaloniaProperty.Register<ModernPersianDatePicker, string>(nameof(Watermark), DefaultWatermark);
+
+    /// <summary>
+    /// <see cref="Watermark"/>'s default: "no watermark of the application's own" -
+    /// the field then shows the localized "select a date" label of its language.
+    /// </summary>
+    private const string DefaultWatermark = "Select date...";
 
     /// <summary>
     /// Accent brush used for the selected day background, today border and focus border.
@@ -262,6 +268,7 @@ public class ModernPersianDatePicker : TemplatedControl
         SelectedDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateTimeChanged(e));
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
+        WatermarkProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.ApplyWatermark());
 
         // ONE focus stop: an editable picker's text box takes the focus, so the control
         // itself is not focusable then - it used to be, NEXT to its text box (Tab and
@@ -629,8 +636,7 @@ public class ModernPersianDatePicker : TemplatedControl
         // Set initial watermark on editable TextBox
         if (_editableTextBox != null)
         {
-            var loc = GetLocalization();
-            _editableTextBox.PlaceholderText = loc.SelectDateLabel;
+            _editableTextBox.PlaceholderText = EffectiveWatermark();
         }
 
         UpdateDisplayText();
@@ -952,8 +958,7 @@ public class ModernPersianDatePicker : TemplatedControl
         // Update editable TextBox watermark to reflect current language
         if (_editableTextBox != null)
         {
-            var loc = GetLocalization();
-            _editableTextBox.PlaceholderText = loc.SelectDateLabel;
+            _editableTextBox.PlaceholderText = EffectiveWatermark();
         }
 
         UpdateDisplayText();
@@ -1640,6 +1645,27 @@ public class ModernPersianDatePicker : TemplatedControl
         }
     }
 
+    /// <summary>
+    /// The watermark the field shows: the application's own <see cref="Watermark"/>,
+    /// or - when none was set - the localized "select a date" label. The editable
+    /// text box used to show the localized label ALWAYS, so a custom watermark
+    /// worked only in display mode.
+    /// </summary>
+    private string EffectiveWatermark()
+        => string.IsNullOrEmpty(Watermark) || Watermark == DefaultWatermark
+            ? GetLocalization().SelectDateLabel
+            : Watermark;
+
+    /// <summary>A new <see cref="Watermark"/> reaches the editable box and the display text.</summary>
+    private void ApplyWatermark()
+    {
+        if (_isDisposed)
+            return;
+        if (_editableTextBox != null)
+            _editableTextBox.PlaceholderText = EffectiveWatermark();
+        UpdateDisplayText();
+    }
+
     private void UpdateDisplayText()
     {
         if (_isDisposed)
@@ -1672,10 +1698,7 @@ public class ModernPersianDatePicker : TemplatedControl
                 }
                 else
                 {
-                    var loc = GetLocalization();
-                    displayText = string.IsNullOrEmpty(Watermark) || Watermark == "Select date..."
-                        ? loc.SelectDateLabel
-                        : Watermark;
+                    displayText = EffectiveWatermark();
                 }
             }
             else if (SelectedDate.HasValue)
@@ -1694,10 +1717,7 @@ public class ModernPersianDatePicker : TemplatedControl
             }
             else
             {
-                var loc = GetLocalization();
-                displayText = string.IsNullOrEmpty(Watermark) || Watermark == "Select date..."
-                    ? loc.SelectDateLabel
-                    : Watermark;
+                displayText = EffectiveWatermark();
             }
 
             // Update TextBlock
@@ -1790,12 +1810,22 @@ public class ModernPersianDatePicker : TemplatedControl
             RangeEnd.Value, format, GetLocalization(), GetEffectiveCalendarType());
     }
 
+    /// <summary>
+    /// Empties the field: no date, no typed text, no invalid flag. When the date was
+    /// already empty (text that is not a date typed into an empty field), setting it
+    /// to null changed nothing, so the text and <see cref="HasInvalidInput"/> used to
+    /// stay - a "Clear filters" button left the field reporting an error.
+    /// </summary>
     public void Clear()
     {
         if (_isDisposed)
             return;
 
         SelectedDate = null;
+        if (_editableTextBox != null)
+            _editableTextBox.Text = string.Empty;
+        HasInvalidInput = false;
+        UpdateDisplayText();
     }
 
     public void SetToToday()
