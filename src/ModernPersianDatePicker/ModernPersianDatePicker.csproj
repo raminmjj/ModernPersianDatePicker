@@ -12,7 +12,7 @@
 
     <!-- NuGet Package Info -->
     <PackageId>ModernPersianDatePicker</PackageId>
-    <Version>2.2.12</Version>
+    <Version>2.4.12</Version>
     <Authors>Ramin Alirezaee</Authors>
     <!--<Company>Your Company</Company>-->
     <Product>ModernPersianDatePicker</Product>
@@ -25,13 +25,13 @@
     <RepositoryType>git</RepositoryType>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>2.2.12 - The time section is always left-to-right (it inherited an RTL container's direction). The controls' looks are ControlThemes keyed by type (app styles override any setter, BasedOn works, subclasses get the look). The text box's padding / vertical alignment are bound to the picker's Padding / VerticalContentAlignment (new). Behaviour changes: no default MinWidth (was 200); focus changes the border colour only (no 2 px border); an editable picker is not focusable itself - FocusEditableText() focuses its text box. Theme="Light" in a Dark application is now light, and the C# copy of the Dark palette is gone. The calendar button has its own theme and a new PersianDatePickerIconForegroundBrush key; the popup is at least as wide as the field; new SelectedDateCalendar. 2.1.12 - Typed dates are never silently replaced: HasInvalidInput reports an invalid entry kept under InvalidValueAction.Keep, CommitText() parses the box on demand, and an empty box means no date under Keep and SetToNull (behaviour change: Keep used to keep the old date). Persian and Arabic-Indic digits are accepted. New calendar-neutral SelectedDateTime (DateTime?, two-way). Auto mode follows a runtime culture switch via the static NotifyCultureChanged() / RefreshCalendar(), and switching CalendarType converts from the calendar the values are actually in. 2.0.0 - Breaking change: replaced Hour/Minute/Second properties on ModernPersianDatePicker (and Hour/Minute/Second on TimePickerView) with a single SelectedTime / Time property of type TimeSpan. Adds range-mode time support via RangeStartTime/RangeEndTime and a Quick Range panel that exposes time spinners on its From/To pickers.</PackageReleaseNotes>
+    <PackageReleaseNotes>2.4.12 - An editable picker shows the application's Watermark (it always showed the localized "select a date" label; left at its default the label is still used). Clear() also empties the text box and resets HasInvalidInput when the date was already empty (text that is not a date typed into an empty field kept the text and the flag). 2.3.12 was published by mistake from the same code with the old 2.2.12 assembly version - use 2.4.12. 2.2.12 - The time section is always left-to-right (it inherited an RTL container's direction). The controls' looks are ControlThemes keyed by type (app styles override any setter, BasedOn works, subclasses get the look). The text box's padding / vertical alignment are bound to the picker's Padding / VerticalContentAlignment (new). Behaviour changes: no default MinWidth (was 200); focus changes the border colour only (no 2 px border); an editable picker is not focusable itself - FocusEditableText() focuses its text box. Theme="Light" in a Dark application is now light, and the C# copy of the Dark palette is gone. The calendar button has its own theme and a new PersianDatePickerIconForegroundBrush key; the popup is at least as wide as the field; new SelectedDateCalendar. 2.1.12 - Typed dates are never silently replaced: HasInvalidInput reports an invalid entry kept under InvalidValueAction.Keep, CommitText() parses the box on demand, and an empty box means no date under Keep and SetToNull (behaviour change: Keep used to keep the old date). Persian and Arabic-Indic digits are accepted. New calendar-neutral SelectedDateTime (DateTime?, two-way). Auto mode follows a runtime culture switch via the static NotifyCultureChanged() / RefreshCalendar(), and switching CalendarType converts from the calendar the values are actually in. 2.0.0 - Breaking change: replaced Hour/Minute/Second properties on ModernPersianDatePicker (and Hour/Minute/Second on TimePickerView) with a single SelectedTime / Time property of type TimeSpan. Adds range-mode time support via RangeStartTime/RangeEndTime and a Quick Range panel that exposes time spinners on its From/To pickers.</PackageReleaseNotes>
     
     <!-- Generate XML documentation -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <AssemblyVersion>2.2.12.0</AssemblyVersion>
-    <FileVersion>2.2.12.0</FileVersion>
+    <AssemblyVersion>2.4.12.0</AssemblyVersion>
+    <FileVersion>2.4.12.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

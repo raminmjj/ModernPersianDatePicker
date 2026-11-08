@@ -8,7 +8,7 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
-![NuGet](https://img.shields.io/badge/NuGet-2.2.12-blue)
+![NuGet](https://img.shields.io/badge/NuGet-2.4.12-blue)
 ![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -54,10 +54,10 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker --version 2.2.12
+dotnet add package ModernPersianDatePicker --version 2.4.12
 ```
 
-## Unreleased
+## What's New in 2.4.12
 
 - **An editable picker shows your `Watermark`.** It always showed the localized
   "select a date" label instead, so a custom hint (e.g. `yyyy/MM/dd`) worked only
@@ -67,6 +67,9 @@ dotnet add package ModernPersianDatePicker --version 2.2.12
   empty (text that is not a date typed into an empty field), `Clear()` changed
   nothing: the text and `HasInvalidInput` stayed. It now empties the text box and
   resets the flag too.
+
+> **2.3.12** was published by mistake from the same code, with the old 2.2.12
+> assembly version inside. Use **2.4.12**.
 
 ## What's New in 2.2.12
 
@@ -705,6 +708,7 @@ dotnet test
 - [x] Always left-to-right time section, in every language
 - [x] ControlThemes with template-bound layout (`Padding`, `VerticalContentAlignment`)
 - [x] Forced Light / Dark from the XAML palette, one focus stop, popup as wide as the field
+- [x] A custom `Watermark` in editable mode, and a `Clear()` that also empties invalid text
 - [x] Custom themes
 - [x] More localization options (Arabic, Kurdish + custom provider)
 - [x] Gregorian calendar mode
