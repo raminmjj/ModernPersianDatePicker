@@ -97,6 +97,8 @@ public class CalendarView : TemplatedControl
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
     public event EventHandler<TodayClickedEventArgs>? TodayClicked;
     public event EventHandler<QuickRangeSelectedEventArgs>? QuickRangeApplied;
+    /// <summary>Raised when the Quick Range panel's Clear button empties the range.</summary>
+    public event EventHandler? QuickRangeCleared;
     public event EventHandler<bool>? QuickRangeViewVisibilityChanged;
 
     // Private fields
@@ -419,7 +421,11 @@ public class CalendarView : TemplatedControl
         if (_quickRangeButton != null)
             _quickRangeButton.Click -= OnQuickRangeButton_Click;
         if (_quickRangeView != null)
+        {
             _quickRangeView.QuickRangeApplied -= OnQuickRangeView_Applied;
+            _quickRangeView.QuickRangeCleared -= OnQuickRangeView_Cleared;
+            _quickRangeView.QuickRangeCancelled -= OnQuickRangeView_Cancelled;
+        }
 
         // Get template parts
         _monthText = e.NameScope.Find<TextBlock>("PART_MonthText");
@@ -455,6 +461,8 @@ public class CalendarView : TemplatedControl
         if (_quickRangeView != null)
         {
             _quickRangeView.QuickRangeApplied += OnQuickRangeView_Applied;
+            _quickRangeView.QuickRangeCleared += OnQuickRangeView_Cleared;
+            _quickRangeView.QuickRangeCancelled += OnQuickRangeView_Cancelled;
             _quickRangeView.LocalizationProvider = GetLocalization();
             _quickRangeView.CalendarType = GetEffectiveCalendarType();
             _quickRangeView.WeeklyHolidays = WeeklyHolidays;
@@ -507,6 +515,17 @@ public class CalendarView : TemplatedControl
         // Fire the event to parent
         QuickRangeApplied?.Invoke(this, e);
     }
+
+    private void OnQuickRangeView_Cleared(object? sender, EventArgs e)
+    {
+        RangeStart = null;
+        RangeEnd = null;
+        ToggleQuickRangeView();
+        QuickRangeCleared?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Cancel: back to the calendar, nothing changed.</summary>
+    private void OnQuickRangeView_Cancelled(object? sender, EventArgs e) => ToggleQuickRangeView();
 
     /// <summary>
     /// Pushes IsTimePickerEnabled / RangeStartTime / RangeEndTime into the embedded

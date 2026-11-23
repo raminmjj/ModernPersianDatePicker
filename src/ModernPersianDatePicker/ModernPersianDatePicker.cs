@@ -200,6 +200,15 @@ public class ModernPersianDatePicker : TemplatedControl
             nameof(RangeEndDateTime), defaultBindingMode: BindingMode.TwoWay);
 
     /// <summary>
+    /// Shows a small clear (x) button inside the field, before the calendar button, while
+    /// the field holds something: a date, a range, or typed text (also text that is not a
+    /// valid date). Clicking it - or Ctrl+Delete in the field - does what <see cref="Clear"/>
+    /// does. The button is not a focus stop. Defaults to false.
+    /// </summary>
+    public static readonly StyledProperty<bool> ShowClearButtonProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, bool>(nameof(ShowClearButton));
+
+    /// <summary>
     /// True while the editable text box holds text that is not a valid date (or is
     /// outside <see cref="MinDate"/>/<see cref="MaxDate"/>) and
     /// <see cref="InvalidValueAction"/> is <see cref="InvalidValueAction.Keep"/>:
@@ -244,6 +253,8 @@ public class ModernPersianDatePicker : TemplatedControl
     private ToggleButton? _toggleButton;
     private TextBlock? _displayTextBlock;
     private TextBox? _editableTextBox;
+    private Button? _clearButton;
+    private Control? _clearSeparator;
     private CalendarView? _calendarView;
     private TimePickerView? _timePickerView;
     private bool _isPopupOpen;
@@ -300,6 +311,9 @@ public class ModernPersianDatePicker : TemplatedControl
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         WatermarkProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.ApplyWatermark());
+        ShowClearButtonProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.UpdateClearButton());
+        HasInvalidInputProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.UpdateClearButton());
+        IsEnabledProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.UpdateClearButton());
 
         // ONE focus stop: an editable picker's text box takes the focus, so the control
         // itself is not focusable then - it used to be, NEXT to its text box (Tab and
@@ -332,6 +346,13 @@ public class ModernPersianDatePicker : TemplatedControl
     {
         get => GetValue(SelectedDateTimeProperty);
         set => SetValue(SelectedDateTimeProperty, value);
+    }
+
+    /// <inheritdoc cref="ShowClearButtonProperty"/>
+    public bool ShowClearButton
+    {
+        get => GetValue(ShowClearButtonProperty);
+        set => SetValue(ShowClearButtonProperty, value);
     }
 
     /// <inheritdoc cref="RangeStartDateTimeProperty"/>
@@ -591,10 +612,18 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.DateRangeSelected -= OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked -= OnCalendarView_TodayClicked;
             _calendarView.QuickRangeApplied -= OnCalendarView_QuickRangeApplied;
+            _calendarView.QuickRangeCleared -= OnCalendarView_QuickRangeCleared;
             _calendarView.QuickRangeViewVisibilityChanged -= OnCalendarView_QuickRangeViewVisibilityChanged;
         }
         if (_timePickerView != null)
             _timePickerView.TimeChanged -= OnTimePickerView_TimeChanged;
+        if (_clearButton != null)
+            _clearButton.Click -= OnClearButton_Click;
+        if (_editableTextBox != null)
+        {
+            _editableTextBox.TextChanged -= OnEditableText_TextChanged;
+            _editableTextBox.RemoveHandler(InputElement.KeyDownEvent, OnEditableText_ClearGesture);
+        }
 
         // Get template parts
         _popup = e.NameScope.Find<Popup>("PART_Popup");
@@ -603,6 +632,10 @@ public class ModernPersianDatePicker : TemplatedControl
         _editableTextBox = e.NameScope.Find<TextBox>("PART_EditableText");
         _calendarView = e.NameScope.Find<CalendarView>("PART_CalendarView");
         _timePickerView = e.NameScope.Find<TimePickerView>("PART_TimePickerView");
+        _clearButton = e.NameScope.Find<Button>("PART_ClearButton");
+        _clearSeparator = e.NameScope.Find<Control>("PART_ClearSeparator");
+        if (_clearButton != null)
+            _clearButton.Click += OnClearButton_Click;
 
         // Attach event handlers
         if (_toggleButton != null)
@@ -636,6 +669,9 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _editableTextBox.KeyDown += OnEditableText_KeyDown;
             _editableTextBox.LostFocus += OnEditableText_LostFocus;
+            _editableTextBox.TextChanged += OnEditableText_TextChanged;
+            _editableTextBox.AddHandler(InputElement.KeyDownEvent, OnEditableText_ClearGesture,
+                RoutingStrategies.Bubble, handledEventsToo: true);
         }
 
         if (_calendarView != null)
@@ -664,6 +700,7 @@ public class ModernPersianDatePicker : TemplatedControl
             _calendarView.DateRangeSelected += OnCalendarView_DateRangeSelected;
             _calendarView.TodayClicked += OnCalendarView_TodayClicked;
             _calendarView.QuickRangeApplied += OnCalendarView_QuickRangeApplied;
+            _calendarView.QuickRangeCleared += OnCalendarView_QuickRangeCleared;
             _calendarView.QuickRangeViewVisibilityChanged += OnCalendarView_QuickRangeViewVisibilityChanged;
         }
 
@@ -693,6 +730,19 @@ public class ModernPersianDatePicker : TemplatedControl
         if (!_isPopupOpen)
         {
             OpenPopup();
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>
+    /// Ctrl+Delete in the text box. Registered with handledEventsToo: the TextBox handles
+    /// Ctrl+Delete itself (delete the next word) before an ordinary KeyDown handler runs.
+    /// </summary>
+    private void OnEditableText_ClearGesture(object? sender, KeyEventArgs e)
+    {
+        if (IsClearGesture(e))
+        {
+            Clear();
             e.Handled = true;
         }
     }
@@ -990,6 +1040,13 @@ public class ModernPersianDatePicker : TemplatedControl
         if (e.Handled)
             return;
 
+        if (IsClearGesture(e))
+        {
+            Clear();
+            e.Handled = true;
+            return;
+        }
+
         switch (e.Key)
         {
             case Key.Down:
@@ -1189,6 +1246,8 @@ public class ModernPersianDatePicker : TemplatedControl
 
         if (_editableTextBox != null)
             _editableTextBox.IsVisible = IsEditable;
+
+        UpdateClearButton();
     }
 
     /// <summary>
@@ -1790,6 +1849,19 @@ public class ModernPersianDatePicker : TemplatedControl
         ClosePopup();
     }
 
+    /// <summary>
+    /// The Quick Range panel's Clear button: empties the field, as <see cref="Clear"/> does,
+    /// and closes the popup. <see cref="DateRangeSelected"/> is not raised (there is no range).
+    /// </summary>
+    private void OnCalendarView_QuickRangeCleared(object? sender, EventArgs e)
+    {
+        if (_isDisposed)
+            return;
+
+        Clear();
+        ClosePopup();
+    }
+
     private void OnCalendarView_QuickRangeViewVisibilityChanged(object? sender, bool isVisible)
     {
         // Light dismiss stays enabled at all times so clicking outside
@@ -1882,6 +1954,49 @@ public class ModernPersianDatePicker : TemplatedControl
         => string.IsNullOrEmpty(Watermark) || Watermark == DefaultWatermark
             ? GetLocalization().SelectDateLabel
             : Watermark;
+
+    /// <summary>Ctrl+Delete clears the field when <see cref="ShowClearButton"/> is on.</summary>
+    private bool IsClearGesture(KeyEventArgs e)
+        => ShowClearButton && e.Key == Key.Delete && e.KeyModifiers.HasFlag(KeyModifiers.Control);
+
+    private void OnClearButton_Click(object? sender, RoutedEventArgs e)
+    {
+        Clear();
+        e.Handled = true;
+    }
+
+    private void OnEditableText_TextChanged(object? sender, TextChangedEventArgs e) => UpdateClearButton();
+
+    /// <summary>
+    /// True when the clear button is shown: <see cref="ShowClearButton"/> is on, the picker
+    /// is enabled, and the field holds a value, a range, or typed text.
+    /// </summary>
+    internal bool IsClearButtonVisible
+    {
+        get
+        {
+            if (!ShowClearButton || !IsEnabled)
+                return false;
+            bool hasValue = IsRangeMode
+                ? RangeStart.HasValue || RangeEnd.HasValue
+                : SelectedDate.HasValue;
+            bool hasText = IsEditable && !string.IsNullOrEmpty(_editableTextBox?.Text);
+            return hasValue || hasText || HasInvalidInput;
+        }
+    }
+
+    private void UpdateClearButton()
+    {
+        bool visible = IsClearButtonVisible;
+        if (_clearButton != null)
+        {
+            _clearButton.IsVisible = visible;
+            if (visible)
+                ToolTip.SetTip(_clearButton, GetLocalization().ClearTooltip);
+        }
+        if (_clearSeparator != null)
+            _clearSeparator.IsVisible = visible;
+    }
 
     /// <summary>A new <see cref="Watermark"/> reaches the editable box and the display text.</summary>
     private void ApplyWatermark()
@@ -1998,6 +2113,8 @@ public class ModernPersianDatePicker : TemplatedControl
         {
             _isUpdatingText = false;
         }
+
+        UpdateClearButton();
     }
 
     // Public Methods

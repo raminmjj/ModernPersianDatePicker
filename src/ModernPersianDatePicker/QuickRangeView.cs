@@ -1,19 +1,19 @@
 using System;
 using System.Collections.Generic;
 using Avalonia;
-using Avalonia.Animation;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
-using Avalonia.Media;
-using Avalonia.Styling;
 using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
 
 /// <summary>
-/// Quick range selection view for choosing preset date ranges
+/// The Quick Range panel of a range picker: a list of preset ranges, a Month / Season /
+/// Half-year grid for any year, editable From / To pickers, and a footer with a summary
+/// and Clear / Cancel / Apply. Clicking a preset or a period fills From / To; only Apply
+/// commits the range (<see cref="QuickRangeApplied"/>).
 /// </summary>
 public class QuickRangeView : TemplatedControl
 {
@@ -61,30 +61,68 @@ public class QuickRangeView : TemplatedControl
             new TimeSpan(23, 59, 59));
 
     // Events
+
+    /// <summary>Apply: From and To are both set; carries the range, its type and the times.</summary>
     public event EventHandler<QuickRangeSelectedEventArgs>? QuickRangeApplied;
 
-    // Private fields
+    /// <summary>Clear: the user asked for no range.</summary>
+    public event EventHandler? QuickRangeCleared;
+
+    /// <summary>Cancel: back to the calendar, nothing changed.</summary>
+    public event EventHandler? QuickRangeCancelled;
+
+    /// <summary>The period grid shown on the right: months, seasons or half-years.</summary>
+    internal enum PeriodKind { Month, Season, HalfYear }
+
+    // One preset or period: a key (QuickRangeSelectedEventArgs.RangeType), its range, the
+    // text the summary shows for it, and the button that shows it.
+    private sealed class RangeItem
+    {
+        public RangeItem(string key, PersianDate start, PersianDate end, string summary)
+        {
+            Key = key;
+            Start = start;
+            End = end;
+            Summary = summary;
+        }
+
+        public string Key { get; }
+        public PersianDate Start { get; }
+        public PersianDate End { get; }
+        public string Summary { get; }
+        public Button? Button { get; set; }
+    }
+
+    // Template parts
     private ModernPersianDatePicker? _fromPicker;
     private ModernPersianDatePicker? _toPicker;
-    private Button? _applyButton;
-    private Button? _todayButton;
-    private Button? _weekButton;
-    private Button? _monthButton;
-    private Button? _yearButton;
+    private TextBlock? _fromLabel;
+    private TextBlock? _toLabel;
+    private Panel? _presetPanel;
+    private TextBlock? _presetsHeader;
     private Button? _groupMonthButton;
     private Button? _groupSeasonButton;
     private Button? _groupHalfYearButton;
-    private Panel? _groupSelectorPanel;
+    private Button? _yearPreviousButton;
+    private Button? _yearNextButton;
+    private TextBlock? _yearText;
     private Panel? _groupContentPanel;
-    private Border? _groupContentBorder;
-    private Button? _backButton;
-    private StackPanel? _row1Panel;
-    private StackPanel? _row2Panel;
+    private TextBlock? _summaryText;
+    private Button? _applyButton;
+    private Button? _cancelButton;
+    private Button? _clearButton;
+
+    // State
+    private readonly List<RangeItem> _presets = new();
+    private readonly List<RangeItem> _periods = new();
+    private PeriodKind _periodKind = PeriodKind.Month;
+    private int _displayYear;
+    private bool _syncingPickers;
 
     static QuickRangeView()
     {
-        LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => { x.UpdateLabels(); x.SyncPickersSettings(); });
-        CalendarTypeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
+        LocalizationProviderProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => { x.SyncPickersSettings(); x.Rebuild(); });
+        CalendarTypeProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => { x.SyncPickersSettings(); x.Rebuild(); });
         WeeklyHolidaysProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersSettings());
         RangeStartProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
         RangeEndProperty.Changed.AddClassHandler<QuickRangeView>((x, _) => x.SyncPickersFromRange());
@@ -123,31 +161,21 @@ public class QuickRangeView : TemplatedControl
         set => SetValue(RangeEndProperty, value);
     }
 
-    /// <summary>
-    /// When true, the embedded From/To pickers expose Hour/Minute/Second spinners
-    /// inside their popups, and the Apply button propagates the user-selected times
-    /// through <see cref="QuickRangeSelectedEventArgs"/>.
-    /// </summary>
+    /// <inheritdoc cref="IsTimePickerEnabledProperty"/>
     public bool IsTimePickerEnabled
     {
         get => GetValue(IsTimePickerEnabledProperty);
         set => SetValue(IsTimePickerEnabledProperty, value);
     }
 
-    /// <summary>
-    /// Time-of-day for the range start (From picker). Reflects/initialises the
-    /// From picker's Hour/Minute/Second when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
+    /// <inheritdoc cref="StartTimeProperty"/>
     public TimeSpan StartTime
     {
         get => GetValue(StartTimeProperty);
         set => SetValue(StartTimeProperty, value);
     }
 
-    /// <summary>
-    /// Time-of-day for the range end (To picker). Reflects/initialises the
-    /// To picker's Hour/Minute/Second when <see cref="IsTimePickerEnabled"/> is true.
-    /// </summary>
+    /// <inheritdoc cref="EndTimeProperty"/>
     public TimeSpan EndTime
     {
         get => GetValue(EndTimeProperty);
@@ -160,79 +188,83 @@ public class QuickRangeView : TemplatedControl
         set => SetValue(WeeklyHolidaysProperty, value);
     }
 
+    // ── Read-only state ──
+
+    /// <summary>The date in the From box (the range start once applied).</summary>
+    public PersianDate? DraftStart => _fromPicker?.SelectedDate;
+
+    /// <summary>The date in the To box (the range end once applied).</summary>
+    public PersianDate? DraftEnd => _toPicker?.SelectedDate;
+
+    /// <summary>The year the Month / Season / Half-year grid shows.</summary>
+    public int DisplayYear => _displayYear;
+
+    /// <summary>The footer summary, e.g. "Azar 1405 · 30 days".</summary>
+    public string SummaryText => _summaryText?.Text ?? string.Empty;
+
+    /// <summary>The key of the preset or period that matches From / To, or "custom".</summary>
+    public string CurrentRangeType => FindMatch()?.Key ?? "custom";
+
+    internal PeriodKind CurrentPeriodKind => _periodKind;
+
     protected override void OnApplyTemplate(TemplateAppliedEventArgs e)
     {
         base.OnApplyTemplate(e);
 
         // Detach previous handlers
         if (_applyButton != null) _applyButton.Click -= OnApply_Click;
-        if (_todayButton != null) _todayButton.Click -= OnToday_Click;
-        if (_weekButton != null) _weekButton.Click -= OnWeek_Click;
-        if (_monthButton != null) _monthButton.Click -= OnPresetMonth_Click;
-        if (_yearButton != null) _yearButton.Click -= OnYear_Click;
+        if (_cancelButton != null) _cancelButton.Click -= OnCancel_Click;
+        if (_clearButton != null) _clearButton.Click -= OnClear_Click;
         if (_groupMonthButton != null) _groupMonthButton.Click -= OnGroupMonth_Click;
         if (_groupSeasonButton != null) _groupSeasonButton.Click -= OnGroupSeason_Click;
         if (_groupHalfYearButton != null) _groupHalfYearButton.Click -= OnGroupHalfYear_Click;
-        if (_backButton != null) _backButton.Click -= OnBack_Click;
+        if (_yearPreviousButton != null) _yearPreviousButton.Click -= OnYearPrevious_Click;
+        if (_yearNextButton != null) _yearNextButton.Click -= OnYearNext_Click;
+        if (_fromPicker != null) _fromPicker.PropertyChanged -= OnPickerPropertyChanged;
+        if (_toPicker != null) _toPicker.PropertyChanged -= OnPickerPropertyChanged;
 
         // Find template parts
         _fromPicker = e.NameScope.Find<ModernPersianDatePicker>("PART_FromPicker");
         _toPicker = e.NameScope.Find<ModernPersianDatePicker>("PART_ToPicker");
-        _applyButton = e.NameScope.Find<Button>("PART_ApplyButton");
-        _todayButton = e.NameScope.Find<Button>("PART_TodayButton");
-        _weekButton = e.NameScope.Find<Button>("PART_WeekButton");
-        _monthButton = e.NameScope.Find<Button>("PART_MonthButton");
-        _yearButton = e.NameScope.Find<Button>("PART_YearButton");
+        _fromLabel = e.NameScope.Find<TextBlock>("PART_FromLabel");
+        _toLabel = e.NameScope.Find<TextBlock>("PART_ToLabel");
+        _presetPanel = e.NameScope.Find<Panel>("PART_PresetPanel");
+        _presetsHeader = e.NameScope.Find<TextBlock>("PART_PresetsHeader");
         _groupMonthButton = e.NameScope.Find<Button>("PART_GroupMonthButton");
         _groupSeasonButton = e.NameScope.Find<Button>("PART_GroupSeasonButton");
         _groupHalfYearButton = e.NameScope.Find<Button>("PART_GroupHalfYearButton");
-        _groupSelectorPanel = e.NameScope.Find<Panel>("PART_GroupSelectorPanel");
+        _yearPreviousButton = e.NameScope.Find<Button>("PART_YearPreviousButton");
+        _yearNextButton = e.NameScope.Find<Button>("PART_YearNextButton");
+        _yearText = e.NameScope.Find<TextBlock>("PART_YearText");
         _groupContentPanel = e.NameScope.Find<Panel>("PART_GroupContentPanel");
-        _groupContentBorder = e.NameScope.Find<Border>("PART_GroupContentBorder");
-        _backButton = e.NameScope.Find<Button>("PART_BackButton");
-        _row1Panel = e.NameScope.Find<StackPanel>("PART_Row1Panel");
-        _row2Panel = e.NameScope.Find<StackPanel>("PART_Row2Panel");
+        _summaryText = e.NameScope.Find<TextBlock>("PART_SummaryText");
+        _applyButton = e.NameScope.Find<Button>("PART_ApplyButton");
+        _cancelButton = e.NameScope.Find<Button>("PART_CancelButton");
+        _clearButton = e.NameScope.Find<Button>("PART_ClearRangeButton");
 
         // Attach handlers
         if (_applyButton != null) _applyButton.Click += OnApply_Click;
-        if (_todayButton != null) _todayButton.Click += OnToday_Click;
-        if (_weekButton != null) _weekButton.Click += OnWeek_Click;
-        if (_monthButton != null) _monthButton.Click += OnPresetMonth_Click;
-        if (_yearButton != null) _yearButton.Click += OnYear_Click;
+        if (_cancelButton != null) _cancelButton.Click += OnCancel_Click;
+        if (_clearButton != null) _clearButton.Click += OnClear_Click;
         if (_groupMonthButton != null) _groupMonthButton.Click += OnGroupMonth_Click;
         if (_groupSeasonButton != null) _groupSeasonButton.Click += OnGroupSeason_Click;
         if (_groupHalfYearButton != null) _groupHalfYearButton.Click += OnGroupHalfYear_Click;
-        if (_backButton != null) _backButton.Click += OnBack_Click;
+        if (_yearPreviousButton != null) _yearPreviousButton.Click += OnYearPrevious_Click;
+        if (_yearNextButton != null) _yearNextButton.Click += OnYearNext_Click;
 
         // Configure pickers
-        if (_fromPicker != null)
+        foreach (var picker in new[] { _fromPicker, _toPicker })
         {
-            _fromPicker.IsRangeMode = false;
-            _fromPicker.IsEditable = true;
-            _fromPicker.CalendarType = CalendarType;
-            _fromPicker.LocalizationProvider = LocalizationProvider;
-            _fromPicker.IsTimePickerEnabled = IsTimePickerEnabled;
-            if (IsTimePickerEnabled)
-                _fromPicker.SelectedTime = StartTime;
-            if (RangeStart.HasValue)
-                _fromPicker.SelectedDate = RangeStart;
+            if (picker == null)
+                continue;
+            picker.IsRangeMode = false;
+            picker.IsEditable = true;
+            picker.PropertyChanged += OnPickerPropertyChanged;
         }
+        SyncPickersSettings();
+        SyncPickersFromRange();
 
-        if (_toPicker != null)
-        {
-            _toPicker.IsRangeMode = false;
-            _toPicker.IsEditable = true;
-            _toPicker.CalendarType = CalendarType;
-            _toPicker.LocalizationProvider = LocalizationProvider;
-            _toPicker.IsTimePickerEnabled = IsTimePickerEnabled;
-            if (IsTimePickerEnabled)
-                _toPicker.SelectedTime = EndTime;
-            if (RangeEnd.HasValue)
-                _toPicker.SelectedDate = RangeEnd;
-        }
-
-        UpdateLabels();
-        ShowGroupSelector();
+        ResetRow3();
     }
 
     // ── Calendar-aware helpers ──
@@ -260,73 +292,108 @@ public class QuickRangeView : TemplatedControl
             : new FarsiLocalization();
     }
 
-    private PersianDate GetToday()
-    {
-        if (IsGregorian)
-        {
-            var today = DateTime.Today;
-            int dow = PersianCalendarHelper.GetGregorianFirstDayOfWeek(today.Year, today.Month);
-            int dayOfWeek = (dow + today.Day - 1) % 7;
-            return new PersianDate(today.Year, today.Month, today.Day, dayOfWeek);
-        }
-        return PersianCalendarHelper.Today();
-    }
+    private PersianDate GetToday() => PersianCalendarHelper.TodayForCalendarType(GetEffectiveCalendarType());
 
     private int GetDaysInMonth(int year, int month)
-    {
-        if (IsGregorian)
-            return DateTime.DaysInMonth(year, month);
-        return PersianCalendarHelper.GetDaysInMonth(year, month);
-    }
-
-    private int GetFirstDayOfWeek(int year, int month)
-    {
-        if (IsGregorian)
-            return PersianCalendarHelper.GetGregorianFirstDayOfWeek(year, month);
-        return PersianCalendarHelper.GetFirstDayOfWeek(year, month);
-    }
+        => IsGregorian ? DateTime.DaysInMonth(year, month) : PersianCalendarHelper.GetDaysInMonth(year, month);
 
     private PersianDate MakeDate(int year, int month, int day)
     {
-        int dow = GetFirstDayOfWeek(year, month);
-        int dayOfWeek = (dow + day - 1) % 7;
-        return new PersianDate(year, month, day, dayOfWeek);
+        int firstDayOfWeek = IsGregorian
+            ? PersianCalendarHelper.GetGregorianFirstDayOfWeek(year, month)
+            : PersianCalendarHelper.GetFirstDayOfWeek(year, month);
+        return new PersianDate(year, month, day, (firstDayOfWeek + day - 1) % 7);
     }
 
-    // ── Label sync ──
+    private DateTime ToDateTime(PersianDate date)
+        => ModernPersianDatePicker.ToDateTime(date, GetEffectiveCalendarType()) ?? DateTime.Today;
+
+    private PersianDate AddDays(PersianDate date, int days)
+        => ModernPersianDatePicker.FromDateTime(ToDateTime(date).AddDays(days), GetEffectiveCalendarType());
+
+    /// <summary>The number of days from <paramref name="start"/> to <paramref name="end"/>, both included.</summary>
+    private int DayCount(PersianDate start, PersianDate end)
+        => Math.Abs((ToDateTime(end) - ToDateTime(start)).Days) + 1;
+
+    private string MonthName(int month, ICalendarLocalization loc)
+        => IsGregorian ? PersianCalendarHelper.GetGregorianMonthName(month, loc) : loc.MonthNames[month];
+
+    private (PersianDate Start, PersianDate End) MonthRange(int year, int month)
+        => (MakeDate(year, month, 1), MakeDate(year, month, GetDaysInMonth(year, month)));
+
+    private (PersianDate Start, PersianDate End) MonthsRange(int year, int firstMonth, int lastMonth)
+        => (MakeDate(year, firstMonth, 1), MakeDate(year, lastMonth, GetDaysInMonth(year, lastMonth)));
+
+    // ── Pickers ──
 
     private void SyncPickersFromRange()
     {
-        if (_fromPicker != null)
+        _syncingPickers = true;
+        try
         {
-            _fromPicker.SelectedDate = RangeStart;
-            if (IsTimePickerEnabled)
-                _fromPicker.SelectedTime = StartTime;
+            if (_fromPicker != null)
+            {
+                _fromPicker.SelectedDate = RangeStart;
+                if (IsTimePickerEnabled)
+                    _fromPicker.SelectedTime = StartTime;
+            }
+            if (_toPicker != null)
+            {
+                _toPicker.SelectedDate = RangeEnd;
+                if (IsTimePickerEnabled)
+                    _toPicker.SelectedTime = EndTime;
+            }
         }
-        if (_toPicker != null)
+        finally
         {
-            _toPicker.SelectedDate = RangeEnd;
-            if (IsTimePickerEnabled)
-                _toPicker.SelectedTime = EndTime;
+            _syncingPickers = false;
         }
+        UpdateSelection();
     }
 
     private void SyncPickersSettings()
     {
-        if (_fromPicker != null)
+        foreach (var picker in new[] { _fromPicker, _toPicker })
         {
-            _fromPicker.CalendarType = CalendarType;
-            _fromPicker.LocalizationProvider = LocalizationProvider;
-            _fromPicker.WeeklyHolidays = WeeklyHolidays;
-            _fromPicker.IsTimePickerEnabled = IsTimePickerEnabled;
+            if (picker == null)
+                continue;
+            picker.CalendarType = CalendarType;
+            picker.LocalizationProvider = LocalizationProvider;
+            picker.WeeklyHolidays = WeeklyHolidays;
+            picker.IsTimePickerEnabled = IsTimePickerEnabled;
         }
-        if (_toPicker != null)
+    }
+
+    private void OnPickerPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == ModernPersianDatePicker.SelectedDateProperty && !_syncingPickers)
+            UpdateSelection();
+    }
+
+    /// <summary>Puts a range into From / To (a preset or period click); Apply commits it.</summary>
+    private void SetDraft(PersianDate start, PersianDate end)
+    {
+        _syncingPickers = true;
+        try
         {
-            _toPicker.CalendarType = CalendarType;
-            _toPicker.LocalizationProvider = LocalizationProvider;
-            _toPicker.WeeklyHolidays = WeeklyHolidays;
-            _toPicker.IsTimePickerEnabled = IsTimePickerEnabled;
+            if (_fromPicker != null)
+            {
+                _fromPicker.SelectedDate = start;
+                if (IsTimePickerEnabled)
+                    _fromPicker.SelectedTime = DateRangeSelectedEventArgs.DefaultStartTime;
+            }
+            if (_toPicker != null)
+            {
+                _toPicker.SelectedDate = end;
+                if (IsTimePickerEnabled)
+                    _toPicker.SelectedTime = DateRangeSelectedEventArgs.DefaultEndTime;
+            }
         }
+        finally
+        {
+            _syncingPickers = false;
+        }
+        UpdateSelection();
     }
 
     /// <summary>
@@ -342,6 +409,45 @@ public class QuickRangeView : TemplatedControl
         _toPicker?.ForceRefreshSettings();
     }
 
+    /// <summary>
+    /// Resets the panel for a new opening: the grid shows the year of the current range
+    /// (or this year) and the tab of its kind of period (a season range opens the Season
+    /// tab). Kept under its old name: hosts call it when the panel is shown.
+    /// </summary>
+    public void ResetRow3()
+    {
+        var anchor = RangeStart ?? GetToday();
+        _displayYear = anchor.Year;
+        _periodKind = MatchingPeriodKind() ?? PeriodKind.Month;
+        Rebuild();
+    }
+
+    private PeriodKind? MatchingPeriodKind()
+    {
+        if (RangeStart is not PersianDate start || RangeEnd is not PersianDate end || start.Year != end.Year)
+            return null;
+
+        var loc = GetLocalization();
+        foreach (var kind in new[] { PeriodKind.Month, PeriodKind.Season, PeriodKind.HalfYear })
+            foreach (var period in PeriodsFor(kind, start.Year, loc))
+                if (period.Start == start && period.End == end)
+                    return kind;
+        return null;
+    }
+
+    // ── Building the lists ──
+
+    private void Rebuild()
+    {
+        if (_displayYear == 0)
+            _displayYear = GetToday().Year;
+
+        UpdateLabels();
+        BuildPresets();
+        BuildPeriods();
+        UpdateSelection();
+    }
+
     private void UpdateLabels()
     {
         var loc = GetLocalization();
@@ -350,449 +456,333 @@ public class QuickRangeView : TemplatedControl
             _fromPicker.Watermark = loc.FromLabel;
         if (_toPicker != null)
             _toPicker.Watermark = loc.ToLabel;
+        if (_fromLabel != null)
+            _fromLabel.Text = loc.FromLabel.TrimEnd('.', '…');
+        if (_toLabel != null)
+            _toLabel.Text = loc.ToLabel.TrimEnd('.', '…');
+        if (_presetsHeader != null)
+            _presetsHeader.Text = loc.PresetsLabel;
         if (_applyButton != null)
             _applyButton.Content = loc.ApplyLabel;
-        if (_todayButton != null)
-            SetPresetButtonContent(_todayButton, loc.TodayLabel);
-        if (_weekButton != null)
-            SetPresetButtonContent(_weekButton, loc.CurrentWeekLabel);
-        if (_monthButton != null)
-            SetPresetButtonContent(_monthButton, loc.CurrentMonthLabel);
-        if (_yearButton != null)
-            SetPresetButtonContent(_yearButton, loc.CurrentYearLabel);
+        if (_cancelButton != null)
+            _cancelButton.Content = loc.CancelLabel;
+        if (_clearButton != null)
+            _clearButton.Content = loc.ClearLabel;
         if (_groupMonthButton != null)
             _groupMonthButton.Content = loc.MonthLabel;
         if (_groupSeasonButton != null)
             _groupSeasonButton.Content = loc.SeasonLabel;
         if (_groupHalfYearButton != null)
             _groupHalfYearButton.Content = loc.HalfYearLabel;
-        if (_backButton != null)
-            _backButton.Content = loc.BackLabel;
     }
 
-    private void SetPresetButtonContent(Button button, string label)
+    private void BuildPresets()
     {
-        if (button.Content is StackPanel sp)
+        var loc = GetLocalization();
+        var today = GetToday();
+
+        // Week: Saturday..Friday (Persian) / Sunday..Saturday (Gregorian); the struct's
+        // DayOfWeek is the 0-based index in that week in both calendars.
+        var weekStart = AddDays(today, -today.DayOfWeek);
+        var month = MonthRange(today.Year, today.Month);
+        int lastMonthYear = today.Month == 1 ? today.Year - 1 : today.Year;
+        int lastMonthNumber = today.Month == 1 ? 12 : today.Month - 1;
+        var lastMonth = MonthRange(lastMonthYear, lastMonthNumber);
+        var year = MonthsRange(today.Year, 1, 12);
+        var yesterday = AddDays(today, -1);
+
+        _presets.Clear();
+        _presets.Add(new RangeItem("today", today, today, loc.TodayLabel));
+        _presets.Add(new RangeItem("yesterday", yesterday, yesterday, loc.YesterdayLabel));
+        _presets.Add(new RangeItem("week", weekStart, AddDays(weekStart, 6), loc.CurrentWeekLabel));
+        _presets.Add(new RangeItem("last7days", AddDays(today, -6), today, loc.Last7DaysLabel));
+        _presets.Add(new RangeItem("month", month.Start, month.End, loc.CurrentMonthLabel));
+        _presets.Add(new RangeItem("lastmonth", lastMonth.Start, lastMonth.End, loc.LastMonthLabel));
+        _presets.Add(new RangeItem("last30days", AddDays(today, -29), today, loc.Last30DaysLabel));
+        _presets.Add(new RangeItem("year", year.Start, year.End, loc.CurrentYearLabel));
+
+        if (_presetPanel == null)
+            return;
+
+        _presetPanel.Children.Clear();
+        foreach (var preset in _presets)
         {
-            foreach (var child in sp.Children)
+            var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto") };
+            grid.Children.Add(new TextBlock { Text = preset.Summary, VerticalAlignment = VerticalAlignment.Center });
+            var count = new TextBlock
             {
-                if (child is TextBlock tb)
+                Text = loc.FormatDayCount(DayCount(preset.Start, preset.End)),
+                VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(8, 0, 0, 0),
+                [Grid.ColumnProperty] = 1,
+            };
+            count.Classes.Add("qr-count");
+            grid.Children.Add(count);
+
+            var button = new Button
+            {
+                Content = grid,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Tag = preset.Key,
+            };
+            button.Classes.Add("qr-preset");
+            var item = preset;
+            button.Click += (_, _) => SetDraft(item.Start, item.End);
+            preset.Button = button;
+            _presetPanel.Children.Add(button);
+        }
+    }
+
+    private List<RangeItem> PeriodsFor(PeriodKind kind, int year, ICalendarLocalization loc)
+    {
+        var list = new List<RangeItem>();
+        switch (kind)
+        {
+            case PeriodKind.Month:
+                for (int m = 1; m <= 12; m++)
                 {
-                    tb.Text = label;
-                    break;
+                    var r = MonthRange(year, m);
+                    list.Add(new RangeItem("month", r.Start, r.End, $"{MonthName(m, loc)} {year}"));
                 }
-            }
+                break;
+            case PeriodKind.Season:
+                for (int i = 0; i < 4; i++)
+                {
+                    var r = MonthsRange(year, i * 3 + 1, i * 3 + 3);
+                    list.Add(new RangeItem("season", r.Start, r.End, $"{loc.SeasonNames[i]} {year}"));
+                }
+                break;
+            case PeriodKind.HalfYear:
+                for (int i = 0; i < 2; i++)
+                {
+                    var r = MonthsRange(year, i * 6 + 1, i * 6 + 6);
+                    list.Add(new RangeItem("halfyear", r.Start, r.End, $"{loc.HalfYearNames[i]} {year}"));
+                }
+                break;
+        }
+        return list;
+    }
+
+    private void BuildPeriods()
+    {
+        var loc = GetLocalization();
+        var today = GetToday();
+        _periods.Clear();
+        _periods.AddRange(PeriodsFor(_periodKind, _displayYear, loc));
+
+        if (_yearText != null)
+            _yearText.Text = _displayYear.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        SetClass(_groupMonthButton, "selected", _periodKind == PeriodKind.Month);
+        SetClass(_groupSeasonButton, "selected", _periodKind == PeriodKind.Season);
+        SetClass(_groupHalfYearButton, "selected", _periodKind == PeriodKind.HalfYear);
+
+        if (_groupContentPanel == null)
+            return;
+
+        var grid = new UniformGrid { Columns = _periodKind == PeriodKind.HalfYear ? 2 : 4 };
+        for (int i = 0; i < _periods.Count; i++)
+        {
+            var period = _periods[i];
+            string text = _periodKind switch
+            {
+                PeriodKind.Month => MonthName(i + 1, loc),
+                PeriodKind.Season => loc.SeasonNames[i],
+                _ => loc.HalfYearNames[i],
+            };
+            var button = new Button
+            {
+                Content = text,
+                Margin = new Thickness(3),
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Center,
+                Tag = period.Key,
+            };
+            button.Classes.Add("qr-period");
+            // A period that has not started yet: still clickable (planning), but muted.
+            if (period.Start > today)
+                button.Classes.Add("future");
+            var item = period;
+            button.Click += (_, _) => SetDraft(item.Start, item.End);
+            period.Button = button;
+            grid.Children.Add(button);
+        }
+
+        _groupContentPanel.Children.Clear();
+        _groupContentPanel.Children.Add(grid);
+    }
+
+    private static void SetClass(Control? control, string name, bool on)
+    {
+        if (control == null)
+            return;
+        if (on)
+        {
+            if (!control.Classes.Contains(name))
+                control.Classes.Add(name);
         }
         else
         {
-            button.Content = label;
+            control.Classes.Remove(name);
         }
     }
 
-    // ── Preset handlers ──
+    // ── Selection and summary ──
+
+    /// <summary>The From / To dates in order (the boxes may hold them reversed), or null.</summary>
+    private (PersianDate Start, PersianDate End)? OrderedDraft()
+    {
+        if (DraftStart is not PersianDate from || DraftEnd is not PersianDate to)
+            return null;
+        return to < from ? (to, from) : (from, to);
+    }
+
+    private RangeItem? FindMatch()
+    {
+        if (OrderedDraft() is not { } draft)
+            return null;
+        foreach (var item in _presets)
+            if (item.Start == draft.Start && item.End == draft.End)
+                return item;
+        foreach (var item in _periods)
+            if (item.Start == draft.Start && item.End == draft.End)
+                return item;
+        return null;
+    }
+
+    private void UpdateSelection()
+    {
+        var draft = OrderedDraft();
+        var match = FindMatch();
+
+        // Every item whose range is the draft is highlighted (e.g. "Current month" AND
+        // that month in the grid).
+        foreach (var item in _presets)
+            SetClass(item.Button, "selected", draft is { } d && item.Start == d.Start && item.End == d.End);
+        foreach (var item in _periods)
+            SetClass(item.Button, "selected", draft is { } d && item.Start == d.Start && item.End == d.End);
+
+        if (_summaryText != null)
+        {
+            var loc = GetLocalization();
+            _summaryText.Text = draft is { } r
+                ? (match != null ? match.Summary + " · " : string.Empty) + loc.FormatDayCount(DayCount(r.Start, r.End))
+                : string.Empty;
+        }
+    }
+
+    // ── Buttons ──
+
+    private void OnGroupMonth_Click(object? sender, RoutedEventArgs e) => ShowPeriods(PeriodKind.Month);
+    private void OnGroupSeason_Click(object? sender, RoutedEventArgs e) => ShowPeriods(PeriodKind.Season);
+    private void OnGroupHalfYear_Click(object? sender, RoutedEventArgs e) => ShowPeriods(PeriodKind.HalfYear);
+    private void OnYearPrevious_Click(object? sender, RoutedEventArgs e) => ShowYear(_displayYear - 1);
+    private void OnYearNext_Click(object? sender, RoutedEventArgs e) => ShowYear(_displayYear + 1);
+
+    internal void ShowPeriods(PeriodKind kind)
+    {
+        _periodKind = kind;
+        BuildPeriods();
+        UpdateSelection();
+    }
+
+    internal void ShowYear(int year)
+    {
+        if (year < 1 || year > 9998)
+            return;
+        _displayYear = year;
+        BuildPeriods();
+        UpdateSelection();
+    }
+
+    /// <summary>Clicks the preset with this key (see <see cref="QuickRangeSelectedEventArgs.RangeType"/>).</summary>
+    internal bool SelectPreset(string key)
+    {
+        foreach (var preset in _presets)
+        {
+            if (preset.Key == key)
+            {
+                SetDraft(preset.Start, preset.End);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>Clicks the period at <paramref name="index"/> in the grid (0-based).</summary>
+    internal void SelectPeriod(int index) => SetDraft(_periods[index].Start, _periods[index].End);
+
+    internal IReadOnlyList<Button> PresetButtons => ButtonsOf(_presets);
+
+    internal IReadOnlyList<Button> PeriodButtons => ButtonsOf(_periods);
+
+    private static List<Button> ButtonsOf(List<RangeItem> items)
+    {
+        var list = new List<Button>();
+        foreach (var item in items)
+            if (item.Button != null)
+                list.Add(item.Button);
+        return list;
+    }
+
+    internal void Apply() => OnApply_Click(this, new RoutedEventArgs());
+    internal void Cancel() => OnCancel_Click(this, new RoutedEventArgs());
+    internal void ClearDraft() => OnClear_Click(this, new RoutedEventArgs());
 
     private void OnApply_Click(object? sender, RoutedEventArgs e)
     {
         var from = _fromPicker?.SelectedDate;
         var to = _toPicker?.SelectedDate;
 
-        if (from.HasValue && to.HasValue)
+        if (!from.HasValue || !to.HasValue)
+            return;
+
+        bool swapped = to.Value < from.Value;
+        var start = swapped ? to.Value : from.Value;
+        var end = swapped ? from.Value : to.Value;
+
+        // Read the time-of-day from the picker that contributed the start/end date.
+        // When the user swapped the dates (typed the later date in From), keep the
+        // time-of-day attached to its original picker so the user's intent is preserved.
+        TimeSpan startTime;
+        TimeSpan endTime;
+        if (IsTimePickerEnabled)
         {
-            bool swapped = to.Value < from.Value;
-            var start = swapped ? to.Value : from.Value;
-            var end = swapped ? from.Value : to.Value;
-
-            // Read the time-of-day from the picker that contributed the start/end date.
-            // When the user swapped the dates (typed the later date in From), keep the
-            // time-of-day attached to its original picker so the user's intent is preserved.
-            TimeSpan startTime;
-            TimeSpan endTime;
-            if (IsTimePickerEnabled)
-            {
-                var startPicker = swapped ? _toPicker : _fromPicker;
-                var endPicker = swapped ? _fromPicker : _toPicker;
-                startTime = startPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultStartTime;
-                endTime = endPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultEndTime;
-            }
-            else
-            {
-                startTime = DateRangeSelectedEventArgs.DefaultStartTime;
-                endTime = DateRangeSelectedEventArgs.DefaultEndTime;
-            }
-
-            QuickRangeApplied?.Invoke(this,
-                new QuickRangeSelectedEventArgs(start, end, "custom", startTime, endTime));
-        }
-    }
-
-    private void OnToday_Click(object? sender, RoutedEventArgs e)
-    {
-        var today = GetToday();
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(today, today, "today"));
-    }
-
-    private void OnWeek_Click(object? sender, RoutedEventArgs e)
-    {
-        var today = GetToday();
-        int dayOfWeek = today.DayOfWeek;
-
-        // Calculate week start (Saturday for Persian, Sunday for Gregorian)
-        int weekStartDow = IsGregorian ? 0 : 0; // Both use 0-based for the start calculation
-        int startDay = today.Day - dayOfWeek;
-        int startMonth = today.Month;
-        int startYear = today.Year;
-
-        if (startDay < 1)
-        {
-            startMonth--;
-            if (startMonth < 1)
-            {
-                startMonth = 12;
-                startYear--;
-            }
-            startDay += GetDaysInMonth(startYear, startMonth);
-        }
-
-        // Calculate week end (Friday for Persian, Saturday for Gregorian)
-        int endDay = today.Day + (6 - dayOfWeek);
-        int endMonth = today.Month;
-        int endYear = today.Year;
-
-        int daysInMonth = GetDaysInMonth(endYear, endMonth);
-        if (endDay > daysInMonth)
-        {
-            endDay -= daysInMonth;
-            endMonth++;
-            if (endMonth > 12)
-            {
-                endMonth = 1;
-                endYear++;
-            }
-        }
-
-        var weekStart = MakeDate(startYear, startMonth, startDay);
-        var weekEnd = MakeDate(endYear, endMonth, endDay);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(weekStart, weekEnd, "week"));
-    }
-
-    private void OnPresetMonth_Click(object? sender, RoutedEventArgs e)
-    {
-        var today = GetToday();
-        int daysInMonth = GetDaysInMonth(today.Year, today.Month);
-
-        var monthStart = MakeDate(today.Year, today.Month, 1);
-        var monthEnd = MakeDate(today.Year, today.Month, daysInMonth);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(monthStart, monthEnd, "month"));
-    }
-
-    private void OnYear_Click(object? sender, RoutedEventArgs e)
-    {
-        var today = GetToday();
-        int daysInLastMonth = GetDaysInMonth(today.Year, 12);
-
-        var yearStart = MakeDate(today.Year, 1, 1);
-        var yearEnd = MakeDate(today.Year, 12, daysInLastMonth);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(yearStart, yearEnd, "year"));
-    }
-
-    // ── Group selectors ──
-
-    private void OnGroupMonth_Click(object? sender, RoutedEventArgs e) => ShowMonthGrid();
-    private void OnGroupSeason_Click(object? sender, RoutedEventArgs e) => ShowSeasonGrid();
-    private void OnGroupHalfYear_Click(object? sender, RoutedEventArgs e) => ShowHalfYearGrid();
-    private void OnBack_Click(object? sender, RoutedEventArgs e) => ShowGroupSelector();
-
-    private void ShowGroupSelector() => Animate(showContent: false);
-    private void ShowGroupContent() => Animate(showContent: true);
-
-    public void ResetRow3()
-    {
-        if (_groupSelectorPanel != null)
-        {
-            _groupSelectorPanel.IsVisible = true;
-            _groupSelectorPanel.IsHitTestVisible = true;
-            _groupSelectorPanel.Opacity = 1;
-        }
-        if (_groupContentBorder != null)
-        {
-            _groupContentBorder.IsVisible = false;
-            _groupContentBorder.IsHitTestVisible = false;
-            _groupContentBorder.Opacity = 1;
-        }
-        if (_backButton != null)
-        {
-            _backButton.IsVisible = false;
-            _backButton.IsHitTestVisible = false;
-            _backButton.Opacity = 1;
-        }
-    }
-
-    // ── Animations ──
-
-    private Animation CreateFadeIn() => new()
-    {
-        Duration = TimeSpan.FromMilliseconds(200),
-        FillMode = FillMode.Forward,
-        Children =
-        {
-            new KeyFrame { Cue = new Cue(0), Setters = { new Setter(Visual.OpacityProperty, 0.0) } },
-            new KeyFrame { Cue = new Cue(1), Setters = { new Setter(Visual.OpacityProperty, 1.0) } }
-        }
-    };
-
-    private Animation CreateFadeOut() => new()
-    {
-        Duration = TimeSpan.FromMilliseconds(200),
-        FillMode = FillMode.Forward,
-        Children =
-        {
-            new KeyFrame { Cue = new Cue(0), Setters = { new Setter(Visual.OpacityProperty, 1.0) } },
-            new KeyFrame { Cue = new Cue(1), Setters = { new Setter(Visual.OpacityProperty, 0.0) } }
-        }
-    };
-
-    private async void Animate(bool showContent)
-    {
-        if (showContent)
-        {
-            var tasks = new List<System.Threading.Tasks.Task>();
-
-            if (_groupSelectorPanel != null && _groupSelectorPanel.IsVisible)
-            {
-                _groupSelectorPanel.IsHitTestVisible = false;
-                tasks.Add(CreateFadeOut().RunAsync(_groupSelectorPanel));
-            }
-
-            if (_groupContentBorder != null)
-            {
-                _groupContentBorder.IsVisible = true;
-                _groupContentBorder.IsHitTestVisible = true;
-                _groupContentBorder.Opacity = 0;
-                tasks.Add(CreateFadeIn().RunAsync(_groupContentBorder));
-            }
-
-            if (_backButton != null)
-            {
-                _backButton.IsVisible = true;
-                _backButton.IsHitTestVisible = true;
-                _backButton.Opacity = 0;
-                tasks.Add(CreateFadeIn().RunAsync(_backButton));
-            }
-
-            await System.Threading.Tasks.Task.WhenAll(tasks);
-
-            if (_groupSelectorPanel != null)
-            {
-                _groupSelectorPanel.IsVisible = false;
-                _groupSelectorPanel.Opacity = 1;
-            }
+            var startPicker = swapped ? _toPicker : _fromPicker;
+            var endPicker = swapped ? _fromPicker : _toPicker;
+            startTime = startPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultStartTime;
+            endTime = endPicker?.SelectedTime ?? DateRangeSelectedEventArgs.DefaultEndTime;
         }
         else
         {
-            var tasks = new List<System.Threading.Tasks.Task>();
-
-            if (_groupContentBorder != null && _groupContentBorder.IsVisible)
-            {
-                _groupContentBorder.IsHitTestVisible = false;
-                tasks.Add(CreateFadeOut().RunAsync(_groupContentBorder));
-            }
-
-            if (_backButton != null && _backButton.IsVisible)
-            {
-                _backButton.IsHitTestVisible = false;
-                tasks.Add(CreateFadeOut().RunAsync(_backButton));
-            }
-
-            if (_groupSelectorPanel != null)
-            {
-                _groupSelectorPanel.IsVisible = true;
-                _groupSelectorPanel.IsHitTestVisible = true;
-                _groupSelectorPanel.Opacity = 0;
-                tasks.Add(CreateFadeIn().RunAsync(_groupSelectorPanel));
-            }
-
-            await System.Threading.Tasks.Task.WhenAll(tasks);
-
-            if (_groupContentBorder != null)
-            {
-                _groupContentBorder.IsVisible = false;
-                _groupContentBorder.Opacity = 1;
-            }
-            if (_backButton != null)
-            {
-                _backButton.IsVisible = false;
-                _backButton.Opacity = 1;
-            }
+            startTime = DateRangeSelectedEventArgs.DefaultStartTime;
+            endTime = DateRangeSelectedEventArgs.DefaultEndTime;
         }
+
+        QuickRangeApplied?.Invoke(this,
+            new QuickRangeSelectedEventArgs(start, end, CurrentRangeType, startTime, endTime));
     }
 
-    // ── Month grid ──
-
-    private void ShowMonthGrid()
+    private void OnCancel_Click(object? sender, RoutedEventArgs e)
     {
-        if (_groupContentPanel == null) return;
+        // Drop the draft: the next opening starts from the committed range.
+        SyncPickersFromRange();
+        QuickRangeCancelled?.Invoke(this, EventArgs.Empty);
+    }
 
-        ShowGroupContent();
-        _groupContentPanel.Children.Clear();
-
-        var loc = GetLocalization();
-        var today = GetToday();
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*") };
-
-        for (int i = 0; i < 4; i++)
-            grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-
-        int row = 0, col = 0;
-        for (int month = 1; month <= 12; month++)
+    private void OnClear_Click(object? sender, RoutedEventArgs e)
+    {
+        _syncingPickers = true;
+        try
         {
-            var monthName = IsGregorian
-                ? PersianCalendarHelper.GetGregorianMonthName(month, loc)
-                : loc.MonthNames[month];
-            var button = new Button
-            {
-                Content = monthName,
-                [Grid.RowProperty] = row,
-                [Grid.ColumnProperty] = col,
-                Margin = new Thickness(2),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Center
-            };
-            button.Classes.Add("month-year-button");
-
-            int selectedMonth = month;
-            button.Click += (s, e) => OnMonthSelected(selectedMonth);
-
-            grid.Children.Add(button);
-            col++;
-            if (col >= 3) { col = 0; row++; }
+            _fromPicker?.Clear();
+            _toPicker?.Clear();
         }
-
-        _groupContentPanel.Children.Add(grid);
-    }
-
-    private void OnMonthSelected(int month)
-    {
-        var today = GetToday();
-        int daysInMonth = GetDaysInMonth(today.Year, month);
-
-        var monthStart = MakeDate(today.Year, month, 1);
-        var monthEnd = MakeDate(today.Year, month, daysInMonth);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(monthStart, monthEnd, "month"));
-    }
-
-    // ── Season grid ──
-
-    private void ShowSeasonGrid()
-    {
-        if (_groupContentPanel == null) return;
-
-        ShowGroupContent();
-        _groupContentPanel.Children.Clear();
-
-        var loc = GetLocalization();
-        var today = GetToday();
-        int currentSeason = (today.Month - 1) / 3; // 0-3
-
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*,*") };
-        grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-
-        for (int i = 0; i < 4; i++)
+        finally
         {
-            var button = new Button
-            {
-                Content = loc.SeasonNames[i],
-                [Grid.RowProperty] = 0,
-                [Grid.ColumnProperty] = i,
-                Margin = new Thickness(2),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Center
-            };
-            button.Classes.Add("month-year-button");
-
-            int seasonIndex = i;
-            button.Click += (s, e) => OnSeasonSelected(seasonIndex);
-
-            grid.Children.Add(button);
+            _syncingPickers = false;
         }
-
-        _groupContentPanel.Children.Add(grid);
-    }
-
-    private void OnSeasonSelected(int seasonIndex)
-    {
-        var today = GetToday();
-        int startMonth = seasonIndex * 3 + 1;
-        int endMonth = startMonth + 2;
-        int daysInEndMonth = GetDaysInMonth(today.Year, endMonth);
-
-        var rangeStart = MakeDate(today.Year, startMonth, 1);
-        var rangeEnd = MakeDate(today.Year, endMonth, daysInEndMonth);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(rangeStart, rangeEnd, "season"));
-    }
-
-    // ── Half-year grid ──
-
-    private void ShowHalfYearGrid()
-    {
-        if (_groupContentPanel == null) return;
-
-        ShowGroupContent();
-        _groupContentPanel.Children.Clear();
-
-        var loc = GetLocalization();
-        var today = GetToday();
-        int currentHalf = today.Month <= 6 ? 0 : 1;
-
-        string h1Label, h2Label;
-        if (loc is FarsiLocalization)
-        { h1Label = "نیم‌سال اول"; h2Label = "نیم‌سال دوم"; }
-        else if (loc is KurdishLocalization)
-        { h1Label = "نیوەساڵی یەکەم"; h2Label = "نیوەساڵی دووەم"; }
-        else if (loc is ArabicLocalization)
-        { h1Label = "النصف الأول"; h2Label = "النصف الثاني"; }
-        else
-        { h1Label = "H1 (Jan-Jun)"; h2Label = "H2 (Jul-Dec)"; }
-
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*") };
-        grid.RowDefinitions.Add(new RowDefinition(GridLength.Auto));
-
-        for (int i = 0; i < 2; i++)
-        {
-            var button = new Button
-            {
-                Content = i == 0 ? h1Label : h2Label,
-                [Grid.RowProperty] = 0,
-                [Grid.ColumnProperty] = i,
-                Margin = new Thickness(2),
-                HorizontalAlignment = HorizontalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Center
-            };
-            button.Classes.Add("month-year-button");
-
-            int halfIndex = i;
-            button.Click += (s, e) => OnHalfYearSelected(halfIndex);
-
-            grid.Children.Add(button);
-        }
-
-        _groupContentPanel.Children.Add(grid);
-    }
-
-    private void OnHalfYearSelected(int halfIndex)
-    {
-        var today = GetToday();
-        int startMonth = halfIndex == 0 ? 1 : 7;
-        int endMonth = halfIndex == 0 ? 6 : 12;
-        int daysInEndMonth = GetDaysInMonth(today.Year, endMonth);
-
-        var rangeStart = MakeDate(today.Year, startMonth, 1);
-        var rangeEnd = MakeDate(today.Year, endMonth, daysInEndMonth);
-
-        QuickRangeApplied?.Invoke(this, new QuickRangeSelectedEventArgs(rangeStart, rangeEnd, "halfyear"));
+        UpdateSelection();
+        QuickRangeCleared?.Invoke(this, EventArgs.Empty);
     }
 }

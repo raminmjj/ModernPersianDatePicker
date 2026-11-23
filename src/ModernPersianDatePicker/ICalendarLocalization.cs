@@ -95,4 +95,37 @@ public interface ICalendarLocalization
     /// Season names indexed 0-3 (Spring, Summer, Autumn, Winter).
     /// </summary>
     string[] SeasonNames { get; }
+
+    // The members below were added in 2.6.12. They have English defaults, so an
+    // existing implementation keeps compiling; override them to translate.
+
+    /// <summary>Label for the "Yesterday" preset.</summary>
+    string YesterdayLabel => "Yesterday";
+
+    /// <summary>Label for the "Last 7 days" preset (today and the 6 days before it).</summary>
+    string Last7DaysLabel => "Last 7 Days";
+
+    /// <summary>Label for the "Last month" preset (the whole previous calendar month).</summary>
+    string LastMonthLabel => "Last Month";
+
+    /// <summary>Label for the "Last 30 days" preset (today and the 29 days before it).</summary>
+    string Last30DaysLabel => "Last 30 Days";
+
+    /// <summary>Heading of the Quick Range panel's preset list.</summary>
+    string PresetsLabel => "Presets";
+
+    /// <summary>Label for the Quick Range panel's "Cancel" button.</summary>
+    string CancelLabel => "Cancel";
+
+    /// <summary>Label for the Quick Range panel's "Clear" button.</summary>
+    string ClearLabel => "Clear";
+
+    /// <summary>Tooltip of the field's clear (x) button.</summary>
+    string ClearTooltip => "Clear";
+
+    /// <summary>Half-year names indexed 0-1 (first half: months 1-6, second half: months 7-12).</summary>
+    string[] HalfYearNames => new[] { "First Half", "Second Half" };
+
+    /// <summary>The length of a range, e.g. "30 days" (shown next to presets and in the summary).</summary>
+    string FormatDayCount(int days) => days == 1 ? "1 day" : $"{days} days";
 }

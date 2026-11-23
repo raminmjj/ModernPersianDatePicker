@@ -54,4 +54,24 @@ public class FarsiLocalization : ICalendarLocalization
     public string GoToTodayLabel { get; } = "برو به امروز";
 
     public string[] SeasonNames { get; } = { "بهار", "تابستان", "پاییز", "زمستان" };
+
+    public string YesterdayLabel => "دیروز";
+
+    public string Last7DaysLabel => "7 روز اخیر";
+
+    public string LastMonthLabel => "ماه گذشته";
+
+    public string Last30DaysLabel => "30 روز اخیر";
+
+    public string PresetsLabel => "بازه‌های آماده";
+
+    public string CancelLabel => "انصراف";
+
+    public string ClearLabel => "پاک کردن";
+
+    public string ClearTooltip => "پاک کردن";
+
+    public string[] HalfYearNames { get; } = { "نیم‌سال اول", "نیم‌سال دوم" };
+
+    public string FormatDayCount(int days) => $"{days} روز";
 }
