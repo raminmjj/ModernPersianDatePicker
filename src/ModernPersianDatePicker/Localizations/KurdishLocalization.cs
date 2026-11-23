@@ -54,4 +54,24 @@ public class KurdishLocalization : ICalendarLocalization
     public string GoToTodayLabel { get; } = "بۆ ئەمڕۆ بچۆ";
 
     public string[] SeasonNames { get; } = { "بەهار", "تابستان", "پاییز", "زستان" };
+
+    public string YesterdayLabel => "دوێنێ";
+
+    public string Last7DaysLabel => "7 ڕۆژی ڕابردوو";
+
+    public string LastMonthLabel => "مانگی ڕابردوو";
+
+    public string Last30DaysLabel => "30 ڕۆژی ڕابردوو";
+
+    public string PresetsLabel => "مەودا ئامادەکان";
+
+    public string CancelLabel => "پاشگەزبوونەوە";
+
+    public string ClearLabel => "سڕینەوە";
+
+    public string ClearTooltip => "سڕینەوە";
+
+    public string[] HalfYearNames { get; } = { "نیوەساڵی یەکەم", "نیوەساڵی دووەم" };
+
+    public string FormatDayCount(int days) => $"{days} ڕۆژ";
 }

@@ -42,6 +42,35 @@
                 </Style>
             </ControlTheme>
 
+            <!-- The clear (x) button inside the field (ShowClearButton): a small round
+                 button in the icon colour, filled on hover. -->
+            <ControlTheme x:Key="PersianDatePickerClearButtonTheme" TargetType="Button">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Width" Value="20"/>
+                <Setter Property="Height" Value="20"/>
+                <Setter Property="CornerRadius" Value="10"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Focusable" Value="False"/>
+                <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerIconForegroundBrush}"/>
+                <Setter Property="Template">
+                    <ControlTemplate>
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="{TemplateBinding CornerRadius}">
+                            <ContentPresenter Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter>
+                <Style Selector="^:pointerover">
+                    <Setter Property="Background" Value="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                </Style>
+            </ControlTheme>
+
             <!-- ModernPersianDatePicker -->
             <ControlTheme x:Key="{x:Type local:ModernPersianDatePicker}" TargetType="local:ModernPersianDatePicker">
                 <Setter Property="Background" Value="{DynamicResource PersianDatePickerBackgroundBrush}"/>
@@ -67,6 +96,8 @@
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
@@ -102,9 +133,29 @@
                                     </TextBox.Resources>
                                 </TextBox>
 
+                                <!-- Clear Button (ShowClearButton; shown while the field holds something) -->
+                                <Button x:Name="PART_ClearButton"
+                                        Grid.Column="1"
+                                        Theme="{StaticResource PersianDatePickerClearButtonTheme}"
+                                        Margin="0,0,4,0"
+                                        VerticalAlignment="Center"
+                                        IsVisible="False">
+                                    <PathIcon Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"
+                                              Width="10"
+                                              Height="10"/>
+                                </Button>
+                                <Border x:Name="PART_ClearSeparator"
+                                        Grid.Column="2"
+                                        Width="1"
+                                        Height="16"
+                                        Margin="0,0,2,0"
+                                        VerticalAlignment="Center"
+                                        Background="{DynamicResource PersianDatePickerBorderBrush}"
+                                        IsVisible="False"/>
+
                                 <!-- Toggle Button -->
                                 <ToggleButton x:Name="PART_ToggleButton"
-                                              Grid.Column="1"
+                                              Grid.Column="3"
                                               Theme="{StaticResource PersianDatePickerToggleButtonTheme}"
                                               Width="30"
                                               Height="24"
@@ -121,7 +172,7 @@
                                 <!-- Popup -->
                                 <Popup x:Name="PART_Popup"
                                        Grid.Column="0"
-                                       Grid.ColumnSpan="2"
+                                       Grid.ColumnSpan="4"
                                        PlacementTarget="{TemplateBinding}"
                                        Placement="Bottom"
                                        IsOpen="False"
@@ -414,179 +465,108 @@
                 </Setter>
             </ControlTheme>
 
-            <!-- QuickRangeView -->
+            <!-- QuickRangeView: presets on the start side, a Month / Season / Half-year grid
+                 with a year stepper and the From / To boxes on the other, a footer with the
+                 summary and Clear / Cancel / Apply. A preset or a period fills From / To;
+                 Apply commits. The preset list and the grid are built in code into
+                 PART_PresetPanel / PART_GroupContentPanel. -->
             <ControlTheme x:Key="{x:Type local:QuickRangeView}" TargetType="local:QuickRangeView">
                 <Setter Property="Background" Value="{DynamicResource PersianDatePickerPopupBackgroundBrush}"/>
-                <Setter Property="MinWidth" Value="280"/>
-                <Setter Property="Padding" Value="8"/>
+                <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                <Setter Property="MinWidth" Value="520"/>
+                <Setter Property="Padding" Value="0"/>
                 <Setter Property="Template">
                     <ControlTemplate>
                         <Border Background="{TemplateBinding Background}"
                                 CornerRadius="4"
                                 Padding="{TemplateBinding Padding}">
-                            <Grid RowDefinitions="Auto,Auto,*">
-                                <!-- Row 1: From/To DatePickers + Apply -->
-                                <StackPanel x:Name="PART_Row1Panel"
-                                            Grid.Row="0"
-                                            Orientation="Horizontal"
-                                            Spacing="4"
-                                            Margin="0,0,0,8"
-                                            HorizontalAlignment="Center">
-                                    <local:ModernPersianDatePicker x:Name="PART_FromPicker"
-                                                                   MinWidth="120"
-                                                                   Watermark="From..."/>
-                                    <TextBlock Text="~"
-                                               VerticalAlignment="Center"
-                                               FontSize="16"
-                                               FontWeight="Bold"
-                                               Margin="4,0"
-                                               Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
-                                    <local:ModernPersianDatePicker x:Name="PART_ToPicker"
-                                                                   MinWidth="120"
-                                                                   Watermark="To..."/>
-                                    <Button x:Name="PART_ApplyButton"
-                                            Classes="qr-button"
-                                            Margin="4,0,0,0"
-                                            HorizontalAlignment="Center"
-                                            VerticalAlignment="Center">
-                                        <TextBlock Text="Apply"
-                                                   FontWeight="SemiBold"/>
-                                    </Button>
-                                </StackPanel>
-
-                                <!-- Row 2: Preset Buttons -->
-                                <StackPanel x:Name="PART_Row2Panel"
-                                            Grid.Row="1"
-                                            Orientation="Horizontal"
-                                            Spacing="4"
-                                            Margin="0,0,0,8"
-                                            HorizontalAlignment="Center">
-                                    <Button x:Name="PART_TodayButton"
-                                            Classes="qr-button"
-                                            Padding="8,6"
-                                            MinWidth="70">
-                                        <StackPanel Orientation="Horizontal">
-                                            <PathIcon Data="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M16,17H18V15H16M13,17H15V15H13M10,17H12V15H10M7,17H9V15H7M16,14H18V12H16M13,14H15V12H13M10,14H12V12H10M7,14H9V12H7M16,11H18V9H16M13,11H15V9H13M10,11H12V9H10M7,11H9V9H7M19,7H5V5H19V7Z"
-                                                      Width="12"
-                                                      Height="12"
-                                                      Margin="0,0,4,0"/>
-                                            <TextBlock Text="Today"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button x:Name="PART_WeekButton"
-                                            Classes="qr-button"
-                                            Padding="8,6"
-                                            MinWidth="70">
-                                        <StackPanel Orientation="Horizontal">
-                                            <PathIcon Data="M19,19H5V5H19M19,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M16,17H18V15H16M13,17H15V15H13M10,17H12V15H10M7,17H9V15H7"
-                                                      Width="12"
-                                                      Height="12"
-                                                      Margin="0,0,4,0"/>
-                                            <TextBlock Text="Week"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button x:Name="PART_MonthButton"
-                                            Classes="qr-button"
-                                            Padding="8,6"
-                                            MinWidth="70">
-                                        <StackPanel Orientation="Horizontal">
-                                            <PathIcon Data="M19,3H18V1H16V3H8V1H6V3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V8H19V19Z"
-                                                      Width="12"
-                                                      Height="12"
-                                                      Margin="0,0,4,0"/>
-                                            <TextBlock Text="Month"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
-                                    <Button x:Name="PART_YearButton"
-                                            Classes="qr-button"
-                                            Padding="8,6"
-                                            MinWidth="70">
-                                        <StackPanel Orientation="Horizontal">
-                                            <PathIcon Data="M12,2A10,10 0 1,0 22,12A10,10 0 0,0 12,2Zm0,18A8,8 0 1,1 20,12A8,8 0 0,1 12,20ZM12.5,7H11V13L16.2,16.2L17,14.9L12.5,12.2V7Z"
-                                                      Width="12"
-                                                      Height="12"
-                                                      Margin="0,0,4,0"/>
-                                            <TextBlock Text="Year"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
-                                </StackPanel>
-
-                                <!-- Row 3: Group Selector + Expandable Content + Back Button -->
-                                <Grid Grid.Row="2">
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
-                                        <RowDefinition Height="*"/>
-                                        <RowDefinition Height="Auto"/>
-                                    </Grid.RowDefinitions>
-
-                                    <!-- Group Selector (Month/Season/Half-Year) -->
-                                    <StackPanel x:Name="PART_GroupSelectorPanel"
-                                                Grid.Row="0"
-                                                Orientation="Horizontal"
-                                                Spacing="4"
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center">
-                                        <Button x:Name="PART_GroupMonthButton"
-                                                Classes="qr-button-group"
-                                                Padding="12,8"
-                                                MinWidth="80"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="Month"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"/>
-                                        </Button>
-                                        <Button x:Name="PART_GroupSeasonButton"
-                                                Classes="qr-button-group"
-                                                Padding="12,8"
-                                                MinWidth="80"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="Season"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"/>
-                                        </Button>
-                                        <Button x:Name="PART_GroupHalfYearButton"
-                                                Classes="qr-button-group"
-                                                Padding="12,8"
-                                                MinWidth="80"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="Half-Year"
-                                                       FontSize="14"
-                                                       FontWeight="SemiBold"/>
-                                        </Button>
+                            <Grid RowDefinitions="*,Auto">
+                                <Grid ColumnDefinitions="164,Auto,*">
+                                    <!-- Presets -->
+                                    <StackPanel Grid.Column="0" Margin="0,0,6,8">
+                                        <TextBlock x:Name="PART_PresetsHeader"
+                                                   Classes="qr-caption"
+                                                   Margin="10,2,10,6"/>
+                                        <StackPanel x:Name="PART_PresetPanel" Spacing="1"/>
                                     </StackPanel>
 
-                                    <!-- Expandable Content -->
-                                    <Border x:Name="PART_GroupContentBorder"
-                                            Grid.Row="1"
-                                            IsVisible="False"
-                                            VerticalAlignment="Center"
-                                            Margin="0,4,0,0">
-                                        <StackPanel x:Name="PART_GroupContentPanel"
-                                                    HorizontalAlignment="Center"/>
-                                    </Border>
+                                    <Border Grid.Column="1"
+                                            Width="1"
+                                            Margin="0,0,0,8"
+                                            Background="{DynamicResource PersianDatePickerBorderBrush}"
+                                            Opacity="0.5"/>
 
-                                    <!-- Back Button (separate row) -->
-                                    <Button x:Name="PART_BackButton"
-                                            Grid.Row="2"
-                                            Classes="qr-button"
-                                            HorizontalAlignment="Left"
-                                            Margin="0,4,0,0"
-                                            IsVisible="False"
-                                            Padding="8,4">
-                                        <StackPanel Orientation="Horizontal">
-                                            <PathIcon Data="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"
-                                                      Width="14"
-                                                      Height="14"
-                                                      Margin="0,0,4,0"/>
-                                            <TextBlock Text="Back"
-                                                       FontSize="12"/>
-                                        </StackPanel>
-                                    </Button>
+                                    <!-- Periods + From / To -->
+                                    <StackPanel Grid.Column="2" Margin="12,0,0,8" Spacing="12">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Border Classes="qr-segment-track">
+                                                <UniformGrid Columns="3">
+                                                    <Button x:Name="PART_GroupMonthButton" Classes="qr-segment"/>
+                                                    <Button x:Name="PART_GroupSeasonButton" Classes="qr-segment"/>
+                                                    <Button x:Name="PART_GroupHalfYearButton" Classes="qr-segment"/>
+                                                </UniformGrid>
+                                            </Border>
+                                            <StackPanel Grid.Column="1"
+                                                        Orientation="Horizontal"
+                                                        Margin="10,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                <Button x:Name="PART_YearPreviousButton" Classes="qr-icon">
+                                                    <PathIcon Data="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+                                                              Width="12" Height="12"/>
+                                                </Button>
+                                                <TextBlock x:Name="PART_YearText"
+                                                           MinWidth="40"
+                                                           TextAlignment="Center"
+                                                           VerticalAlignment="Center"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+                                                <Button x:Name="PART_YearNextButton" Classes="qr-icon">
+                                                    <PathIcon Data="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z"
+                                                              Width="12" Height="12"/>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Panel x:Name="PART_GroupContentPanel" Margin="-3,0"/>
+
+                                        <Grid ColumnDefinitions="*,Auto,*">
+                                            <StackPanel Grid.Column="0" Spacing="3">
+                                                <TextBlock x:Name="PART_FromLabel" Classes="qr-caption"/>
+                                                <local:ModernPersianDatePicker x:Name="PART_FromPicker"
+                                                                               HorizontalAlignment="Stretch"
+                                                                               MinWidth="120"/>
+                                            </StackPanel>
+                                            <PathIcon Grid.Column="1"
+                                                      Data="M4,11V13H16L10.5,18.5L11.92,19.92L19.84,12L11.92,4.08L10.5,5.5L16,11H4Z"
+                                                      Width="14" Height="14"
+                                                      Margin="8,0,8,8"
+                                                      VerticalAlignment="Bottom"
+                                                      Foreground="{DynamicResource PersianDatePickerIconForegroundBrush}"/>
+                                            <StackPanel Grid.Column="2" Spacing="3">
+                                                <TextBlock x:Name="PART_ToLabel" Classes="qr-caption"/>
+                                                <local:ModernPersianDatePicker x:Name="PART_ToPicker"
+                                                                               HorizontalAlignment="Stretch"
+                                                                               MinWidth="120"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Grid>
+
+                                <!-- Footer -->
+                                <Border Grid.Row="1"
+                                        BorderThickness="0,1,0,0"
+                                        BorderBrush="{DynamicResource PersianDatePickerBorderBrush}"
+                                        Padding="4,8,0,0">
+                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                                        <TextBlock x:Name="PART_SummaryText"
+                                                   Classes="qr-summary"
+                                                   VerticalAlignment="Center"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <Button x:Name="PART_ClearRangeButton" Grid.Column="1" Classes="qr-ghost"/>
+                                        <Button x:Name="PART_CancelButton" Grid.Column="2" Classes="qr-button" Margin="6,0,0,0"/>
+                                        <Button x:Name="PART_ApplyButton" Grid.Column="3" Classes="qr-primary" Margin="6,0,0,0"/>
+                                    </Grid>
+                                </Border>
                             </Grid>
                         </Border>
                     </ControlTemplate>
@@ -724,30 +704,171 @@
     </Style>
 
 
-    <!-- Quick Range button style with border -->
-    <Style Selector="local|QuickRangeView Button.qr-button">
+    <!-- Quick Range panel. Backgrounds go to the button's ContentPresenter: the Fluent
+         and Simple themes paint hover / pressed there, over the Button's own Background. -->
+    <Style Selector="local|QuickRangeView TextBlock.qr-caption">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerWatermarkForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView TextBlock.qr-summary">
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHeaderForegroundBrush}"/>
+    </Style>
+
+    <!-- Presets: a quiet list; the selected one in the accent colour -->
+    <Style Selector="local|QuickRangeView Button.qr-preset">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="10,6"/>
+        <Setter Property="FontSize" Value="13"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-preset /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-preset:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-preset.selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerDayHoverBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="local|QuickRangeView TextBlock.qr-count">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="FontWeight" Value="Normal"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerWatermarkForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-preset.selected TextBlock.qr-count">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+    </Style>
+
+    <!-- Month / Season / Half-year: a segmented switch -->
+    <Style Selector="local|QuickRangeView Border.qr-segment-track">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="Padding" Value="3"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-segment">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="0,4"/>
+        <Setter Property="Margin" Value="1,0"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-segment /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHeaderForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-segment:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-segment.selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerPopupBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Year stepper -->
+    <Style Selector="local|QuickRangeView Button.qr-icon">
+        <Setter Property="Width" Value="26"/>
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-icon /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerIconForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-icon:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+    </Style>
+
+    <!-- Period grid: outlined cells, the selected one filled, future ones muted -->
+    <Style Selector="local|QuickRangeView Button.qr-period">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerBorderBrush}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="4"/>
-        <Setter Property="Padding" Value="8,4"/>
+        <Setter Property="Padding" Value="0,7"/>
+        <Setter Property="FontSize" Value="12"/>
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    <Style Selector="local|QuickRangeView Button.qr-button:pointerover">
-        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
-    </Style>
-
-    <!-- Quick Range group button style (larger, with border) -->
-    <Style Selector="local|QuickRangeView Button.qr-button-group">
+    <Style Selector="local|QuickRangeView Button.qr-period /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerBorderBrush}"/>
-        <Setter Property="BorderThickness" Value="1"/>
-        <Setter Property="CornerRadius" Value="6"/>
-        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-period.future /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerWatermarkForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-period:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerFocusBorderBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-period.selected /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-period.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentHoverBrush}"/>
+    </Style>
+
+    <!-- Footer buttons: Clear (text), Cancel (outlined), Apply (filled) -->
+    <Style Selector="local|QuickRangeView Button.qr-ghost, local|QuickRangeView Button.qr-button, local|QuickRangeView Button.qr-primary">
+        <Setter Property="CornerRadius" Value="4"/>
+        <Setter Property="Padding" Value="14,5"/>
+        <Setter Property="FontSize" Value="13"/>
         <Setter Property="Cursor" Value="Hand"/>
     </Style>
-    <Style Selector="local|QuickRangeView Button.qr-button-group:pointerover">
+    <Style Selector="local|QuickRangeView Button.qr-ghost">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="10,5"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-ghost /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerHeaderForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-button">
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerBorderBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-button /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource PersianDatePickerBorderBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerDayForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerMonthYearHoverBackgroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-primary">
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-primary /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource PersianDatePickerSelectedForegroundBrush}"/>
+    </Style>
+    <Style Selector="local|QuickRangeView Button.qr-primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource PersianDatePickerAccentHoverBrush}"/>
     </Style>
 
 </Styles>

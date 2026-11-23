@@ -8,7 +8,7 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
-![NuGet](https://img.shields.io/badge/NuGet-2.5.12-blue)
+![NuGet](https://img.shields.io/badge/NuGet-2.6.12-blue)
 ![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -27,7 +27,8 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **Today Button** - Quick access to current date
 - ✅ **Time Picker** - Optional Hour/Minute/Second spinners exposed as a single `SelectedTime` (`TimeSpan`)
 - ✅ **Date Range Picker** - Select start and end dates, with optional `RangeStartTime` / `RangeEndTime` time-of-day components
-- ✅ **Quick Range Panel** - Custom-designed preset picker (Today / Week / Month / Year + grouped Month/Season/Half-Year) with optional From/To time spinners
+- ✅ **Quick Range Panel** - Eight presets (Today, Yesterday, This week, Last 7 days, This month, Last month, Last 30 days, This year), a Month / Season / Half-year grid for any year, editable From / To with optional time spinners, and Clear / Cancel / Apply
+- ✅ **Clear Button** - Optional × inside the field (`ShowClearButton`), also Ctrl+Delete
 - ✅ **Weekly Holidays** - Configurable `DayOfWeek` recurring holidays
 - ✅ **Specific Date Holidays** - Mark individual dates as holidays with custom brush
 - ✅ **Custom Accent Brush** - Override the theme accent for selected day, today border, etc.
@@ -54,8 +55,40 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker --version 2.5.12
+dotnet add package ModernPersianDatePicker --version 2.6.12
 ```
+
+## What's New in 2.6.12
+
+- **`ShowClearButton`** (`bool`, default `false`): a small × inside the field, before the
+  calendar button, shown while the field holds a date, a range or typed text (also invalid
+  text kept under `InvalidValueAction="Keep"`). Clicking it - or Ctrl+Delete in the field -
+  does what `Clear()` does. It is not a focus stop and is hidden while the picker is disabled.
+
+  ![Clear button](docs/ClearButton.png)
+
+- **A redesigned Quick Range panel.** Presets on one side (now eight, each with its length in
+  days), a Month / Season / Half-year grid with a year stepper on the other (any year, not
+  only the current one; periods that have not started yet are muted), the From / To boxes
+  below, and a footer with a summary ("Azar 1405 · 30 days") and **Clear / Cancel / Apply**.
+  Whatever matches From / To is highlighted, and the panel opens on the tab and year of the
+  current range.
+
+  ![Quick Range panel](docs/QuickRange.png)
+
+- **Behaviour change: a preset or a period no longer applies at once.** It fills From / To;
+  **Apply** commits the range (`DateRangeSelected` is raised then, as before). Cancel goes
+  back to the calendar without a change, Clear empties the range and closes the popup.
+  `QuickRangeSelectedEventArgs.RangeType` gains `yesterday`, `last7days`, `lastmonth` and
+  `last30days`; a range that matches no preset or period is `custom`.
+- **New localization members** on `ICalendarLocalization`: `YesterdayLabel`,
+  `Last7DaysLabel`, `LastMonthLabel`, `Last30DaysLabel`, `PresetsLabel`, `CancelLabel`,
+  `ClearLabel`, `ClearTooltip`, `HalfYearNames` and `FormatDayCount(int)`. They have English
+  defaults, so an existing custom localization still compiles; the four built-in languages
+  translate them. The English half-year names are now "First Half" / "Second Half" (were
+  "H1 (Jan-Jun)" / "H2 (Jul-Dec)", wrong in the Persian calendar).
+- **Custom `QuickRangeView` templates must be updated**: the template parts changed (see
+  [Quick Range panel](#quick-range-panel)), and the `qr-button-group` style class is gone.
 
 ## What's New in 2.5.12
 
@@ -236,6 +269,7 @@ See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
 | `InvalidValueAction` | `InvalidValueAction` | `SetToNull` | Action for invalid input |
 | `MinDate` | `PersianDate?` | `null` | Minimum selectable date |
 | `MaxDate` | `PersianDate?` | `null` | Maximum selectable date |
+| `ShowClearButton` | `bool` | `false` | Show a × inside the field while it holds a date, a range or typed text; clicking it (or Ctrl+Delete) clears the field |
 | `Watermark` | `string` | `"Select date..."` | Placeholder text - in display AND editable mode. Left at the default, the field shows the localized "select a date" label of its language |
 | `Theme` | `ThemeMode` | `System` | Per-instance theme (System, Light, Dark) |
 | `AccentBrush` | `IBrush?` | `null` | Override accent color for selection and focus |
@@ -309,7 +343,7 @@ datePicker.RangeTimeChanged += (sender, e) =>
 
 | Method | Description |
 |--------|-------------|
-| `Clear()` | Empties the field: no date, no typed text, no `HasInvalidInput` - also when the date was already empty and only invalid text was typed (a "Clear filters" button). |
+| `Clear()` | Empties the field: no date, no range, no typed text, no `HasInvalidInput` - also when the date was already empty and only invalid text was typed (a "Clear filters" button). The × of `ShowClearButton` calls it. |
 | `CommitText()` | Parses the editable box's current text now, as Enter or losing focus would. Call it before a save that does not move focus (e.g. a keyboard shortcut). |
 | `FocusEditableText()` | Puts the caret in the editable text box - an editable picker's only focus stop (a picker that is not editable focuses itself). |
 | `RefreshCalendar()` | In `Auto` mode, re-reads the culture's calendar and, if it changed, converts the held dates into it (the same day, new numbers). |
@@ -396,6 +430,12 @@ public class MyLocalization : ICalendarLocalization
     public string[] DayNames => new[] { "Day1", "Day2", /* ... */ };
     public string[] ShortMonthNames => new[] { "M1", "M2", /* ... */ };
     public string[] ShortDayNames => new[] { "D1", "D2", /* ... */ };
+    // ... the labels (TodayLabel, ApplyLabel, ...). The Quick Range members added in 2.6.12
+    // (YesterdayLabel, Last7DaysLabel, LastMonthLabel, Last30DaysLabel, PresetsLabel,
+    // CancelLabel, ClearLabel, ClearTooltip, HalfYearNames, FormatDayCount) have English
+    // defaults - override the ones you translate:
+    public string CancelLabel => "Annuler";
+    public string FormatDayCount(int days) => days == 1 ? "1 jour" : $"{days} jours";
 }
 
 // Use it:
@@ -571,6 +611,32 @@ Picking a range (a day click or a Quick Range preset), typing one, or `Clear()` 
 both properties; setting them from the view model moves the selection. A calendar switch
 converts `RangeStart` / `RangeEnd` and leaves these values untouched. The time of day of
 a value set from outside is ignored - use `RangeStartTime` / `RangeEndTime` for times.
+
+### Quick Range panel
+
+The "Quick Range" button at the bottom of a range picker's calendar opens the panel:
+
+- **Presets** - Today, Yesterday, This week, Last 7 days, This month, Last month, Last 30 days,
+  This year - each with its length in days.
+- **Periods** - a Month / Season / Half-year switch and a year stepper; click a cell to take
+  that whole period. Periods that have not started yet are muted (still selectable).
+- **From / To** - editable pickers (with time spinners when `IsTimePickerEnabled`).
+- **Footer** - a summary of the draft range, then **Clear** (empty the range and close),
+  **Cancel** (back to the calendar, nothing changed) and **Apply** (commit; raises
+  `DateRangeSelected`).
+
+A preset or a period only fills From / To; nothing changes until Apply. Whatever matches
+From / To is highlighted in both lists, and the panel opens on the tab and year of the
+current range.
+
+Template parts of `QuickRangeView` (for a custom ControlTheme): `PART_PresetsHeader`,
+`PART_PresetPanel`, `PART_GroupMonthButton`, `PART_GroupSeasonButton`,
+`PART_GroupHalfYearButton`, `PART_YearPreviousButton`, `PART_YearText`,
+`PART_YearNextButton`, `PART_GroupContentPanel`, `PART_FromLabel`, `PART_FromPicker`,
+`PART_ToLabel`, `PART_ToPicker`, `PART_SummaryText`, `PART_ClearRangeButton`,
+`PART_CancelButton`, `PART_ApplyButton`. The presets and the period cells are built in
+code; style them through the classes `qr-preset`, `qr-count`, `qr-period` (`.future`,
+`.selected`), `qr-segment` (`.selected`), `qr-icon`, `qr-ghost`, `qr-button`, `qr-primary`.
 
 ### Visibility matrix
 
@@ -749,7 +815,8 @@ dotnet test
 
 - [x] Time picker component (`SelectedTime` as `TimeSpan`)
 - [x] Date range picker with optional time-of-day (`RangeStartTime` / `RangeEndTime`)
-- [x] Quick Range panel with grouped Month/Season/Half-Year presets
+- [x] Quick Range panel: presets, a Month / Season / Half-year grid for any year, Clear / Cancel / Apply
+- [x] Optional clear button in the field (`ShowClearButton`)
 - [x] `SelectedTimeChanged` / `RangeTimeChanged` events
 - [x] Gregorian-mode safe conversion (`ToGregorianDateTime` / `ToDateTimeAsGregorian`)
 - [x] Calendar-aware date formatting (`FormatPersianDate` / `FormatSelectedDate` / `ToString(format, loc, calendarType)`)

@@ -54,4 +54,30 @@ public class ArabicLocalization : ICalendarLocalization
     public string GoToTodayLabel { get; } = "انتقل إلى اليوم";
 
     public string[] SeasonNames { get; } = { "ربيع", "صيف", "خريف", "شتاء" };
+
+    public string YesterdayLabel => "أمس";
+
+    public string Last7DaysLabel => "آخر 7 أيام";
+
+    public string LastMonthLabel => "الشهر الماضي";
+
+    public string Last30DaysLabel => "آخر 30 يومًا";
+
+    public string PresetsLabel => "نطاقات جاهزة";
+
+    public string CancelLabel => "إلغاء";
+
+    public string ClearLabel => "مسح";
+
+    public string ClearTooltip => "مسح";
+
+    public string[] HalfYearNames { get; } = { "النصف الأول", "النصف الثاني" };
+
+    public string FormatDayCount(int days) => days switch
+    {
+        1 => "يوم واحد",
+        2 => "يومان",
+        >= 3 and <= 10 => $"{days} أيام",
+        _ => $"{days} يومًا",
+    };
 }
