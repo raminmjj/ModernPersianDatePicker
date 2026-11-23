@@ -9,6 +9,7 @@
             <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="#FFABADB3"/>
             <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="#FF6D6D6D"/>
             <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="#FF999999"/>
+            <SolidColorBrush x:Key="PersianDatePickerIconForegroundBrush" Color="#FF6D6D6D"/>
 
             <!-- Accent colors -->
             <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF2196F3"/>
@@ -38,6 +39,7 @@
             <SolidColorBrush x:Key="PersianDatePickerBorderBrush" Color="#FF555555"/>
             <SolidColorBrush x:Key="PersianDatePickerTextForegroundBrush" Color="#FFCCCCCC"/>
             <SolidColorBrush x:Key="PersianDatePickerWatermarkForegroundBrush" Color="#FF888888"/>
+            <SolidColorBrush x:Key="PersianDatePickerIconForegroundBrush" Color="#FFAAAAAA"/>
 
             <!-- Accent colors (lighter shades for dark backgrounds) -->
             <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF64B5F6"/>

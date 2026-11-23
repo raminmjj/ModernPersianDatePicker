@@ -26,4 +26,52 @@ public class KurdishLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "ئەمڕۆ";
+
+    public string QuickRangeLabel { get; } = "هەڵبژاردنی خێرا";
+
+    public string ApplyLabel { get; } = "جێبەجێکردن";
+
+    public string CurrentWeekLabel { get; } = "ئەم هەفتەیە";
+
+    public string CurrentMonthLabel { get; } = "ئەم مانگەیە";
+
+    public string CurrentYearLabel { get; } = "ئەم ساڵەیە";
+
+    public string MonthLabel { get; } = "مانگ";
+
+    public string SeasonLabel { get; } = "وانان";
+
+    public string HalfYearLabel { get; } = "نیوەساڵ";
+
+    public string BackLabel { get; } = "گەڕانەوە";
+
+    public string FromLabel { get; } = "لە...";
+
+    public string ToLabel { get; } = "بۆ...";
+
+    public string SelectDateLabel { get; } = "بەروارێک هەڵبژێرە...";
+
+    public string GoToTodayLabel { get; } = "بۆ ئەمڕۆ بچۆ";
+
+    public string[] SeasonNames { get; } = { "بەهار", "تابستان", "پاییز", "زستان" };
+
+    public string YesterdayLabel => "دوێنێ";
+
+    public string Last7DaysLabel => "7 ڕۆژی ڕابردوو";
+
+    public string LastMonthLabel => "مانگی ڕابردوو";
+
+    public string Last30DaysLabel => "30 ڕۆژی ڕابردوو";
+
+    public string PresetsLabel => "مەودا ئامادەکان";
+
+    public string CancelLabel => "پاشگەزبوونەوە";
+
+    public string ClearLabel => "سڕینەوە";
+
+    public string ClearTooltip => "سڕینەوە";
+
+    public string[] HalfYearNames { get; } = { "نیوەساڵی یەکەم", "نیوەساڵی دووەم" };
+
+    public string FormatDayCount(int days) => $"{days} ڕۆژ";
 }

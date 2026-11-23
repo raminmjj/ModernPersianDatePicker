@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Threading;
 using ModernPersianDatePicker.Localizations;
 
 namespace ModernPersianDatePicker;
@@ -66,10 +67,39 @@ public class CalendarView : TemplatedControl
     public static readonly StyledProperty<PersianDate?> RangeEndProperty =
         AvaloniaProperty.Register<CalendarView, PersianDate?>(nameof(RangeEnd));
 
+    /// <summary>
+    /// When true, the embedded From/To pickers inside the Quick Range view expose
+    /// Hour/Minute/Second spinners so the user can specify start/end times for the
+    /// selected date range. Typically mirrors the parent picker's
+    /// (IsRangeMode &amp;&amp; IsTimePickerEnabled) flag.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsTimePickerEnabledProperty =
+        AvaloniaProperty.Register<CalendarView, bool>(nameof(IsTimePickerEnabled));
+
+    /// <summary>
+    /// Time-of-day component for the range start. Propagated to the embedded From
+    /// picker inside the Quick Range view and updated when a quick range is applied.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeStartTimeProperty =
+        AvaloniaProperty.Register<CalendarView, TimeSpan>(nameof(RangeStartTime),
+            DateRangeSelectedEventArgs.DefaultStartTime);
+
+    /// <summary>
+    /// Time-of-day component for the range end. Propagated to the embedded To
+    /// picker inside the Quick Range view and updated when a quick range is applied.
+    /// </summary>
+    public static readonly StyledProperty<TimeSpan> RangeEndTimeProperty =
+        AvaloniaProperty.Register<CalendarView, TimeSpan>(nameof(RangeEndTime),
+            DateRangeSelectedEventArgs.DefaultEndTime);
+
     // Events
     public event EventHandler<DateSelectedEventArgs>? DateSelected;
     public event EventHandler<DateRangeSelectedEventArgs>? DateRangeSelected;
     public event EventHandler<TodayClickedEventArgs>? TodayClicked;
+    public event EventHandler<QuickRangeSelectedEventArgs>? QuickRangeApplied;
+    /// <summary>Raised when the Quick Range panel's Clear button empties the range.</summary>
+    public event EventHandler? QuickRangeCleared;
+    public event EventHandler<bool>? QuickRangeViewVisibilityChanged;
 
     // Private fields
     private TextBlock? _monthText;
@@ -85,11 +115,16 @@ public class CalendarView : TemplatedControl
     private Button? _todayButton;
     private Popup? _monthPopup;
     private Popup? _yearPopup;
+    private Button? _quickRangeButton;
+    private TextBlock? _quickRangeText;
+    private QuickRangeView? _quickRangeView;
     private bool _isUpdatingCalendar;
     private bool _isSelectingEnd;
+    private bool _isQuickRangeViewVisible;
 
     // Derived caches for holiday checks (rebuilt when the source properties change)
     private HashSet<int> _weeklyHolidayIndices = new() { ToPersianWeekdayIndex(DayOfWeek.Friday) };
+    private HashSet<int> _gregorianWeeklyHolidayIndices = new() { (int)DayOfWeek.Friday };
     private HashSet<PersianDate> _holidays = new();
 
     static CalendarView()
@@ -105,6 +140,9 @@ public class CalendarView : TemplatedControl
         HolidayBrushProperty.Changed.AddClassHandler<CalendarView>((x, e) => x.OnHolidayBrushChanged(e));
         RangeStartProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
         RangeEndProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.UpdateCalendar());
+        IsTimePickerEnabledProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
+        RangeStartTimeProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
+        RangeEndTimeProperty.Changed.AddClassHandler<CalendarView>((x, _) => x.OnQuickRangeTimeSettingsChanged());
     }
 
     public CalendarView()
@@ -162,9 +200,22 @@ public class CalendarView : TemplatedControl
             .Select(ToPersianWeekdayIndex)
             .ToHashSet() ?? new HashSet<int>();
 
+        // Gregorian cache: store raw .NET DayOfWeek values
+        _gregorianWeeklyHolidayIndices = WeeklyHolidays?
+            .Select(d => (int)d)
+            .ToHashSet() ?? new HashSet<int>();
+
         _holidays = Holidays != null
             ? new HashSet<PersianDate>(Holidays)
             : new HashSet<PersianDate>();
+
+        // Note: we deliberately do NOT pre-convert the holidays to Gregorian here.
+        // PersianDate equality only compares Year/Month/Day, so the same HashSet works
+        // for both Persian and Gregorian modes — the user supplies the appropriate kind
+        // of date for the active calendar, and we check membership directly at render time.
+        // This also avoids the crash where a Gregorian July 31st (day=31, month=7) would be
+        // routed through PersianCalendar (which rejects it because Persian month 7 / Mehr
+        // only has 30 days).
 
         UpdateCalendar();
     }
@@ -294,6 +345,37 @@ public class CalendarView : TemplatedControl
         set => SetValue(RangeEndProperty, value);
     }
 
+    /// <summary>
+    /// When true, the embedded From/To pickers inside the Quick Range view expose
+    /// Hour/Minute/Second spinners so the user can specify start/end times for the
+    /// selected date range.
+    /// </summary>
+    public bool IsTimePickerEnabled
+    {
+        get => GetValue(IsTimePickerEnabledProperty);
+        set => SetValue(IsTimePickerEnabledProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range start (00:00:00 by default). Propagated to the
+    /// embedded From picker inside the Quick Range view.
+    /// </summary>
+    public TimeSpan RangeStartTime
+    {
+        get => GetValue(RangeStartTimeProperty);
+        set => SetValue(RangeStartTimeProperty, value);
+    }
+
+    /// <summary>
+    /// Time-of-day for the range end (23:59:59 by default). Propagated to the
+    /// embedded To picker inside the Quick Range view.
+    /// </summary>
+    public TimeSpan RangeEndTime
+    {
+        get => GetValue(RangeEndTimeProperty);
+        set => SetValue(RangeEndTimeProperty, value);
+    }
+
     private ICalendarLocalization GetLocalization()
     {
         return LocalizationProvider ?? new Localizations.FarsiLocalization();
@@ -336,6 +418,14 @@ public class CalendarView : TemplatedControl
             _yearButton.Click -= OnYearButton_Click;
         if (_todayButton != null)
             _todayButton.Click -= OnTodayButton_Click;
+        if (_quickRangeButton != null)
+            _quickRangeButton.Click -= OnQuickRangeButton_Click;
+        if (_quickRangeView != null)
+        {
+            _quickRangeView.QuickRangeApplied -= OnQuickRangeView_Applied;
+            _quickRangeView.QuickRangeCleared -= OnQuickRangeView_Cleared;
+            _quickRangeView.QuickRangeCancelled -= OnQuickRangeView_Cancelled;
+        }
 
         // Get template parts
         _monthText = e.NameScope.Find<TextBlock>("PART_MonthText");
@@ -351,6 +441,9 @@ public class CalendarView : TemplatedControl
         _todayButton = e.NameScope.Find<Button>("PART_TodayButton");
         _monthPopup = e.NameScope.Find<Popup>("PART_MonthPopup");
         _yearPopup = e.NameScope.Find<Popup>("PART_YearPopup");
+        _quickRangeButton = e.NameScope.Find<Button>("PART_QuickRangeButton");
+        _quickRangeText = e.NameScope.Find<TextBlock>("PART_QuickRangeText");
+        _quickRangeView = e.NameScope.Find<QuickRangeView>("PART_QuickRangeView");
 
         // Attach new event handlers
         if (_previousButton != null)
@@ -363,6 +456,20 @@ public class CalendarView : TemplatedControl
             _yearButton.Click += OnYearButton_Click;
         if (_todayButton != null)
             _todayButton.Click += OnTodayButton_Click;
+        if (_quickRangeButton != null)
+            _quickRangeButton.Click += OnQuickRangeButton_Click;
+        if (_quickRangeView != null)
+        {
+            _quickRangeView.QuickRangeApplied += OnQuickRangeView_Applied;
+            _quickRangeView.QuickRangeCleared += OnQuickRangeView_Cleared;
+            _quickRangeView.QuickRangeCancelled += OnQuickRangeView_Cancelled;
+            _quickRangeView.LocalizationProvider = GetLocalization();
+            _quickRangeView.CalendarType = GetEffectiveCalendarType();
+            _quickRangeView.WeeklyHolidays = WeeklyHolidays;
+            _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+            _quickRangeView.StartTime = RangeStartTime;
+            _quickRangeView.EndTime = RangeEndTime;
+        }
 
         UpdateCalendar();
     }
@@ -379,9 +486,133 @@ public class CalendarView : TemplatedControl
 
     private void OnTodayButton_Click(object? sender, RoutedEventArgs e)
     {
-        // Fire event to parent to select today and close popup
-        var today = PersianCalendarHelper.Today();
+        // Fire event to parent to select today and close popup.
+        // Respect the active calendar type: in Gregorian mode, return a
+        // PersianDate struct holding Gregorian values; in Persian mode,
+        // return Persian values.
+        var today = PersianCalendarHelper.TodayForCalendarType(GetEffectiveCalendarType());
         TodayClicked?.Invoke(this, new TodayClickedEventArgs(today));
+    }
+
+    private void OnQuickRangeButton_Click(object? sender, RoutedEventArgs e)
+    {
+        ToggleQuickRangeView();
+    }
+
+    private void OnQuickRangeView_Applied(object? sender, QuickRangeSelectedEventArgs e)
+    {
+        // Set range on this CalendarView
+        RangeStart = e.RangeStart;
+        RangeEnd = e.RangeEnd;
+
+        // Cache the user-selected times so reopening the Quick Range view preserves them
+        RangeStartTime = e.StartTime;
+        RangeEndTime = e.EndTime;
+
+        // Toggle back to calendar view
+        ToggleQuickRangeView();
+
+        // Fire the event to parent
+        QuickRangeApplied?.Invoke(this, e);
+    }
+
+    private void OnQuickRangeView_Cleared(object? sender, EventArgs e)
+    {
+        RangeStart = null;
+        RangeEnd = null;
+        ToggleQuickRangeView();
+        QuickRangeCleared?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Cancel: back to the calendar, nothing changed.</summary>
+    private void OnQuickRangeView_Cancelled(object? sender, EventArgs e) => ToggleQuickRangeView();
+
+    /// <summary>
+    /// Pushes IsTimePickerEnabled / RangeStartTime / RangeEndTime into the embedded
+    /// QuickRangeView whenever any of them change. The QuickRangeView forwards them
+    /// to its own From/To pickers.
+    /// </summary>
+    private void OnQuickRangeTimeSettingsChanged()
+    {
+        if (_quickRangeView == null)
+            return;
+
+        _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+        _quickRangeView.StartTime = RangeStartTime;
+        _quickRangeView.EndTime = RangeEndTime;
+    }
+
+    /// <summary>
+    /// Resets the quick range view to its default (hidden) state.
+    /// Called when the parent popup opens to ensure clean state.
+    /// </summary>
+    public void ResetQuickRangeView()
+    {
+        if (!_isQuickRangeViewVisible)
+            return;
+
+        _isQuickRangeViewVisible = false;
+        if (_daysGrid != null) _daysGrid.IsVisible = true;
+        if (_previousButton != null) _previousButton.IsVisible = true;
+        if (_nextButton != null) _nextButton.IsVisible = true;
+        if (_monthButton != null) _monthButton.IsVisible = true;
+        if (_yearButton != null) _yearButton.IsVisible = true;
+        if (_todayButton != null) _todayButton.IsVisible = true;
+        if (_monthText != null) _monthText.IsVisible = true;
+        if (_yearText != null) _yearText.IsVisible = true;
+        if (_quickRangeButton != null) _quickRangeButton.IsVisible = IsRangeMode;
+        if (_quickRangeView != null) _quickRangeView.IsVisible = false;
+
+        QuickRangeViewVisibilityChanged?.Invoke(this, false);
+    }
+
+    private void ToggleQuickRangeView()
+    {
+        _isQuickRangeViewVisible = !_isQuickRangeViewVisible;
+
+        if (_isQuickRangeViewVisible)
+        {
+            if (_daysGrid != null) _daysGrid.IsVisible = false;
+            if (_previousButton != null) _previousButton.IsVisible = false;
+            if (_nextButton != null) _nextButton.IsVisible = false;
+            if (_monthButton != null) _monthButton.IsVisible = false;
+            if (_yearButton != null) _yearButton.IsVisible = false;
+            if (_todayButton != null) _todayButton.IsVisible = false;
+            if (_monthText != null) _monthText.IsVisible = false;
+            if (_yearText != null) _yearText.IsVisible = false;
+            if (_quickRangeButton != null) _quickRangeButton.IsVisible = false;
+            if (_quickRangeView != null)
+            {
+                _quickRangeView.IsVisible = true;
+                _quickRangeView.CalendarType = GetEffectiveCalendarType();
+                _quickRangeView.LocalizationProvider = GetLocalization();
+                _quickRangeView.WeeklyHolidays = WeeklyHolidays;
+                _quickRangeView.IsTimePickerEnabled = IsTimePickerEnabled;
+                _quickRangeView.StartTime = RangeStartTime;
+                _quickRangeView.EndTime = RangeEndTime;
+                _quickRangeView.ResetRow3();
+                _quickRangeView.RangeStart = RangeStart;
+                _quickRangeView.RangeEnd = RangeEnd;
+                // Delay refresh to ensure embedded pickers' templates are applied
+                Dispatcher.UIThread.Post(() => _quickRangeView.RefreshPickers(),
+                    Avalonia.Threading.DispatcherPriority.Loaded);
+            }
+        }
+        else
+        {
+            if (_daysGrid != null) _daysGrid.IsVisible = true;
+            if (_previousButton != null) _previousButton.IsVisible = true;
+            if (_nextButton != null) _nextButton.IsVisible = true;
+            if (_monthButton != null) _monthButton.IsVisible = true;
+            if (_yearButton != null) _yearButton.IsVisible = true;
+            if (_todayButton != null) _todayButton.IsVisible = true;
+            if (_monthText != null) _monthText.IsVisible = true;
+            if (_yearText != null) _yearText.IsVisible = true;
+            if (_quickRangeButton != null) _quickRangeButton.IsVisible = IsRangeMode;
+            if (_quickRangeView != null) _quickRangeView.IsVisible = false;
+        }
+
+        QuickRangeViewVisibilityChanged?.Invoke(this, _isQuickRangeViewVisible);
     }
 
     private void ShowMonthSelection()
@@ -763,6 +994,16 @@ public class CalendarView : TemplatedControl
                 _todayText.Text = loc.TodayLabel;
             }
 
+            if (_todayButton != null)
+            {
+                ToolTip.SetTip(_todayButton, loc.GoToTodayLabel);
+            }
+
+            if (_quickRangeText != null)
+            {
+                _quickRangeText.Text = loc.QuickRangeLabel;
+            }
+
             if (_daysGrid != null)
             {
                 _daysGrid.Children.Clear();
@@ -841,14 +1082,26 @@ public class CalendarView : TemplatedControl
                         button.Classes.Add("today");
                     }
 
-                    if (GetEffectiveCalendarType() == CalendarType.Persian)
+                    bool isHoliday;
+                    if (GetEffectiveCalendarType() == CalendarType.Gregorian)
                     {
-                        bool isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
+                        // For Gregorian: calculate .NET DayOfWeek and check against caches
+                        int dayOfWeek = (firstDayOfWeek + day - 1) % 7;
+                        // Use _holidays directly: PersianDate equality is Year/Month/Day-only,
+                        // so a Gregorian date wrapped in PersianDate compares correctly here.
+                        // DayOfWeek (0) is a placeholder — it doesn't affect equality.
+                        isHoliday = _gregorianWeeklyHolidayIndices.Contains(dayOfWeek)
+                            || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, 0));
+                    }
+                    else
+                    {
+                        // For Persian: use column-based index check
+                        isHoliday = _weeklyHolidayIndices.Contains(currentColumn)
                             || _holidays.Contains(new PersianDate(DisplayYear, DisplayMonth, currentDay, currentColumn));
-                        if (isHoliday)
-                        {
-                            button.Classes.Add("holiday");
-                        }
+                    }
+                    if (isHoliday)
+                    {
+                        button.Classes.Add("holiday");
                     }
 
                     if (IsRangeMode)
@@ -880,11 +1133,29 @@ public class CalendarView : TemplatedControl
         {
             _isUpdatingCalendar = false;
         }
+
+        // Show/hide Quick Range button based on IsRangeMode
+        if (_quickRangeButton != null)
+            _quickRangeButton.IsVisible = IsRangeMode && !_isQuickRangeViewVisible;
+
+        // Update QuickRangeView localization
+        if (_quickRangeView != null)
+        {
+            _quickRangeView.LocalizationProvider = GetLocalization();
+            _quickRangeView.CalendarType = GetEffectiveCalendarType();
+            _quickRangeView.WeeklyHolidays = WeeklyHolidays;
+        }
     }
 
     private void OnDayClicked(int day)
     {
-        var firstDayOfWeek = PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
+        // Compute DayOfWeek using the active calendar's first-day-of-week.
+        // Persian mode stores the Persian week index (Sat=0..Fri=6);
+        // Gregorian mode stores the .NET DayOfWeek (Sun=0..Sat=6) for consistency
+        // with the rest of the Gregorian rendering path.
+        int firstDayOfWeek = GetEffectiveCalendarType() == CalendarType.Gregorian
+            ? PersianCalendarHelper.GetGregorianFirstDayOfWeek(DisplayYear, DisplayMonth)
+            : PersianCalendarHelper.GetFirstDayOfWeek(DisplayYear, DisplayMonth);
         var dayOfWeek = (firstDayOfWeek + (day - 1)) % 7;
         var clickedDate = new PersianDate(DisplayYear, DisplayMonth, day, dayOfWeek);
 

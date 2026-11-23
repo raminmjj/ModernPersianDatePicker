@@ -26,4 +26,58 @@ public class ArabicLocalization : ICalendarLocalization
     };
 
     public string TodayLabel { get; } = "اليوم";
+
+    public string QuickRangeLabel { get; } = "اختيار سريع";
+
+    public string ApplyLabel { get; } = "تطبيق";
+
+    public string CurrentWeekLabel { get; } = "هذا الأسبوع";
+
+    public string CurrentMonthLabel { get; } = "هذا الشهر";
+
+    public string CurrentYearLabel { get; } = "هذا العام";
+
+    public string MonthLabel { get; } = "شهر";
+
+    public string SeasonLabel { get; } = "فصول";
+
+    public string HalfYearLabel { get; } = "نصف سنة";
+
+    public string BackLabel { get; } = "رجوع";
+
+    public string FromLabel { get; } = "من...";
+
+    public string ToLabel { get; } = "إلى...";
+
+    public string SelectDateLabel { get; } = "اختر تاريخاً...";
+
+    public string GoToTodayLabel { get; } = "انتقل إلى اليوم";
+
+    public string[] SeasonNames { get; } = { "ربيع", "صيف", "خريف", "شتاء" };
+
+    public string YesterdayLabel => "أمس";
+
+    public string Last7DaysLabel => "آخر 7 أيام";
+
+    public string LastMonthLabel => "الشهر الماضي";
+
+    public string Last30DaysLabel => "آخر 30 يومًا";
+
+    public string PresetsLabel => "نطاقات جاهزة";
+
+    public string CancelLabel => "إلغاء";
+
+    public string ClearLabel => "مسح";
+
+    public string ClearTooltip => "مسح";
+
+    public string[] HalfYearNames { get; } = { "النصف الأول", "النصف الثاني" };
+
+    public string FormatDayCount(int days) => days switch
+    {
+        1 => "يوم واحد",
+        2 => "يومان",
+        >= 3 and <= 10 => $"{days} أيام",
+        _ => $"{days} يومًا",
+    };
 }

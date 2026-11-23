@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Xunit;
 
 namespace ModernPersianDatePicker.Tests;
@@ -120,5 +121,43 @@ public class HolidayTests
         Assert.True(Enum.IsDefined(typeof(ThemeMode), ThemeMode.Light));
         Assert.True(Enum.IsDefined(typeof(ThemeMode), ThemeMode.Dark));
         Assert.Equal(3, Enum.GetValues(typeof(ThemeMode)).Length);
+    }
+
+    // ──────────────────────────────────────────────────────
+    // 5. Gregorian weekly holiday logic
+    // ──────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(2025, 7, 5, true)]   // Saturday
+    [InlineData(2025, 7, 6, true)]   // Sunday
+    [InlineData(2025, 7, 7, false)]  // Monday
+    [InlineData(2025, 7, 12, true)]  // Saturday
+    [InlineData(2025, 7, 13, true)]  // Sunday
+    [InlineData(2025, 7, 4, false)]  // Friday
+    public void Gregorian_SaturdayAndSunday_AreHolidays(int year, int month, int day, bool expectedHoliday)
+    {
+        // Simulate the holiday check logic from CalendarView.UpdateCalendar for Gregorian
+        var weeklyHolidays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday };
+        var gregorianWeeklyIndices = weeklyHolidays.Select(d => (int)d).ToHashSet();
+
+        int firstDayOfWeek = PersianCalendarHelper.GetGregorianFirstDayOfWeek(year, month);
+        int dayOfWeek = (firstDayOfWeek + day - 1) % 7;
+
+        bool isHoliday = gregorianWeeklyIndices.Contains(dayOfWeek);
+        Assert.Equal(expectedHoliday, isHoliday);
+    }
+
+    [Fact]
+    public void Gregorian_Friday_IsNotHoliday()
+    {
+        var weeklyHolidays = new[] { DayOfWeek.Saturday, DayOfWeek.Sunday };
+        var gregorianWeeklyIndices = weeklyHolidays.Select(d => (int)d).ToHashSet();
+
+        // July 4, 2025 is Friday
+        int firstDayOfWeek = PersianCalendarHelper.GetGregorianFirstDayOfWeek(2025, 7);
+        int dayOfWeek = (firstDayOfWeek + 4 - 1) % 7;
+
+        bool isHoliday = gregorianWeeklyIndices.Contains(dayOfWeek);
+        Assert.False(isHoliday);
     }
 }

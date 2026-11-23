@@ -71,12 +71,65 @@ public static class PersianCalendarHelper
     }
 
     /// <summary>
-    /// Converts a Persian date to Gregorian date
+    /// Converts a Persian date to Gregorian date.
+    /// Use this when the <see cref="PersianDate"/> struct holds an actual Persian (Jalali)
+    /// date that needs to be converted to its Gregorian equivalent.
     /// </summary>
     public static DateTime ToGregorianDate(PersianDate persianDate)
     {
         var persianCalendar = new PersianCalendar();
         return persianCalendar.ToDateTime(persianDate.Year, persianDate.Month, persianDate.Day, 0, 0, 0, 0);
+    }
+
+    /// <summary>
+    /// Constructs a <see cref="DateTime"/> directly from a <see cref="PersianDate"/> struct
+    /// whose Year/Month/Day values are already in the Gregorian calendar.
+    /// Use this when the picker is in Gregorian mode and the struct holds a Gregorian date
+    /// (e.g. July 31st). Calling <see cref="ToGregorianDate"/> in that case would fail because
+    /// <c>PersianCalendar</c> rejects day=31 for month=7 (Mehr only has 30 days).
+    /// </summary>
+    public static DateTime ToGregorianDateTime(PersianDate persianDate)
+    {
+        return new DateTime(persianDate.Year, persianDate.Month, persianDate.Day);
+    }
+
+    /// <summary>
+    /// Formats a <see cref="PersianDate"/> using the appropriate day/month names for the
+    /// active calendar. Use this instead of <see cref="PersianDate.ToString(string)"/> when
+    /// you need the formatted string to respect both the localization and the calendar type
+    /// (e.g. an English-localized picker in Gregorian mode should produce "Monday 14 July 2025",
+    /// not Persian "Doshanbeh 14 Tir 1404").
+    /// </summary>
+    /// <param name="date">The date struct (holds either Persian or Gregorian values).</param>
+    /// <param name="format">"long", "short", or "month".</param>
+    /// <param name="localization">Localization provider (Farsi/English/Arabic/Kurdish).</param>
+    /// <param name="calendarType">Effective calendar type (Persian or Gregorian).</param>
+    public static string FormatPersianDate(PersianDate date, string format,
+        ICalendarLocalization localization, CalendarType calendarType)
+    {
+        if (calendarType == CalendarType.Gregorian)
+        {
+            // Build a real DateTime from the struct's Gregorian values so we can
+            // use .NET's DayOfWeek (Sunday=0..Saturday=6) for name lookup.
+            var d = ToGregorianDateTime(date);
+            int dotNetDow = (int)d.DayOfWeek;
+            return format.ToLower() switch
+            {
+                "long"  => $"{GetGregorianDayName(dotNetDow, localization)} {d.Day} {GetGregorianMonthName(d.Month, localization)} {d.Year}",
+                "month" => $"{GetGregorianMonthName(d.Month, localization)} {d.Year}",
+                _       => $"{d.Year}/{d.Month:D2}/{d.Day:D2}"
+            };
+        }
+        else
+        {
+            // Persian: struct's DayOfWeek is Persian-week-indexed (Sat=0..Fri=6).
+            return format.ToLower() switch
+            {
+                "long"  => $"{localization.DayNames[date.DayOfWeek]} {date.Day} {localization.MonthNames[date.Month]} {date.Year}",
+                "month" => $"{localization.MonthNames[date.Month]} {date.Year}",
+                _       => $"{date.Year}/{date.Month:D2}/{date.Day:D2}"
+            };
+        }
     }
 
     /// <summary>
@@ -156,6 +209,96 @@ public static class PersianCalendarHelper
     public static PersianDate Today()
     {
         return ToPersianDate(DateTime.Today);
+    }
+
+    /// <summary>
+    /// Resolves a (possibly Auto) CalendarType to a concrete Persian or Gregorian.
+    /// Auto is resolved using the current thread's UI culture: fa/ps → Persian,
+    /// everything else → Gregorian. This mirrors the picker's own resolution logic.
+    /// </summary>
+    public static CalendarType ResolveEffectiveCalendarType(CalendarType calendarType)
+    {
+        if (calendarType != CalendarType.Auto)
+            return calendarType;
+
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        return culture.TwoLetterISOLanguageName is "fa" or "ps"
+            ? CalendarType.Persian
+            : CalendarType.Gregorian;
+    }
+
+    /// <summary>
+    /// Returns today's date as a PersianDate struct whose Year/Month/Day values
+    /// are in the specified calendar system. For Auto, resolves via
+    /// <see cref="ResolveEffectiveCalendarType"/>.
+    /// </summary>
+    public static PersianDate TodayForCalendarType(CalendarType calendarType)
+    {
+        var effective = ResolveEffectiveCalendarType(calendarType);
+        if (effective == CalendarType.Gregorian)
+        {
+            var today = DateTime.Today;
+            return new PersianDate(today.Year, today.Month, today.Day, (int)today.DayOfWeek);
+        }
+        return Today();
+    }
+
+    /// <summary>
+    /// Returns two mid-week days (Tuesday and Wednesday) from the current month
+    /// in the specified calendar system. For Auto, resolves via
+    /// <see cref="ResolveEffectiveCalendarType"/>. The returned PersianDate structs
+    /// hold values in the resolved calendar and are suitable for use as holiday
+    /// examples that match the picker's active calendar.
+    /// </summary>
+    public static PersianDate[] GetMidWeekDaysOfCurrentMonth(CalendarType calendarType)
+    {
+        var effective = ResolveEffectiveCalendarType(calendarType);
+
+        if (effective == CalendarType.Gregorian)
+        {
+            var today = DateTime.Today;
+            return FindMidWeekDays(today.Year, today.Month, effective);
+        }
+        else
+        {
+            var today = Today();
+            return FindMidWeekDays(today.Year, today.Month, effective);
+        }
+    }
+
+    /// <summary>
+    /// Finds the first Tuesday and Wednesday in the given month/year.
+    /// In the Persian week (Sat=0..Fri=6), Tuesday=3 and Wednesday=4.
+    /// In the .NET week (Sun=0..Sat=6), Tuesday=2 and Wednesday=3.
+    /// </summary>
+    private static PersianDate[] FindMidWeekDays(int year, int month, CalendarType calendarType)
+    {
+        var result = new System.Collections.Generic.List<PersianDate>();
+
+        if (calendarType == CalendarType.Gregorian)
+        {
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+            for (int day = 1; day <= daysInMonth && result.Count < 2; day++)
+            {
+                var dt = new DateTime(year, month, day);
+                if (dt.DayOfWeek == DayOfWeek.Tuesday || dt.DayOfWeek == DayOfWeek.Wednesday)
+                    result.Add(new PersianDate(year, month, day, (int)dt.DayOfWeek));
+            }
+        }
+        else
+        {
+            int firstDayOfWeek = GetFirstDayOfWeek(year, month);
+            int daysInMonth = GetDaysInMonth(year, month);
+            for (int day = 1; day <= daysInMonth && result.Count < 2; day++)
+            {
+                int persianDow = (firstDayOfWeek + day - 1) % 7;
+                // Persian week: 0=Sat, 1=Sun, 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri
+                if (persianDow == 3 || persianDow == 4)
+                    result.Add(new PersianDate(year, month, day, persianDow));
+            }
+        }
+
+        return result.ToArray();
     }
 
     // ── Gregorian helpers ──
@@ -318,6 +461,8 @@ public readonly struct PersianDate : IEquatable<PersianDate>, IComparable<Persia
 
     public string ToString(string format, ICalendarLocalization localization)
     {
+        // Backward-compatible overload: assumes Persian calendar semantics.
+        // Use ToString(format, localization, calendarType) for calendar-aware formatting.
         return format.ToLower() switch
         {
             "long" => $"{localization.DayNames[DayOfWeek]} {Day} {localization.MonthNames[Month]} {Year}",
@@ -325,6 +470,16 @@ public readonly struct PersianDate : IEquatable<PersianDate>, IComparable<Persia
             "month" => $"{localization.MonthNames[Month]} {Year}",
             _ => ToString()
         };
+    }
+
+    /// <summary>
+    /// Calendar-aware formatting. Produces day/month names appropriate for the active
+    /// calendar type and localization. Use this in place of <see cref="ToString(string, ICalendarLocalization)"/>
+    /// when the picker might be in Gregorian mode.
+    /// </summary>
+    public string ToString(string format, ICalendarLocalization localization, CalendarType calendarType)
+    {
+        return PersianCalendarHelper.FormatPersianDate(this, format, localization, calendarType);
     }
 
     public bool Equals(PersianDate other)
@@ -352,9 +507,23 @@ public readonly struct PersianDate : IEquatable<PersianDate>, IComparable<Persia
         return !(left == right);
     }
 
+    /// <summary>
+    /// Converts this date to a .NET <see cref="DateTime"/> assuming the struct holds
+    /// an actual Persian (Jalali) date. Use <see cref="ToDateTimeAsGregorian"/> instead when
+    /// the struct holds a Gregorian date (i.e. the picker is in Gregorian mode).
+    /// </summary>
     public DateTime ToDateTime()
     {
         return PersianCalendarHelper.ToGregorianDate(this);
+    }
+
+    /// <summary>
+    /// Constructs a <see cref="DateTime"/> directly from this struct's Year/Month/Day,
+    /// treating them as already Gregorian. Use this when the picker is in Gregorian mode.
+    /// </summary>
+    public DateTime ToDateTimeAsGregorian()
+    {
+        return PersianCalendarHelper.ToGregorianDateTime(this);
     }
 
     public int CompareTo(PersianDate other)

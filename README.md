@@ -8,7 +8,8 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
-![Avalonia UI](https://img.shields.io/badge/Avalonia-11.3.11-blue)
+![NuGet](https://img.shields.io/badge/NuGet-2.6.12-blue)
+![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -17,14 +18,17 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **Full Persian Calendar Support** - Accurate Jalali/Shamsi date calculations with leap year support
 - ✅ **RTL & LTR Layouts** - Right-to-left for Persian, Left-to-right for English
 - ✅ **Multi-Language Support** - Farsi, English, Arabic, Kurdish + custom via `ICalendarLocalization`
-- ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture
+- ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture (follows a runtime language switch via `NotifyCultureChanged()`)
+- ✅ **Calendar-Neutral Binding** - `SelectedDateTime`, `RangeStartDateTime` and `RangeEndDateTime` (`DateTime?`) keep the same day whatever the calendar
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
 - ✅ **Mouse Scroll Navigation** - Scroll through months with mouse wheel when calendar is open
-- ✅ **Editable Mode** - Type dates manually with validation
+- ✅ **Editable Mode** - Type dates manually with validation, in ASCII, Persian (۰-۹) or Arabic-Indic (٠-٩) digits; an invalid entry can be kept and reported (`HasInvalidInput`) instead of silently replaced
 - ✅ **Month/Year Selection** - Quick dropdown selectors for month and year
 - ✅ **Today Button** - Quick access to current date
-- ✅ **Time Picker** - Optional Hour/Minute/Second spinners
-- ✅ **Date Range Picker** - Select start and end dates
+- ✅ **Time Picker** - Optional Hour/Minute/Second spinners exposed as a single `SelectedTime` (`TimeSpan`)
+- ✅ **Date Range Picker** - Select start and end dates, with optional `RangeStartTime` / `RangeEndTime` time-of-day components
+- ✅ **Quick Range Panel** - Eight presets (Today, Yesterday, This week, Last 7 days, This month, Last month, Last 30 days, This year), a Month / Season / Half-year grid for any year, editable From / To with optional time spinners, and Clear / Cancel / Apply
+- ✅ **Clear Button** - Optional × inside the field (`ShowClearButton`), also Ctrl+Delete
 - ✅ **Weekly Holidays** - Configurable `DayOfWeek` recurring holidays
 - ✅ **Specific Date Holidays** - Mark individual dates as holidays with custom brush
 - ✅ **Custom Accent Brush** - Override the theme accent for selected day, today border, etc.
@@ -51,8 +55,120 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker
+dotnet add package ModernPersianDatePicker --version 2.6.12
 ```
+
+## What's New in 2.6.12
+
+- **`ShowClearButton`** (`bool`, default `false`): a small × inside the field, before the
+  calendar button, shown while the field holds a date, a range or typed text (also invalid
+  text kept under `InvalidValueAction="Keep"`). Clicking it - or Ctrl+Delete in the field -
+  does what `Clear()` does. It is not a focus stop and is hidden while the picker is disabled.
+
+  ![Clear button](docs/ClearButton.png)
+
+- **A redesigned Quick Range panel.** Presets on one side (now eight, each with its length in
+  days), a Month / Season / Half-year grid with a year stepper on the other (any year, not
+  only the current one; periods that have not started yet are muted), the From / To boxes
+  below, and a footer with a summary ("Azar 1405 · 30 days") and **Clear / Cancel / Apply**.
+  Whatever matches From / To is highlighted, and the panel opens on the tab and year of the
+  current range.
+
+  ![Quick Range panel](docs/QuickRange.png)
+
+- **Behaviour change: a preset or a period no longer applies at once.** It fills From / To;
+  **Apply** commits the range (`DateRangeSelected` is raised then, as before). Cancel goes
+  back to the calendar without a change, Clear empties the range and closes the popup.
+  `QuickRangeSelectedEventArgs.RangeType` gains `yesterday`, `last7days`, `lastmonth` and
+  `last30days`; a range that matches no preset or period is `custom`.
+- **New localization members** on `ICalendarLocalization`: `YesterdayLabel`,
+  `Last7DaysLabel`, `LastMonthLabel`, `Last30DaysLabel`, `PresetsLabel`, `CancelLabel`,
+  `ClearLabel`, `ClearTooltip`, `HalfYearNames` and `FormatDayCount(int)`. They have English
+  defaults, so an existing custom localization still compiles; the four built-in languages
+  translate them. The English half-year names are now "First Half" / "Second Half" (were
+  "H1 (Jan-Jun)" / "H2 (Jul-Dec)", wrong in the Persian calendar).
+- **Custom `QuickRangeView` templates must be updated**: the template parts changed (see
+  [Quick Range panel](#quick-range-panel)), and the `qr-button-group` style class is gone.
+
+## What's New in 2.5.12
+
+- **Calendar-neutral range values: `RangeStartDateTime` / `RangeEndDateTime`**
+  (`DateTime?`, the date part, two-way by default). They stay in sync with
+  `RangeStart` / `RangeEnd` both ways and never change meaning: a range picked as
+  1405/09/01 ~ 1405/09/30 is the same days after a switch to Gregorian (a `CalendarType`
+  change, or `NotifyCultureChanged()` / `RefreshCalendar()` in Auto mode) and back -
+  `RangeStart` / `RangeEnd` and the text are converted, the DateTime values do not change.
+  Bind these instead of `RangeStart` / `RangeEnd` when you store the range.
+- **Typing a range** (`IsRangeMode` + `IsEditable`): the box is parsed as
+  `start ~ end` (plus `HH:mm[:ss] ~ HH:mm[:ss]` when `IsTimePickerEnabled`). It used to
+  be parsed as a single date and written to `SelectedDate`, leaving the range unchanged.
+  An invalid range (a bad date, only one end, the end before the start, outside
+  `MinDate` / `MaxDate`) follows `InvalidValueAction` like a single date: under `Keep`
+  the text and the old range stay and `HasInvalidInput` is set - never replaced by today.
+  An empty box clears the range. A valid typed range raises `DateRangeSelected`.
+- **`Clear()` also empties the range** (`RangeStart`, `RangeEnd` and both DateTime values).
+
+## What's New in 2.4.12
+
+- **An editable picker shows your `Watermark`.** It always showed the localized
+  "select a date" label instead, so a custom hint (e.g. `yyyy/MM/dd`) worked only
+  in display mode. Left at its default, the watermark is still the localized label,
+  and a later `Watermark` change or a language switch keeps your text.
+- **`Clear()` empties a field holding invalid text.** When the date was already
+  empty (text that is not a date typed into an empty field), `Clear()` changed
+  nothing: the text and `HasInvalidInput` stayed. It now empties the text box and
+  resets the flag too.
+
+> **2.3.12** was published by mistake from the same code, with the old 2.2.12
+> assembly version inside. Use **2.4.12**.
+
+## What's New in 2.2.12
+
+- **The time section is always left-to-right** - it used to inherit an RTL container's
+  direction and read second : minute : hour.
+- **ControlThemes**: the picker, the calendar, the time and the quick-range views are
+  ControlThemes keyed by type - an ordinary style overrides any setter, a ControlTheme
+  can be `BasedOn` them, and a subclass gets the look with nothing overridden.
+- **The layout is yours**: the text box's padding and vertical alignment are bound to the
+  picker's `Padding` / `VerticalContentAlignment` (they were fixed in the template, so
+  no style could change them, and `Padding` did nothing). The default `MinWidth="200"`
+  is gone. Focus changes the border colour only (the 2 px border made the box jump).
+- **One focus stop**: an editable picker is no longer focusable itself next to its text
+  box; `FocusEditableText()` puts the caret in the box.
+- **`Theme="Light"` in a Dark application is Light** (it stayed dark), the box and the
+  popup; the Dark palette is no longer copied into C# - every colour comes from
+  `PersianDatePickerColors.xaml` (or the application's re-definition).
+- **The calendar button** has its own theme: no grey box, an `IconForeground` icon that
+  takes the accent colour when hovered or open (Fluent drew it white - invisible on Light).
+- **The popup is at least as wide as the field.**
+- **`SelectedDateCalendar`** (read-only): the calendar `SelectedDate`'s numbers are in.
+
+### Upgrading from 2.1.x
+- A picker no longer has a **minimum width of 200**: give it a `Width` / `MinWidth` (or a
+  stretching container) where it relied on that.
+- **Focus no longer thickens the border** to 2 px (only its colour changes).
+- An **editable** picker is no longer focusable itself: call `FocusEditableText()`
+  instead of `Focus()` to put the caret in it.
+- A **re-templated** picker: the looks are now ControlThemes. Your own `Style` setters still
+  win; a full replacement is a ControlTheme keyed by the type (or `BasedOn` it).
+- An application that re-defines the colour keys should add the new
+  `PersianDatePickerIconForegroundBrush` (the calendar button's icon).
+
+## What's New in 2.1.12
+
+- **`HasInvalidInput`** - with `InvalidValueAction="Keep"`, an invalid or out-of-range typed date
+  keeps the text and the previous date **and reports it**, so the application never saves the old
+  date as what the user typed. `CommitText()` parses the box on demand.
+- **An empty box means "no date"** under `Keep` and `SetToNull`. *Behaviour change:* `Keep` used to
+  keep the previous date, so a cleared box could not clear the value. `SetToToday` is unchanged.
+- **Persian and Arabic-Indic digits** (`۱۴۰۴/۰۱/۱۵`, `١٤٠٤/٠١/١٥`) are accepted when typing.
+- **`SelectedDateTime`** (`DateTime?`, two-way) - the selected date independent of the calendar.
+- **Runtime language switch** - `ModernPersianDatePicker.NotifyCultureChanged()` /
+  `RefreshCalendar()` convert the held dates when an `Auto` picker's culture changes, and switching
+  `CalendarType` now converts from the calendar the values are actually in.
+
+See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
+[Editable Mode](#editable-mode).
 
 ## Quick Start
 
@@ -115,6 +231,16 @@ dotnet add package ModernPersianDatePicker
             Width="250"
             Margin="0,10"/>
 
+        <!-- Date Range Picker with Time
+             The parent's own TimePicker is hidden in range mode; time-of-day
+             for the range is captured inside the From/To pickers shown in the
+             Quick Range panel (open via the 'Quick Range' button). -->
+        <persian:ModernPersianDatePicker 
+            IsRangeMode="True"
+            IsTimePickerEnabled="True"
+            Width="250"
+            Margin="0,10"/>
+
         <!-- Custom Accent & Gregorian Calendar -->
         <persian:ModernPersianDatePicker 
             CalendarType="Gregorian"
@@ -130,7 +256,12 @@ dotnet add package ModernPersianDatePicker
 
 | Property | Type | Default | Description |
 |----------|------|---------|-------------|
-| `SelectedDate` | `PersianDate?` | `null` | The selected Persian date |
+| `SelectedDate` | `PersianDate?` | `null` | The selected date, as Year/Month/Day in the active calendar |
+| `SelectedDateTime` | `DateTime?` | `null` | The selected date, calendar-neutral (two-way by default) - bind this to store real dates |
+| `HasInvalidInput` | `bool` (read-only) | `false` | The typed text is not a valid date (range mode: not a valid range) and `InvalidValueAction` is `Keep` |
+| `SelectedDateCalendar` | `CalendarType` (read-only) | the effective calendar | The calendar `SelectedDate` / `RangeStart` / `RangeEnd` are expressed in (Persian or Gregorian, never Auto) |
+| `Padding` | `Thickness` | `12,4` | The text's padding inside the box (template-bound - a style can change it) |
+| `VerticalContentAlignment` | `VerticalAlignment` | `Center` | The text's vertical alignment inside the box |
 | `DisplayFormat` | `string` | `"long"` | Date display format (`"long"`, `"short"`, `"month"`) |
 | `Language` | `CalendarLanguage` | `Farsi` | Calendar language (Farsi, English, Arabic, Kurdish) |
 | `CalendarType` | `CalendarType` | `Auto` | Calendar system (Auto, Persian, Gregorian) |
@@ -138,19 +269,22 @@ dotnet add package ModernPersianDatePicker
 | `InvalidValueAction` | `InvalidValueAction` | `SetToNull` | Action for invalid input |
 | `MinDate` | `PersianDate?` | `null` | Minimum selectable date |
 | `MaxDate` | `PersianDate?` | `null` | Maximum selectable date |
-| `Watermark` | `string` | `"Select date..."` | Placeholder text |
+| `ShowClearButton` | `bool` | `false` | Show a × inside the field while it holds a date, a range or typed text; clicking it (or Ctrl+Delete) clears the field |
+| `Watermark` | `string` | `"Select date..."` | Placeholder text - in display AND editable mode. Left at the default, the field shows the localized "select a date" label of its language |
 | `Theme` | `ThemeMode` | `System` | Per-instance theme (System, Light, Dark) |
 | `AccentBrush` | `IBrush?` | `null` | Override accent color for selection and focus |
 | `HolidayBrush` | `IBrush?` | `null` | Override color for holiday day numbers |
 | `WeeklyHolidays` | `IReadOnlyList<DayOfWeek>` | `[Friday]` | Days of week treated as holidays |
 | `Holidays` | `IReadOnlyList<PersianDate>` | `[]` | Specific dates to mark as holidays |
-| `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar |
-| `Hour` | `int` | `0` | Selected hour (0-23) |
-| `Minute` | `int` | `0` | Selected minute (0-59) |
-| `Second` | `int` | `0` | Selected second (0-59) |
+| `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar (single-date mode) or inside the Quick Range From/To pickers (range mode) |
+| `SelectedTime` | `TimeSpan` | `00:00:00` | Selected time-of-day `[00:00:00, 23:59:59]` (single-date mode) |
 | `IsRangeMode` | `bool` | `false` | Enable date range selection |
-| `RangeStart` | `PersianDate?` | `null` | Start of selected range |
-| `RangeEnd` | `PersianDate?` | `null` | End of selected range |
+| `RangeStart` | `PersianDate?` | `null` | Start of selected range, as Year/Month/Day in the active calendar - do not bind to stored data |
+| `RangeEnd` | `PersianDate?` | `null` | End of selected range, as Year/Month/Day in the active calendar - do not bind to stored data |
+| `RangeStartDateTime` | `DateTime?` | `null` | Start of the range, calendar-neutral (two-way by default) - bind this to store real dates |
+| `RangeEndDateTime` | `DateTime?` | `null` | End of the range, calendar-neutral (two-way by default) - bind this to store real dates |
+| `RangeStartTime` | `TimeSpan` | `00:00:00` | Time-of-day for range start (active when `IsRangeMode && IsTimePickerEnabled`) |
+| `RangeEndTime` | `TimeSpan` | `23:59:59` | Time-of-day for range end (active when `IsRangeMode && IsTimePickerEnabled`) |
 | `LocalizationProvider` | `ICalendarLocalization?` | `null` | Custom localization provider |
 
 ## Events
@@ -169,14 +303,52 @@ datePicker.SelectedDateChanged += (sender, e) =>
 ```
 
 ### `DateRangeSelected`
-Fired when a date range is fully selected (in `IsRangeMode`).
+Fired when a date range is fully selected (in `IsRangeMode`). The event args also carry the
+current `StartTime` / `EndTime` (`TimeSpan`) — defaults are `00:00:00` and `23:59:59`.
 
 ```csharp
 datePicker.DateRangeSelected += (sender, e) =>
 {
-    Console.WriteLine($"Range: {e.RangeStart} ~ {e.RangeEnd}");
+    if (e.RangeStart is { } start && e.RangeEnd is { } end)
+    {
+        Console.WriteLine($"Range: {start:short} {e.StartTime:hh\:mm\:ss}" +
+            $" ~ {end:short} {e.EndTime:hh\:mm\:ss}");
+    }
 };
 ```
+
+### `SelectedTimeChanged`
+Fired when the single-date `SelectedTime` changes (e.g. user spins the Hour/Minute/Second control).
+
+```csharp
+datePicker.SelectedTimeChanged += (sender, e) =>
+{
+    Console.WriteLine($"Time: {e.OldTime:hh\:mm\:ss} -> {e.NewTime:hh\:mm\:ss}");
+};
+```
+
+### `RangeTimeChanged`
+Fired when `RangeStartTime` or `RangeEndTime` changes — e.g. when the user adjusts the From/To
+time spinners inside the Quick Range panel.
+
+```csharp
+datePicker.RangeTimeChanged += (sender, e) =>
+{
+    Console.WriteLine($"Range time: {datePicker.RangeStartTime:hh\:mm\:ss}" +
+        $" ~ {datePicker.RangeEndTime:hh\:mm\:ss}");
+};
+```
+
+## Methods
+
+| Method | Description |
+|--------|-------------|
+| `Clear()` | Empties the field: no date, no range, no typed text, no `HasInvalidInput` - also when the date was already empty and only invalid text was typed (a "Clear filters" button). The × of `ShowClearButton` calls it. |
+| `CommitText()` | Parses the editable box's current text now, as Enter or losing focus would. Call it before a save that does not move focus (e.g. a keyboard shortcut). |
+| `FocusEditableText()` | Puts the caret in the editable text box - an editable picker's only focus stop (a picker that is not editable focuses itself). |
+| `RefreshCalendar()` | In `Auto` mode, re-reads the culture's calendar and, if it changed, converts the held dates into it (the same day, new numbers). |
+| `ModernPersianDatePicker.NotifyCultureChanged()` | *Static.* Tells every loaded picker that `CultureInfo.CurrentUICulture` changed - call it on the UI thread right after switching the language. |
+| `FormatSelectedDate(format)` / `FormatRangeStart(format)` / `FormatRangeEnd(format)` | Calendar-aware formatted strings (see [formatting helpers](#modernpersiandatepicker-formatting-helpers)). |
 
 ## Keyboard & Mouse Navigation
 
@@ -207,7 +379,16 @@ When `IsEditable="True"`, users can type dates manually:
 1404-10-19    ✓ Dash separator
 1404_10_20    ✓ Underscore separator
 04/10/21      ✓ 2-digit year (→ 1404)
+۱۴۰۴/۱۰/۲۲    ✓ Persian digits (and Arabic-Indic ٠-٩)
 ```
+
+An **empty** box means "no date" (`SelectedDate = null`), except under `SetToToday`.
+
+In **range mode** the box holds `start ~ end`, each end in any of the formats above
+(`1405/09/01 ~ 1405/09/30`), followed by `HH:mm[:ss] ~ HH:mm[:ss]` when
+`IsTimePickerEnabled` (`1405/09/01 ~ 1405/09/30 08:00 ~ 17:30`). Both ends are required
+and the end may not precede the start; anything else is an invalid entry. An empty box
+clears the range (under `SetToToday`: today ~ today).
 
 ### Invalid Value Actions
 
@@ -218,9 +399,23 @@ InvalidValueAction="SetToNull"
 // Set to today if invalid
 InvalidValueAction="SetToToday"
 
-// Keep current value if invalid
+// Keep the typed text and the current value, and report it
 InvalidValueAction="Keep"
 ```
+
+With `Keep`, an invalid entry leaves `SelectedDate` (range mode: the range) unchanged and sets
+`HasInvalidInput` to `true` until the next valid or empty entry. An application that
+must never save a date the user did not enter binds `HasInvalidInput` and refuses to
+save while it is set - otherwise the OLD date would be saved under the mistyped text:
+
+```xml
+<persian:ModernPersianDatePicker IsEditable="True" InvalidValueAction="Keep"
+                                 SelectedDateTime="{Binding DueDate}"
+                                 HasInvalidInput="{Binding DueDateIsInvalid, Mode=OneWayToSource}" />
+```
+
+Typed text is parsed on Enter and when the box loses focus. When a save can happen
+without either (a keyboard shortcut), call `picker.CommitText()` first.
 
 ## Localization
 
@@ -235,6 +430,12 @@ public class MyLocalization : ICalendarLocalization
     public string[] DayNames => new[] { "Day1", "Day2", /* ... */ };
     public string[] ShortMonthNames => new[] { "M1", "M2", /* ... */ };
     public string[] ShortDayNames => new[] { "D1", "D2", /* ... */ };
+    // ... the labels (TodayLabel, ApplyLabel, ...). The Quick Range members added in 2.6.12
+    // (YesterdayLabel, Last7DaysLabel, LastMonthLabel, Last30DaysLabel, PresetsLabel,
+    // CancelLabel, ClearLabel, ClearTooltip, HalfYearNames, FormatDayCount) have English
+    // defaults - override the ones you translate:
+    public string CancelLabel => "Annuler";
+    public string FormatDayCount(int days) => days == 1 ? "1 jour" : $"{days} jours";
 }
 
 // Use it:
@@ -253,9 +454,66 @@ datePicker.LocalizationProvider = new MyLocalization();
 <persian:ModernPersianDatePicker Theme="Dark" />
 ```
 
+`Theme="Light"` / `"Dark"` win over the application's variant - the box AND its popup.
+`System` (the default) follows the application.
+
 ### Custom Accent
 ```xml
 <persian:ModernPersianDatePicker AccentBrush="#FF4CAF50" />
+```
+
+### Your Own Colours
+Every colour is a named resource (`PersianDatePicker...Brush`, see
+`Themes/PersianDatePickerColors.xaml`) looked up with `DynamicResource`. Define the
+same key in your application's resources and yours wins:
+
+```xml
+<Application.Resources>
+    <SolidColorBrush x:Key="PersianDatePickerAccentBrush" Color="#FF6366F1"/>
+</Application.Resources>
+```
+
+The keys: `Background`, `Border`, `TextForeground`, `WatermarkForeground`,
+`IconForeground` (the calendar button), `Accent`, `AccentHover`, `FocusBorder`,
+`PopupBackground`, `PopupBorder`, `HeaderForeground`, `DayForeground`,
+`HolidayForeground`, `DayHoverBackground`, `SelectedForeground`,
+`MonthYearHoverBackground`, `DayFocusBackground`, `SelectedFocusBorder`,
+`SelectedFocusBackground` - each `PersianDatePicker<name>Brush`.
+
+### Your Own Size and Shape
+The controls' looks are **ControlThemes** keyed by type, so an ordinary style
+overrides any of their setters - no template copy needed:
+
+```xml
+<Style Selector="persian|ModernPersianDatePicker">
+    <Setter Property="Padding" Value="14,12"/>
+    <Setter Property="CornerRadius" Value="10"/>
+    <Setter Property="MinHeight" Value="0"/>
+</Style>
+```
+
+The text box's layout is template-bound to the picker (`Padding`,
+`VerticalContentAlignment`), focus changes the border colour only (1 px, no jump),
+and the calendar button has its own theme (`PersianDatePickerToggleButtonTheme`).
+
+### Your Own Date Field (a Subclass)
+A subclass gets the picker's theme and its type selectors with nothing overridden
+(the picker's style key is `ModernPersianDatePicker`):
+
+```csharp
+public class AppDateField : ModernPersianDatePicker
+{
+    public AppDateField() { IsEditable = true; InvalidValueAction = InvalidValueAction.Keep; }
+}
+```
+
+To build on the look instead, base a ControlTheme on it:
+
+```xml
+<ControlTheme x:Key="MyPicker" TargetType="persian:ModernPersianDatePicker"
+              BasedOn="{StaticResource {x:Type persian:ModernPersianDatePicker}}">
+    <Setter Property="CornerRadius" Value="10"/>
+</ControlTheme>
 ```
 
 ## Holidays
@@ -280,6 +538,115 @@ datePicker.Holidays = new[]
 <persian:ModernPersianDatePicker HolidayBrush="#FFFF8800" />
 ```
 
+## Time & Range Time
+
+### Single-date mode
+Set `IsTimePickerEnabled="True"` to display Hour/Minute/Second spinners below the calendar.
+The selected time-of-day is exposed as `SelectedTime` (`TimeSpan`, range `[00:00:00, 23:59:59]`).
+
+The time section is **always left-to-right** (hour : minute : second), in every language:
+it does not inherit the direction of an RTL container, and a later change of that
+direction (or a value set on it) does not flip it.
+
+```xml
+<persian:ModernPersianDatePicker IsTimePickerEnabled="True" />
+```
+
+```csharp
+TimeOnly time = TimeOnly.FromTimeSpan(datePicker.SelectedTime);
+// Use ToDateTimeAsGregorian() when the picker is in Gregorian mode
+var d = datePicker.SelectedDate!.Value;
+DateTime full = (datePicker.CalendarType == CalendarType.Gregorian
+    ? d.ToDateTimeAsGregorian() : d.ToDateTime()) + datePicker.SelectedTime;
+```
+
+### Range mode
+When both `IsRangeMode` and `IsTimePickerEnabled` are `True`, the parent picker's own TimePicker
+is **hidden** — the time-of-day for the range is instead captured inside the From/To pickers
+shown in the Quick Range panel (open via the "Quick Range" button at the bottom of the dropdown).
+
+The two times are surfaced on the parent picker as `RangeStartTime` (default `00:00:00`) and
+`RangeEndTime` (default `23:59:59`).
+
+```xml
+<persian:ModernPersianDatePicker
+    IsRangeMode="True"
+    IsTimePickerEnabled="True" />
+```
+
+```csharp
+datePicker.DateRangeSelected += (_, e) =>
+{
+    DateTime start = e.RangeStart!.Value.ToDateTime() + e.StartTime;
+    DateTime end   = e.RangeEnd  !.Value.ToDateTime() + e.EndTime;
+    Console.WriteLine($"[{start:yyyy-MM-dd HH:mm:ss} .. {end:yyyy-MM-dd HH:mm:ss}]");
+};
+```
+
+> When the picker is in Gregorian mode, use `e.RangeStart.Value.ToDateTimeAsGregorian()`
+> instead of `ToDateTime()` to avoid routing through `PersianCalendar` (which would reject
+> days > 30 for Persian month 7 / Mehr). Simpler: read `RangeStartDateTime` /
+> `RangeEndDateTime`, which are already calendar-neutral.
+
+### Binding a range (MVVM)
+
+`RangeStart` / `RangeEnd` are `PersianDate` values **in the active calendar**: their
+numbers change meaning when the calendar or (in Auto mode) the culture switches. Bind the
+calendar-neutral `RangeStartDateTime` / `RangeEndDateTime` to stored data instead:
+
+```xml
+<persian:ModernPersianDatePicker IsRangeMode="True" IsEditable="True"
+                                 InvalidValueAction="Keep"
+                                 RangeStartDateTime="{Binding FromDate}"
+                                 RangeEndDateTime="{Binding ToDate}"
+                                 HasInvalidInput="{Binding RangeIsInvalid, Mode=OneWayToSource}" />
+```
+
+```csharp
+public DateTime? FromDate { get; set; }   // the date part; null = no range
+public DateTime? ToDate   { get; set; }
+```
+
+Picking a range (a day click or a Quick Range preset), typing one, or `Clear()` updates
+both properties; setting them from the view model moves the selection. A calendar switch
+converts `RangeStart` / `RangeEnd` and leaves these values untouched. The time of day of
+a value set from outside is ignored - use `RangeStartTime` / `RangeEndTime` for times.
+
+### Quick Range panel
+
+The "Quick Range" button at the bottom of a range picker's calendar opens the panel:
+
+- **Presets** - Today, Yesterday, This week, Last 7 days, This month, Last month, Last 30 days,
+  This year - each with its length in days.
+- **Periods** - a Month / Season / Half-year switch and a year stepper; click a cell to take
+  that whole period. Periods that have not started yet are muted (still selectable).
+- **From / To** - editable pickers (with time spinners when `IsTimePickerEnabled`).
+- **Footer** - a summary of the draft range, then **Clear** (empty the range and close),
+  **Cancel** (back to the calendar, nothing changed) and **Apply** (commit; raises
+  `DateRangeSelected`).
+
+A preset or a period only fills From / To; nothing changes until Apply. Whatever matches
+From / To is highlighted in both lists, and the panel opens on the tab and year of the
+current range.
+
+Template parts of `QuickRangeView` (for a custom ControlTheme): `PART_PresetsHeader`,
+`PART_PresetPanel`, `PART_GroupMonthButton`, `PART_GroupSeasonButton`,
+`PART_GroupHalfYearButton`, `PART_YearPreviousButton`, `PART_YearText`,
+`PART_YearNextButton`, `PART_GroupContentPanel`, `PART_FromLabel`, `PART_FromPicker`,
+`PART_ToLabel`, `PART_ToPicker`, `PART_SummaryText`, `PART_ClearRangeButton`,
+`PART_CancelButton`, `PART_ApplyButton`. The presets and the period cells are built in
+code; style them through the classes `qr-preset`, `qr-count`, `qr-period` (`.future`,
+`.selected`), `qr-segment` (`.selected`), `qr-icon`, `qr-ghost`, `qr-button`, `qr-primary`.
+
+### Visibility matrix
+
+| Mode | Parent's TimePicker | Quick Range From/To TimePickers |
+|------|---------------------|---------------------------------|
+| Single-date, no time | hidden | hidden |
+| Single-date, with time | **visible** | hidden |
+| Range mode, no time | hidden | hidden |
+| **Range mode + time** | **hidden** | **visible** |
+
 ## Gregorian Calendar Mode
 
 ```xml
@@ -289,17 +656,47 @@ datePicker.Holidays = new[]
     FlowDirection="LeftToRight" />
 ```
 
+## Real Dates and Culture Switches
+
+`SelectedDate` holds Year/Month/Day **in the active calendar**: the same struct means a
+different day in Persian and in Gregorian mode. Applications that store dates should bind
+`SelectedDateTime` (`DateTime?`, the date part) - it never changes meaning, and switching
+`CalendarType` converts `SelectedDate` while `SelectedDateTime` stays the same day.
+The same holds for a range: `RangeStart` / `RangeEnd` are converted, `RangeStartDateTime` /
+`RangeEndDateTime` stay the same days.
+
+In `CalendarType="Auto"` mode the calendar follows `CultureInfo.CurrentUICulture`.
+.NET raises no event when that changes, so an application that switches language at
+runtime tells the pickers right after setting the culture:
+
+```csharp
+CultureInfo.CurrentUICulture = new CultureInfo("en-US");
+ModernPersianDatePicker.NotifyCultureChanged();   // every loaded picker converts its date / range
+```
+
+A picker that was not loaded at the time catches up when it loads; `picker.RefreshCalendar()`
+does the same for one picker.
+
 ## Helper Classes
 
 ### `PersianCalendarHelper`
-Utility class for Persian date operations:
+Utility class for Persian date operations. (To read the picker's value as a real date,
+bind `SelectedDateTime` instead of converting `SelectedDate` yourself - see
+[Real Dates and Culture Switches](#real-dates-and-culture-switches).)
 
 ```csharp
 // Convert Gregorian to Persian
 var persianDate = PersianCalendarHelper.ToPersianDate(DateTime.Today);
 
-// Convert Persian to Gregorian
+// Convert Persian to Gregorian (assumes the struct holds Persian values)
 var gregorianDate = persianDate.ToDateTime();
+
+// Construct a DateTime directly from a PersianDate struct whose
+// Year/Month/Day are ALREADY Gregorian (i.e. the picker is in Gregorian mode).
+// Use this when CalendarType == Gregorian — ToDateTime() would otherwise route
+// through PersianCalendar and throw for e.g. July 31st (Persian month 7 / Mehr
+// only has 30 days).
+var dt = pickedDate.ToDateTimeAsGregorian();
 
 // Get today's Persian date
 var today = PersianCalendarHelper.Today();
@@ -313,13 +710,22 @@ int days = PersianCalendarHelper.GetDaysInMonth(1404, 12);
 // Get month/day names
 string monthName = PersianCalendarHelper.GetMonthName(1, useEnglish: false); // "فروردین"
 string dayName = PersianCalendarHelper.GetDayName(0, useEnglish: false);    // "شنبه"
+
+// Get today's date in the active calendar system (resolves Auto via culture)
+var today = PersianCalendarHelper.TodayForCalendarType(datePicker.CalendarType);
+
+// Get two mid-week days (Tue & Wed) of the current month in the active calendar
+PersianDate[] midWeek = PersianCalendarHelper.GetMidWeekDaysOfCurrentMonth(datePicker.CalendarType);
+
+// Format a date with calendar-aware day/month names
+string formatted = PersianCalendarHelper.FormatPersianDate(date, "long", loc, CalendarType.Gregorian);
 ```
 
 ### `PersianDate`
 Structure representing a Persian date:
 
 ```csharp
-var date = new PersianDate(year: 1403, month: 10, day: 19, dayOfWeek: 7);
+var date = new PersianDate(year: 1403, month: 10, day: 19, dayOfWeek: 6); // dayOfWeek: 0=Sat..6=Fri
 
 // ToString formats
 date.ToString();        // "1404/10/19"
@@ -331,9 +737,31 @@ date.ToString("month"); // "دی ۱۴۰۴"
 if (date1 > date2) { ... }
 if (date1.CompareTo(date2) > 0) { ... }
 
-// Convert to Gregorian
+// Convert to Gregorian (when the struct holds a Persian date)
 DateTime gregorian = date.ToDateTime();
+
+// Construct directly from the struct's values (when the struct holds a Gregorian date)
+// Use this in Gregorian calendar mode to avoid PersianCalendar conversion errors.
+DateTime asGregorian = date.ToDateTimeAsGregorian();
+
+// Calendar-aware ToString — produces correct day/month names for both calendars
+string farsi = date.ToString("long", loc, CalendarType.Persian);   // "شنبه 1 فروردین 1404"
+string english = date.ToString("long", loc, CalendarType.Gregorian); // "Thursday 31 July 2025"
 ```
+
+### `ModernPersianDatePicker` formatting helpers
+The picker exposes three convenience methods that produce calendar-aware formatted
+strings using the active localization and calendar type:
+
+```csharp
+string selected = datePicker.FormatSelectedDate("long");  // "شنبه 1 فروردین 1404"
+string rangeStart = datePicker.FormatRangeStart("short");  // "1404/01/01"
+string rangeEnd = datePicker.FormatRangeEnd("short");     // "1404/01/31"
+```
+
+These are especially useful in MVVM scenarios where the view-model needs to produce
+display strings that respect the active calendar — without manually passing the
+localization and calendar type to `PersianCalendarHelper.FormatPersianDate`.
 
 ## Demo Application
 
@@ -385,8 +813,22 @@ dotnet test
 
 ## Roadmap
 
-- [x] Time picker component
-- [x] Date range picker
+- [x] Time picker component (`SelectedTime` as `TimeSpan`)
+- [x] Date range picker with optional time-of-day (`RangeStartTime` / `RangeEndTime`)
+- [x] Quick Range panel: presets, a Month / Season / Half-year grid for any year, Clear / Cancel / Apply
+- [x] Optional clear button in the field (`ShowClearButton`)
+- [x] `SelectedTimeChanged` / `RangeTimeChanged` events
+- [x] Gregorian-mode safe conversion (`ToGregorianDateTime` / `ToDateTimeAsGregorian`)
+- [x] Calendar-aware date formatting (`FormatPersianDate` / `FormatSelectedDate` / `ToString(format, loc, calendarType)`)
+- [x] Automatic date conversion when switching `CalendarType` (Persian ↔ Gregorian)
+- [x] Calendar-aware "Today" button and initialization (`TodayForCalendarType`)
+- [x] Invalid typed dates reported, never silently replaced (`HasInvalidInput`, `CommitText`)
+- [x] Persian / Arabic-Indic digits in typed dates
+- [x] Calendar-neutral `SelectedDateTime` and runtime culture switching (`NotifyCultureChanged`)
+- [x] Always left-to-right time section, in every language
+- [x] ControlThemes with template-bound layout (`Padding`, `VerticalContentAlignment`)
+- [x] Forced Light / Dark from the XAML palette, one focus stop, popup as wide as the field
+- [x] A custom `Watermark` in editable mode, and a `Clear()` that also empties invalid text
 - [x] Custom themes
 - [x] More localization options (Arabic, Kurdish + custom provider)
 - [x] Gregorian calendar mode
@@ -413,7 +855,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Inspired by [HEskandari/FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms
 - Built with [Avalonia UI](https://avaloniaui.net/)
-- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io) & [MiMo](https://github.com/XiaomiMiMo/MiMo-Code)
+- Vibe Coding with [Qwen Code CLI](https://qwenlm.github.io) & [MiMo](https://github.com/XiaomiMiMo/MiMo-Code) & [Super Z](https://chat.z.ai)
 - Persian calendar algorithms based on standard Jalali calendar calculations
 
 ## Support
