@@ -8,7 +8,7 @@
 
 A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalonia UI**, inspired by the popular [FarsiLibrary](https://github.com/HEskandari/FarsiLibrary) for WPF/WinForms.
 
-![NuGet](https://img.shields.io/badge/NuGet-2.4.12-blue)
+![NuGet](https://img.shields.io/badge/NuGet-2.5.12-blue)
 ![Avalonia UI](https://img.shields.io/badge/Avalonia-12.1.4-blue)
 ![.NET](https://img.shields.io/badge/.NET-8.0+-purple)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -19,7 +19,7 @@ A modern, fully-featured Persian (Jalali/Shamsi) DatePicker control for **Avalon
 - ✅ **RTL & LTR Layouts** - Right-to-left for Persian, Left-to-right for English
 - ✅ **Multi-Language Support** - Farsi, English, Arabic, Kurdish + custom via `ICalendarLocalization`
 - ✅ **Calendar Type** - Persian, Gregorian, or Auto-detect from thread culture (follows a runtime language switch via `NotifyCultureChanged()`)
-- ✅ **Calendar-Neutral Binding** - `SelectedDateTime` (`DateTime?`) keeps the same day whatever the calendar
+- ✅ **Calendar-Neutral Binding** - `SelectedDateTime`, `RangeStartDateTime` and `RangeEndDateTime` (`DateTime?`) keep the same day whatever the calendar
 - ✅ **Keyboard Navigation** - Full keyboard support for accessibility
 - ✅ **Mouse Scroll Navigation** - Scroll through months with mouse wheel when calendar is open
 - ✅ **Editable Mode** - Type dates manually with validation, in ASCII, Persian (۰-۹) or Arabic-Indic (٠-٩) digits; an invalid entry can be kept and reported (`HasInvalidInput`) instead of silently replaced
@@ -54,8 +54,26 @@ cd ModernPersianDatePicker
 
 ### Option 3: NuGet Package
 ```bash
-dotnet add package ModernPersianDatePicker --version 2.4.12
+dotnet add package ModernPersianDatePicker --version 2.5.12
 ```
+
+## What's New in 2.5.12
+
+- **Calendar-neutral range values: `RangeStartDateTime` / `RangeEndDateTime`**
+  (`DateTime?`, the date part, two-way by default). They stay in sync with
+  `RangeStart` / `RangeEnd` both ways and never change meaning: a range picked as
+  1405/09/01 ~ 1405/09/30 is the same days after a switch to Gregorian (a `CalendarType`
+  change, or `NotifyCultureChanged()` / `RefreshCalendar()` in Auto mode) and back -
+  `RangeStart` / `RangeEnd` and the text are converted, the DateTime values do not change.
+  Bind these instead of `RangeStart` / `RangeEnd` when you store the range.
+- **Typing a range** (`IsRangeMode` + `IsEditable`): the box is parsed as
+  `start ~ end` (plus `HH:mm[:ss] ~ HH:mm[:ss]` when `IsTimePickerEnabled`). It used to
+  be parsed as a single date and written to `SelectedDate`, leaving the range unchanged.
+  An invalid range (a bad date, only one end, the end before the start, outside
+  `MinDate` / `MaxDate`) follows `InvalidValueAction` like a single date: under `Keep`
+  the text and the old range stay and `HasInvalidInput` is set - never replaced by today.
+  An empty box clears the range. A valid typed range raises `DateRangeSelected`.
+- **`Clear()` also empties the range** (`RangeStart`, `RangeEnd` and both DateTime values).
 
 ## What's New in 2.4.12
 
@@ -207,7 +225,7 @@ See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
 |----------|------|---------|-------------|
 | `SelectedDate` | `PersianDate?` | `null` | The selected date, as Year/Month/Day in the active calendar |
 | `SelectedDateTime` | `DateTime?` | `null` | The selected date, calendar-neutral (two-way by default) - bind this to store real dates |
-| `HasInvalidInput` | `bool` (read-only) | `false` | The typed text is not a valid date and `InvalidValueAction` is `Keep` |
+| `HasInvalidInput` | `bool` (read-only) | `false` | The typed text is not a valid date (range mode: not a valid range) and `InvalidValueAction` is `Keep` |
 | `SelectedDateCalendar` | `CalendarType` (read-only) | the effective calendar | The calendar `SelectedDate` / `RangeStart` / `RangeEnd` are expressed in (Persian or Gregorian, never Auto) |
 | `Padding` | `Thickness` | `12,4` | The text's padding inside the box (template-bound - a style can change it) |
 | `VerticalContentAlignment` | `VerticalAlignment` | `Center` | The text's vertical alignment inside the box |
@@ -227,8 +245,10 @@ See [Real Dates and Culture Switches](#real-dates-and-culture-switches) and
 | `IsTimePickerEnabled` | `bool` | `false` | Show time picker spinners below calendar (single-date mode) or inside the Quick Range From/To pickers (range mode) |
 | `SelectedTime` | `TimeSpan` | `00:00:00` | Selected time-of-day `[00:00:00, 23:59:59]` (single-date mode) |
 | `IsRangeMode` | `bool` | `false` | Enable date range selection |
-| `RangeStart` | `PersianDate?` | `null` | Start of selected range |
-| `RangeEnd` | `PersianDate?` | `null` | End of selected range |
+| `RangeStart` | `PersianDate?` | `null` | Start of selected range, as Year/Month/Day in the active calendar - do not bind to stored data |
+| `RangeEnd` | `PersianDate?` | `null` | End of selected range, as Year/Month/Day in the active calendar - do not bind to stored data |
+| `RangeStartDateTime` | `DateTime?` | `null` | Start of the range, calendar-neutral (two-way by default) - bind this to store real dates |
+| `RangeEndDateTime` | `DateTime?` | `null` | End of the range, calendar-neutral (two-way by default) - bind this to store real dates |
 | `RangeStartTime` | `TimeSpan` | `00:00:00` | Time-of-day for range start (active when `IsRangeMode && IsTimePickerEnabled`) |
 | `RangeEndTime` | `TimeSpan` | `23:59:59` | Time-of-day for range end (active when `IsRangeMode && IsTimePickerEnabled`) |
 | `LocalizationProvider` | `ICalendarLocalization?` | `null` | Custom localization provider |
@@ -330,6 +350,12 @@ When `IsEditable="True"`, users can type dates manually:
 
 An **empty** box means "no date" (`SelectedDate = null`), except under `SetToToday`.
 
+In **range mode** the box holds `start ~ end`, each end in any of the formats above
+(`1405/09/01 ~ 1405/09/30`), followed by `HH:mm[:ss] ~ HH:mm[:ss]` when
+`IsTimePickerEnabled` (`1405/09/01 ~ 1405/09/30 08:00 ~ 17:30`). Both ends are required
+and the end may not precede the start; anything else is an invalid entry. An empty box
+clears the range (under `SetToToday`: today ~ today).
+
 ### Invalid Value Actions
 
 ```csharp
@@ -343,7 +369,7 @@ InvalidValueAction="SetToToday"
 InvalidValueAction="Keep"
 ```
 
-With `Keep`, an invalid entry leaves `SelectedDate` unchanged and sets
+With `Keep`, an invalid entry leaves `SelectedDate` (range mode: the range) unchanged and sets
 `HasInvalidInput` to `true` until the next valid or empty entry. An application that
 must never save a date the user did not enter binds `HasInvalidInput` and refuses to
 save while it is set - otherwise the OLD date would be saved under the mistyped text:
@@ -519,7 +545,32 @@ datePicker.DateRangeSelected += (_, e) =>
 
 > When the picker is in Gregorian mode, use `e.RangeStart.Value.ToDateTimeAsGregorian()`
 > instead of `ToDateTime()` to avoid routing through `PersianCalendar` (which would reject
-> days > 30 for Persian month 7 / Mehr).
+> days > 30 for Persian month 7 / Mehr). Simpler: read `RangeStartDateTime` /
+> `RangeEndDateTime`, which are already calendar-neutral.
+
+### Binding a range (MVVM)
+
+`RangeStart` / `RangeEnd` are `PersianDate` values **in the active calendar**: their
+numbers change meaning when the calendar or (in Auto mode) the culture switches. Bind the
+calendar-neutral `RangeStartDateTime` / `RangeEndDateTime` to stored data instead:
+
+```xml
+<persian:ModernPersianDatePicker IsRangeMode="True" IsEditable="True"
+                                 InvalidValueAction="Keep"
+                                 RangeStartDateTime="{Binding FromDate}"
+                                 RangeEndDateTime="{Binding ToDate}"
+                                 HasInvalidInput="{Binding RangeIsInvalid, Mode=OneWayToSource}" />
+```
+
+```csharp
+public DateTime? FromDate { get; set; }   // the date part; null = no range
+public DateTime? ToDate   { get; set; }
+```
+
+Picking a range (a day click or a Quick Range preset), typing one, or `Clear()` updates
+both properties; setting them from the view model moves the selection. A calendar switch
+converts `RangeStart` / `RangeEnd` and leaves these values untouched. The time of day of
+a value set from outside is ignored - use `RangeStartTime` / `RangeEndTime` for times.
 
 ### Visibility matrix
 
@@ -545,6 +596,8 @@ datePicker.DateRangeSelected += (_, e) =>
 different day in Persian and in Gregorian mode. Applications that store dates should bind
 `SelectedDateTime` (`DateTime?`, the date part) - it never changes meaning, and switching
 `CalendarType` converts `SelectedDate` while `SelectedDateTime` stays the same day.
+The same holds for a range: `RangeStart` / `RangeEnd` are converted, `RangeStartDateTime` /
+`RangeEndDateTime` stay the same days.
 
 In `CalendarType="Auto"` mode the calendar follows `CultureInfo.CurrentUICulture`.
 .NET raises no event when that changes, so an application that switches language at
@@ -552,7 +605,7 @@ runtime tells the pickers right after setting the culture:
 
 ```csharp
 CultureInfo.CurrentUICulture = new CultureInfo("en-US");
-ModernPersianDatePicker.NotifyCultureChanged();   // every loaded picker converts its date
+ModernPersianDatePicker.NotifyCultureChanged();   // every loaded picker converts its date / range
 ```
 
 A picker that was not loaded at the time catches up when it loads; `picker.RefreshCalendar()`

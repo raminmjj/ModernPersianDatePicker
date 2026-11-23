@@ -103,12 +103,18 @@ public class ModernPersianDatePicker : TemplatedControl
 
     /// <summary>
     /// Start of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// Expressed in the active calendar (<see cref="SelectedDateCalendar"/>), so its numbers
+    /// change meaning when the calendar switches - bind <see cref="RangeStartDateTime"/> to
+    /// stored data instead.
     /// </summary>
     public static readonly StyledProperty<PersianDate?> RangeStartProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(RangeStart));
 
     /// <summary>
     /// End of the selected date range. Only meaningful when <see cref="IsRangeMode"/> is true.
+    /// Expressed in the active calendar (<see cref="SelectedDateCalendar"/>), so its numbers
+    /// change meaning when the calendar switches - bind <see cref="RangeEndDateTime"/> to
+    /// stored data instead.
     /// </summary>
     public static readonly StyledProperty<PersianDate?> RangeEndProperty =
         AvaloniaProperty.Register<ModernPersianDatePicker, PersianDate?>(nameof(RangeEnd));
@@ -172,6 +178,28 @@ public class ModernPersianDatePicker : TemplatedControl
             nameof(SelectedDateTime), defaultBindingMode: BindingMode.TwoWay);
 
     /// <summary>
+    /// Start of the selected range as a calendar-neutral <see cref="DateTime"/> (the date
+    /// part; <see cref="DateTimeKind.Unspecified"/>), kept in sync with
+    /// <see cref="RangeStart"/>. Bind this instead of <see cref="RangeStart"/> when the
+    /// application stores real dates: <see cref="RangeStart"/> holds Year/Month/Day in
+    /// whichever calendar is active, so its numbers change meaning when the calendar (or,
+    /// in <see cref="CalendarType.Auto"/> mode, the culture) changes - this value does not.
+    /// The time of day of a value set from outside is not interpreted; use
+    /// <see cref="RangeStartTime"/> for it.
+    /// </summary>
+    public static readonly StyledProperty<DateTime?> RangeStartDateTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, DateTime?>(
+            nameof(RangeStartDateTime), defaultBindingMode: BindingMode.TwoWay);
+
+    /// <summary>
+    /// End of the selected range as a calendar-neutral <see cref="DateTime"/> (the date
+    /// part), kept in sync with <see cref="RangeEnd"/>. See <see cref="RangeStartDateTimeProperty"/>.
+    /// </summary>
+    public static readonly StyledProperty<DateTime?> RangeEndDateTimeProperty =
+        AvaloniaProperty.Register<ModernPersianDatePicker, DateTime?>(
+            nameof(RangeEndDateTime), defaultBindingMode: BindingMode.TwoWay);
+
+    /// <summary>
     /// True while the editable text box holds text that is not a valid date (or is
     /// outside <see cref="MinDate"/>/<see cref="MaxDate"/>) and
     /// <see cref="InvalidValueAction"/> is <see cref="InvalidValueAction.Keep"/>:
@@ -224,6 +252,7 @@ public class ModernPersianDatePicker : TemplatedControl
     private const double MinimumPopupWidth = 280;
     private bool _hasInvalidInput;
     private bool _syncingDateTime;
+    private bool _syncingRangeDateTime;
 
     // The concrete calendar (Persian or Gregorian) that SelectedDate / RangeStart /
     // RangeEnd are currently expressed in. In Auto mode it is the culture's calendar at
@@ -266,6 +295,8 @@ public class ModernPersianDatePicker : TemplatedControl
         SelectedTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedTimeChanged(e));
         CalendarTypeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnCalendarTypeChanged(e));
         SelectedDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnSelectedDateTimeChanged(e));
+        RangeStartDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeDateTimeChanged(e));
+        RangeEndDateTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeDateTimeChanged(e));
         RangeStartTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         RangeEndTimeProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, e) => x.OnRangeTimeChanged(e));
         WatermarkProperty.Changed.AddClassHandler<ModernPersianDatePicker>((x, _) => x.ApplyWatermark());
@@ -303,6 +334,20 @@ public class ModernPersianDatePicker : TemplatedControl
         set => SetValue(SelectedDateTimeProperty, value);
     }
 
+    /// <inheritdoc cref="RangeStartDateTimeProperty"/>
+    public DateTime? RangeStartDateTime
+    {
+        get => GetValue(RangeStartDateTimeProperty);
+        set => SetValue(RangeStartDateTimeProperty, value);
+    }
+
+    /// <inheritdoc cref="RangeEndDateTimeProperty"/>
+    public DateTime? RangeEndDateTime
+    {
+        get => GetValue(RangeEndDateTimeProperty);
+        set => SetValue(RangeEndDateTimeProperty, value);
+    }
+
     /// <inheritdoc cref="HasInvalidInputProperty"/>
     public bool HasInvalidInput
     {
@@ -336,7 +381,8 @@ public class ModernPersianDatePicker : TemplatedControl
     /// mode, which follows <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>)
     /// and, when it changed, converts <see cref="SelectedDate"/>, <see cref="RangeStart"/>
     /// and <see cref="RangeEnd"/> into it - the same day, new numbers - and re-renders.
-    /// <see cref="SelectedDateTime"/> does not change. Every loaded picker does this when
+    /// <see cref="SelectedDateTime"/>, <see cref="RangeStartDateTime"/> and
+    /// <see cref="RangeEndDateTime"/> do not change. Every loaded picker does this when
     /// <see cref="NotifyCultureChanged"/> is called, and a picker does it when it loads.
     /// </summary>
     public void RefreshCalendar()
@@ -670,6 +716,12 @@ public class ModernPersianDatePicker : TemplatedControl
 
     private void ValidateAndParseInput(string? input)
     {
+        if (IsRangeMode)
+        {
+            ValidateAndParseRangeInput(input);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(input))
         {
             // An empty box is not an invalid value: it means "no date" - except under
@@ -725,6 +777,136 @@ public class ModernPersianDatePicker : TemplatedControl
                 HasInvalidInput = true;
                 break;
         }
+    }
+
+    /// <summary>
+    /// Range mode: parses "start ~ end" (the text the field shows), optionally followed
+    /// by "HH:mm[:ss] ~ HH:mm[:ss]" when <see cref="IsTimePickerEnabled"/>. Both dates are
+    /// required, the end may not precede the start, and both must be inside
+    /// <see cref="MinDate"/>/<see cref="MaxDate"/>; anything else is invalid and is
+    /// handled by <see cref="InvalidValueAction"/> exactly as in single-date mode
+    /// (<see cref="InvalidValueAction.Keep"/> keeps the text and the old range and sets
+    /// <see cref="HasInvalidInput"/>). An empty box clears the range.
+    /// </summary>
+    private void ValidateAndParseRangeInput(string? input)
+    {
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            if (InvalidValueAction == InvalidValueAction.SetToToday)
+                SetRangeToToday();
+            else
+                SetRange(null, null);
+            HasInvalidInput = false;
+            return;
+        }
+
+        if (!TryParseRange(input, out var start, out var end, out var startTime, out var endTime)
+            || (MinDate.HasValue && start < MinDate.Value)
+            || (MaxDate.HasValue && end > MaxDate.Value))
+        {
+            switch (InvalidValueAction)
+            {
+                case InvalidValueAction.SetToToday:
+                    SetRangeToToday();
+                    break;
+                case InvalidValueAction.SetToNull:
+                    SetRange(null, null);
+                    break;
+                case InvalidValueAction.Keep:
+                    HasInvalidInput = true;
+                    break;
+            }
+            return;
+        }
+
+        bool changed = RangeStart != start || RangeEnd != end;
+        if (startTime.HasValue && endTime.HasValue)
+        {
+            changed |= RangeStartTime != startTime.Value || RangeEndTime != endTime.Value;
+            RangeStartTime = startTime.Value;
+            RangeEndTime = endTime.Value;
+        }
+        SetRange(start, end);
+        // Also when the range did not change (re-typing the same range after an
+        // invalid entry raises no RangeStart / RangeEnd change).
+        HasInvalidInput = false;
+
+        if (changed)
+            DateRangeSelected?.Invoke(this, new DateRangeSelectedEventArgs(start, end, RangeStartTime, RangeEndTime));
+    }
+
+    private void SetRange(PersianDate? start, PersianDate? end)
+    {
+        RangeStart = start;
+        RangeEnd = end;
+    }
+
+    private void SetRangeToToday()
+    {
+        var today = PersianCalendarHelper.TodayForCalendarType(CalendarType);
+        SetRange(today, today);
+    }
+
+    private bool TryParseRange(string input, out PersianDate start, out PersianDate end,
+        out TimeSpan? startTime, out TimeSpan? endTime)
+    {
+        start = end = default;
+        startTime = endTime = null;
+
+        var tokens = NormalizeDigits(input).Replace("~", " ~ ")
+            .Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+
+        var dates = new List<PersianDate>(2);
+        var times = new List<TimeSpan>(2);
+        foreach (var token in tokens)
+        {
+            if (token == "~")
+                continue;
+            if (token.Contains(':'))
+            {
+                if (!IsTimePickerEnabled || !TryParseTime(token, out var time))
+                    return false;
+                times.Add(time);
+            }
+            else
+            {
+                var date = ParsePersianDate(token);
+                if (!date.HasValue)
+                    return false;
+                dates.Add(date.Value);
+            }
+        }
+
+        if (dates.Count != 2 || times.Count is not (0 or 2) || dates[1] < dates[0])
+            return false;
+        if (times.Count == 2 && dates[0] == dates[1] && times[1] < times[0])
+            return false;
+
+        start = dates[0];
+        end = dates[1];
+        if (times.Count == 2)
+        {
+            startTime = times[0];
+            endTime = times[1];
+        }
+        return true;
+    }
+
+    private static bool TryParseTime(string text, out TimeSpan time)
+    {
+        time = default;
+        var parts = text.Split(':');
+        if (parts.Length is not (2 or 3))
+            return false;
+        if (!int.TryParse(parts[0], out int h) || h is < 0 or > 23)
+            return false;
+        if (!int.TryParse(parts[1], out int m) || m is < 0 or > 59)
+            return false;
+        int s = 0;
+        if (parts.Length == 3 && (!int.TryParse(parts[2], out s) || s is < 0 or > 59))
+            return false;
+        time = new TimeSpan(h, m, s);
+        return true;
     }
 
     private PersianDate? ParsePersianDate(string input)
@@ -1183,6 +1365,11 @@ public class ModernPersianDatePicker : TemplatedControl
 
     private void OnRangeChanged(AvaloniaPropertyChangedEventArgs e)
     {
+        // Property state, not visuals: kept in step even while unloaded.
+        if (IsRangeMode)
+            HasInvalidInput = false;
+        SyncRangeDateTimeFromRange(e.Property == RangeStartProperty);
+
         if (_isDisposed)
             return;
 
@@ -1343,6 +1530,46 @@ public class ModernPersianDatePicker : TemplatedControl
         finally
         {
             _syncingDateTime = false;
+        }
+    }
+
+    private void OnRangeDateTimeChanged(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (_syncingRangeDateTime)
+            return;
+
+        _syncingRangeDateTime = true;
+        try
+        {
+            var value = e.NewValue as DateTime?;
+            var date = value is DateTime d ? FromDateTime(d, _valuesCalendar) : (PersianDate?)null;
+            if (e.Property == RangeStartDateTimeProperty)
+                RangeStart = date;
+            else
+                RangeEnd = date;
+        }
+        finally
+        {
+            _syncingRangeDateTime = false;
+        }
+    }
+
+    private void SyncRangeDateTimeFromRange(bool start)
+    {
+        if (_syncingRangeDateTime)
+            return;
+
+        _syncingRangeDateTime = true;
+        try
+        {
+            if (start)
+                RangeStartDateTime = RangeStart is PersianDate s ? ToDateTime(s, _valuesCalendar) : null;
+            else
+                RangeEndDateTime = RangeEnd is PersianDate e ? ToDateTime(e, _valuesCalendar) : null;
+        }
+        finally
+        {
+            _syncingRangeDateTime = false;
         }
     }
 
@@ -1811,7 +2038,8 @@ public class ModernPersianDatePicker : TemplatedControl
     }
 
     /// <summary>
-    /// Empties the field: no date, no typed text, no invalid flag. When the date was
+    /// Empties the field: no date, no range (<see cref="RangeStart"/>, <see cref="RangeEnd"/>
+    /// and their DateTime counterparts become null), no typed text, no invalid flag. When the date was
     /// already empty (text that is not a date typed into an empty field), setting it
     /// to null changed nothing, so the text and <see cref="HasInvalidInput"/> used to
     /// stay - a "Clear filters" button left the field reporting an error.
@@ -1822,6 +2050,7 @@ public class ModernPersianDatePicker : TemplatedControl
             return;
 
         SelectedDate = null;
+        SetRange(null, null);
         if (_editableTextBox != null)
             _editableTextBox.Text = string.Empty;
         HasInvalidInput = false;
